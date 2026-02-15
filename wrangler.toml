@@ -1,9 +1,7 @@
 name = "toniolab"
 compatibility_date = "2024-11-27"
 compatibility_flags = ["nodejs_compat"]
-
-[assets]
-directory = "./out"
+pages_build_output_dir = ".vercel/output/static"
 
 [[d1_databases]]
 binding = "DB"
