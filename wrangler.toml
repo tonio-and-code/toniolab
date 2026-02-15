@@ -1,5 +1,11 @@
 name = "toniolab"
-compatibility_date = "2025-01-01"
+compatibility_date = "2024-11-27"
+compatibility_flags = ["nodejs_compat"]
 
 [assets]
 directory = "./out"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "iwasaki-phrases"
+database_id = "f4801cde-0f1d-4bc9-beec-5d8709813798"

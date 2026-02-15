@@ -1,0 +1,151 @@
+export interface DayPrologue {
+    title: string;
+    titleJa: string;
+    setting: string;
+    settingJa: string;
+    characters: { name: string; desc: string }[];
+}
+
+// Key = date string (YYYY-MM-DD)
+export const DAY_PROLOGUES: Record<string, DayPrologue> = {
+    '2026-01-01': {
+        title: "Baby's First Words",
+        titleJa: '赤ちゃんの最初の言葉',
+        setting: "A family home. A baby is discovering sounds and objects for the first time. Parents narrate everyday life with the wide-eyed wonder that only new parents have.",
+        settingJa: '家庭の日常。赤ちゃんが初めて音やモノを発見していく。新米パパママが目を輝かせながら日常を実況する。',
+        characters: [
+            { name: 'Baby', desc: 'exploring everything for the first time' },
+            { name: 'Mom', desc: 'narrating every tiny moment' },
+            { name: 'Dad', desc: 'trying to be helpful, mostly in the way' },
+        ],
+    },
+    '2026-02-05': {
+        title: 'College Party',
+        titleJa: '大学のパーティー（20歳、男）',
+        setting: "Tyler's apartment, sophomore year. His roommate Brandon convinced him to throw a 'small' get-together that has now spiraled into a full-blown rager. The music is too loud, someone already broke a lamp, and the neighbor professor has called in noise complaints twice. Tyler is trying to enjoy himself while worrying about his security deposit.",
+        settingJa: 'タイラーのアパート、大学2年。ルームメイトのブランドンに「ちょっとした集まり」を開くよう説得されたが、本格的な大パーティーに発展。音楽がうるさすぎ、誰かがランプを壊し、隣人の教授が2回も騒音の苦情を入れている。タイラーは敷金を心配しながら楽しもうとしている。',
+        characters: [
+            { name: 'Tyler (20M)', desc: 'host, introvert who agreed to this, regretting it while crushing on Alyssa' },
+            { name: 'Brandon (21M)', desc: 'roommate, party animal, "relax bro it\'s fine" energy' },
+            { name: 'Alyssa (20F)', desc: 'Tyler\'s crush, showed up unexpectedly, kinda knows he likes her' },
+            { name: 'Derek (22M)', desc: 'senior, self-appointed DJ, will NOT give up the aux' },
+            { name: 'Megan (19F)', desc: 'freshman at her first college party, wide-eyed and overwhelmed' },
+            { name: 'Professor Hayes (55M)', desc: 'next-door neighbor, has called noise complaints twice already' },
+            { name: 'Zoe (20F)', desc: 'documenting everything for social media, "this is SO going viral"' },
+            { name: 'Jake (21M)', desc: 'frat bro, showed up uninvited with 15 people' },
+            { name: 'Kenji (20M)', desc: 'exchange student from Tokyo, comparing everything to Japanese culture' },
+            { name: 'Rosa (20F)', desc: 'designated driver, sober and silently judging everyone' },
+        ],
+    },
+    '2026-06-25': {
+        title: 'First Day of High School',
+        titleJa: '高校初日（15歳、男）',
+        setting: "September morning. A 15-year-old boy walks through the doors of his new high school for the first time. Everything is too big, too loud, and too confusing. His family watches him go with a mix of pride and anxiety.",
+        settingJa: '9月の朝。15歳の男の子が新しい高校の扉をくぐる。全てがデカすぎ、うるさすぎ、わけわかんない。家族は誇りと不安が入り混じった目で見送る。',
+        characters: [
+            { name: 'The Boy (15M)', desc: 'nervous freshman trying to play it cool' },
+            { name: 'Mom (42F)', desc: 'emotional, packing too many snacks' },
+            { name: 'Dad (45M)', desc: 'giving advice nobody asked for' },
+            { name: 'Big Sister (18F)', desc: 'senior at the same school, pretends not to know him' },
+            { name: 'Best Friend (15M)', desc: 'equally lost but pretending otherwise' },
+            { name: 'Teacher', desc: 'seen a thousand first days, unfazed' },
+            { name: 'Grandpa', desc: 'tells stories about HIS first day (in 1978)' },
+        ],
+    },
+    '2026-06-30': {
+        title: 'Baby Shower',
+        titleJa: 'ベビーシャワー（30歳、女）',
+        setting: "A backyard decorated with pastel balloons and too many dip platters. Rachel is 8 months pregnant and emotionally volatile. Her best friends, family, and one very confused husband navigate the chaos of modern baby shower culture.",
+        settingJa: 'パステルカラーの風船とディップの皿が多すぎる裏庭。レイチェルは妊娠8ヶ月で感情が不安定。親友、家族、そして1人の非常に困惑した旦那が現代のベビーシャワー文化のカオスを乗り越える。',
+        characters: [
+            { name: 'Rachel (30F)', desc: '8 months pregnant, emotional rollercoaster' },
+            { name: 'Dave (32M)', desc: 'husband, can\'t wrap gifts, tries his best' },
+            { name: 'Mia (29F)', desc: 'best friend, planned everything perfectly' },
+            { name: 'Mom (55F)', desc: 'keeps crying happy tears' },
+            { name: 'Mother-in-law (58F)', desc: 'judgmental but means well' },
+            { name: 'Kate (33F)', desc: 'older sister, full of opinions' },
+            { name: 'Jess (26F)', desc: 'younger sister, chaotic energy' },
+            { name: 'Priya (31F)', desc: 'shows up looking like a model' },
+            { name: 'Sarah (28F)', desc: 'coworker, slightly awkward at family events' },
+            { name: 'Dad/Grandpa (58M)', desc: 'drove 12 hours from Florida, refuses to fly' },
+        ],
+    },
+    '2026-07-05': {
+        title: 'Class Reunion',
+        titleJa: '同窓会（28歳、混合）',
+        setting: "The old high school gym, badly repainted. Ten years out, and everyone is pretending to have their life together. Kevin organized it. The catering is surprisingly good. The bleachers are still broken.",
+        settingJa: '塗り直しがイマイチな旧体育館。卒業から10年、みんな人生うまくいってるフリをしている。ケビンが幹事。ケータリングは意外と良い。観覧席はまだ壊れたまま。',
+        characters: [
+            { name: 'Kevin (28M)', desc: 'organizer, people-pleaser, stressed' },
+            { name: 'Yuki (28F)', desc: 'just returned from Amsterdam, worldly' },
+            { name: 'Marco (29M)', desc: 'chef, taught everyone real pasta back in the day' },
+            { name: 'Lisa (28F)', desc: 'lawyer, gives free legal advice at parties' },
+            { name: 'Tommy (28M)', desc: 'gym bro, protein shakes in his duffel bag' },
+            { name: 'Mrs. Brenda (55F)', desc: 'former teacher, still learning new things' },
+            { name: 'Raj (28M)', desc: 'tech startup founder, hustler since high school' },
+            { name: 'Amanda (27F)', desc: 'vet, brings up animals in every conversation' },
+            { name: 'Hiro (28M)', desc: 'quiet PhD student, running on 4 hours of sleep' },
+            { name: 'Stacy (28F)', desc: 'gossip queen, knows everything about everyone' },
+        ],
+    },
+    '2026-07-10': {
+        title: 'First Salary Negotiation',
+        titleJa: '初めての給料交渉（23歳、女）',
+        setting: "Maya has been at a downtown marketing firm for exactly one year. Her performance review is tomorrow morning. She's been Googling 'how to ask for a raise without crying' at 2 AM. Her support crew all have opinions. Everyone has opinions.",
+        settingJa: 'マヤが都心のマーケティング会社に入社してちょうど1年。明日の朝は人事面談。深夜2時に「泣かずに昇給を頼む方法」を検索中。応援団は全員意見を持っている。全員。',
+        characters: [
+            { name: 'Maya (23F)', desc: 'first year at marketing firm, terrified of confrontation but determined' },
+            { name: 'Jen (24F)', desc: 'cubicle neighbor, been there 2 years, sassy and street-smart' },
+            { name: 'Brad (35M)', desc: 'manager, avoids conflict, speaks exclusively in corporate buzzwords' },
+            { name: 'HR Karen (42F)', desc: 'HR manager, poker face, seen every trick in the book' },
+            { name: 'Dad (52M)', desc: 'construction worker, "just be grateful" mentality' },
+            { name: 'Mom (50F)', desc: 'teacher, supportive but texts every 5 minutes' },
+            { name: 'Uncle Ray (48M)', desc: 'finance bro, unsolicited money advice machine' },
+            { name: 'Tasha (23F)', desc: 'college roommate, works in tech, already making bank' },
+            { name: 'Mike (27M)', desc: 'office gossip, somehow knows everyone\'s salary' },
+            { name: 'Grandma Dotty (78F)', desc: '"just be grateful you have a job" generation' },
+        ],
+    },
+    '2026-02-15': {
+        title: 'Mariners Trade Talk',
+        titleJa: '野球トレード談義ポッドキャスト（30代、男2人）',
+        setting: "A late-night baseball podcast. Marcus hosts from his St. Louis basement studio, Kai calls in from Seattle. They're breaking down the Donovan trade, but the conversation keeps veering into random tangents -- conspiracy theories, bad dentists, pet gerbils, you name it. Two dudes who could talk baseball for six hours straight and still not cover everything.",
+        settingJa: '深夜の野球ポッドキャスト。マーカスがセントルイスの自宅スタジオから配信、カイはシアトルから電話参加。ドノバンのトレードを分析するはずが、話は陰謀論、歯医者の悪口、ペットのジャービルまで脱線しまくり。6時間喋っても話し足りない野球バカ2人。',
+        characters: [
+            { name: 'Marcus (34M)', desc: 'host, Cardinals fan, loud, opinionated, loves tangents and hot takes' },
+            { name: 'Kai (32M)', desc: 'guest, Mariners superfan since 2001, analytical but emotional about his team' },
+        ],
+    },
+    '2026-02-10': {
+        title: 'Monster Under the Bed',
+        titleJa: '暗闇が怖い、ベッドの下のモンスター（4歳、男）',
+        setting: "It's Friday night and Timmy's parents are heading out for a quick dinner. The babysitter has arrived. Timmy's best friend Noah is sleeping over. The old house makes weird pipe noises. Timmy is convinced there's a monster under his bed. The adults are less than helpful.",
+        settingJa: '金曜の夜、ティミーの両親が夕食に出かける。ベビーシッターが来た。親友のノアがお泊まり。古い家は配管がギシギシ鳴る。ティミーはベッドの下にモンスターがいると確信。大人たちはあまり役に立たない。',
+        characters: [
+            { name: 'Timmy (4M)', desc: 'scared boy, talks to his stuffed bear Captain Fuzzy, simple fragments' },
+            { name: 'Mom/Sarah (32F)', desc: 'ER nurse, tired from work but patient, explains things medically' },
+            { name: 'Dad/Greg (35M)', desc: "lawyer, can't stop using big words even with a 4-year-old" },
+            { name: 'Emma (8F)', desc: "big sister, science obsessed, 'actually...' girl" },
+            { name: 'Grandpa Frank (68M)', desc: 'retired plumber, visiting for the weekend, storyteller' },
+            { name: 'Noah (4M)', desc: "best friend sleeping over, tries to be brave, brought a ninja sword" },
+            { name: 'Kayla (16F)', desc: 'babysitter, studying for SATs, pragmatic, on her phone' },
+            { name: 'Uncle Danny (30M)', desc: "Dad's brother, conspiracy theorist, accidentally makes everything scarier" },
+        ],
+    },
+    '2026-02-20': {
+        title: 'First Movie Without Parents',
+        titleJa: '親なしで初めて映画館（12歳、グループ）',
+        setting: "Friday night at the Regal Cinemas. Five sixth-graders are being dropped off at the movies for the very first time without a parent. Jayden organized the whole thing, Maddie is already spiraling, and Jayden's little brother Benji somehow weaseled his way into coming. The candy counter looks like paradise, the theater seats feel enormous, and every decision -- who sits where, what snacks to get, which armrest is whose -- feels like life or death. An old man in row F is already glaring at them.",
+        settingJa: '金曜夜のリーガルシネマ。5人の6年生が初めて親なしで映画館に来た。ジェイデンが全部計画、マディはもうパニック、なぜかジェイデンの弟ベンジがついてきた。お菓子カウンターは楽園に見え、シアターの座席は巨大で、誰がどこに座るか、どのスナックを買うか、どの肘掛けが誰のか -- 全てが命がけ。F列のおじいさんがもう睨んでる。',
+        characters: [
+            { name: 'Jayden (12M)', desc: 'ringleader, organized everything, acts 16 but panics at real decisions' },
+            { name: 'Maddie (12F)', desc: "anxious about everything, mom texts every 3 minutes, hand sanitizer always out" },
+            { name: 'Tyler C. (12M)', desc: "class clown, nonstop commentary, eats everyone's snacks" },
+            { name: 'Ava (12F)', desc: "film nerd, already read every spoiler, wanted the indie movie instead" },
+            { name: 'Benji (11M)', desc: "Jayden's little brother, wasn't supposed to come, zero volume control" },
+            { name: 'Mrs. Chen (42F)', desc: "Jayden's mom, hovering via text, threatened to come inside and sit with them" },
+            { name: 'Marcus (17M)', desc: 'movie theater usher, bored out of his mind, on his phone, zero authority' },
+            { name: 'Old Man Gus (70M)', desc: "grumpy retiree in row F, shushes everyone, 'back in my day' energy" },
+        ],
+    },
+};

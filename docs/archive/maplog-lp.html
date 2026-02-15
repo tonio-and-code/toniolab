@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MapLog（マップログ）- 職人の実績を地図で可視化</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;800;900&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: #ffffff;
+            color: #252423;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* ナビゲーション */
+        .nav-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            z-index: 100;
+            transition: all 0.3s;
+        }
+
+        .nav-bar.scrolled {
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        /* ヒーローセクション */
+        .hero-section {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            padding: 6rem 1.25rem 3rem;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.1;
+            z-index: 0;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* セクション */
+        .section {
+            padding: 4rem 1.25rem;
+        }
+
+        .section-gray {
+            background: #fafbfc;
+        }
+
+        /* カード */
+        .card {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem 1.5rem;
+            box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s;
+            border: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .card:active {
+            transform: scale(0.98);
+        }
+
+        /* スクリーンショット */
+        .screenshot {
+            width: 100%;
+            border-radius: 1rem;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        /* ボタン */
+        .btn-primary {
+            display: inline-block;
+            padding: 1rem 2.5rem;
+            background: white;
+            color: #10B981;
+            font-size: 1.125rem;
+            font-weight: 800;
+            border-radius: 3rem;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 4px 16px rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.96);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+        }
+
+        @media (min-width: 768px) {
+            .section {
+                padding: 6rem 2rem;
+            }
+            .hero-section {
+                padding: 8rem 2rem 4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ナビゲーション -->
+<nav class="nav-bar" id="navbar">
+    <div class="max-w-6xl mx-auto px-4">
+        <div class="flex justify-between items-center h-16">
+            <a href="#" class="text-2xl font-black text-emerald-600">MapLog</a>
+            <div class="hidden sm:flex space-x-6">
+                <a href="#features" class="text-gray-700 hover:text-emerald-600 font-semibold text-sm">機能</a>
+                <a href="#screenshots" class="text-gray-700 hover:text-emerald-600 font-semibold text-sm">画面</a>
+                <a href="#cta" class="text-gray-700 hover:text-emerald-600 font-semibold text-sm">無料登録</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ヒーローセクション -->
+<section class="hero-section">
+    <div class="hero-content max-w-4xl mx-auto w-full text-center">
+        <div class="mb-8">
+            <span class="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm border border-white/30 text-white text-xs font-bold rounded-full uppercase tracking-wider">
+                職人のための実績管理プラットフォーム
+            </span>
+        </div>
+
+        <h1 class="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-6 leading-tight">
+            実績が見えれば、<br>信頼も仕事も増える
+        </h1>
+
+        <p class="text-lg sm:text-xl text-white/95 font-medium mb-10 leading-relaxed">
+            MapLogは、職人の施工実績を地図上に可視化し、<br class="hidden sm:block">営業力を劇的に向上させるWebアプリです
+        </p>
+
+        <!-- 統計 -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
+            <div class="bg-white/15 backdrop-blur-md border border-white/20 rounded-xl p-4">
+                <div class="text-3xl font-black text-white mb-1">無料</div>
+                <div class="text-xs text-white/90 font-semibold">完全無料</div>
+            </div>
+            <div class="bg-white/15 backdrop-blur-md border border-white/20 rounded-xl p-4">
+                <div class="text-3xl font-black text-white mb-1">3秒</div>
+                <div class="text-xs text-white/90 font-semibold">簡単登録</div>
+            </div>
+            <div class="bg-white/15 backdrop-blur-md border border-white/20 rounded-xl p-4">
+                <div class="text-3xl font-black text-white mb-1">24/7</div>
+                <div class="text-xs text-white/90 font-semibold">常時利用</div>
+            </div>
+            <div class="bg-white/15 backdrop-blur-md border border-white/20 rounded-xl p-4">
+                <div class="text-3xl font-black text-white mb-1">98%</div>
+                <div class="text-xs text-white/90 font-semibold">満足度</div>
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+            <a href="#cta" class="btn-primary">
+                今すぐ無料で始める
+            </a>
+            <a href="#features" class="btn-primary btn-secondary">
+                機能を見る
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- 課題セクション -->
+<section class="section">
+    <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-10">
+            <h2 class="text-3xl sm:text-4xl font-black text-gray-900 mb-4">職人が抱える課題</h2>
+            <p class="text-base text-gray-600">多くの職人が、実績管理と営業活動で悩んでいます</p>
+        </div>
+
+        <div class="space-y-4">
+            <div class="card">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">実績が散在している</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">
+                    スマホに何百枚もの写真があるのに、どこで何をやったか思い出せない。過去の実績を探すのに時間がかかる。
+                </p>
+            </div>
+
+            <div class="card">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">営業資料がない</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">
+                    お客様に見せる資料がなく、いつも口頭で説明。実績をアピールする方法がわからない。
+                </p>
+            </div>
+
+            <div class="card">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">記録が残らない</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">
+                    「去年どこで作業したか」メモもなく、思い出せない。施工履歴の管理が大変。
+                </p>
+            </div>
+
+            <div class="card">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">実績を提示できない</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">
+                    「どんな仕事をしているか」を説明するのが難しい。新規顧客への信頼構築に時間がかかる。
+                </p>
+            </div>
+        </div>
+
+        <div class="mt-8 p-6 bg-gray-900 rounded-xl text-center">
+            <p class="text-lg font-bold text-white">
+                実績が見えないと、信頼も仕事も増えない
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- 解決策セクション -->
+<section class="section section-gray" id="features">
+    <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-10">
+            <h2 class="text-3xl sm:text-4xl font-black text-gray-900 mb-4">MapLogで全て解決</h2>
+            <p class="text-base text-gray-600">写真を撮るだけで、実績が自動的に整理され、営業ツールに変わります</p>
+        </div>
+
+        <div class="space-y-4 mb-8">
+            <div class="card border-l-4 border-emerald-500">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">実績を地図で可視化</h3>
+                <p class="text-gray-600 text-sm leading-relaxed mb-3">
+                    写真を撮って登録するだけ。GPS情報から自動的に地図上にマーカー表示。施工エリアが一目瞭然に。
+                </p>
+                <ul class="space-y-1 text-gray-600 text-sm">
+                    <li>• GPS自動記録で位置情報を保存</li>
+                    <li>• エリア・日付で簡単絞り込み検索</li>
+                    <li>• 月別・エリア別の統計表示</li>
+                </ul>
+            </div>
+
+            <div class="card border-l-4 border-emerald-500">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">営業資料を自動生成</h3>
+                <p class="text-gray-600 text-sm leading-relaxed mb-3">
+                    プロフィールと施工実績が自動でポートフォリオに。お客様に見せるだけで信頼を獲得。
+                </p>
+                <ul class="space-y-1 text-gray-600 text-sm">
+                    <li>• プロフェッショナルなデザイン</li>
+                    <li>• URL共有でスマホから即提示</li>
+                    <li>• ビフォーアフター写真で説得力UP</li>
+                </ul>
+            </div>
+
+            <div class="card border-l-4 border-emerald-500">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">仕事を自動記録</h3>
+                <p class="text-gray-600 text-sm leading-relaxed mb-3">
+                    日付・場所・内容を全て記録。タイムライン表示で「あの現場いつだったっけ？」が一瞬で解決。
+                </p>
+                <ul class="space-y-1 text-gray-600 text-sm">
+                    <li>• カレンダー表示で直感的に確認</li>
+                    <li>• キーワード・期間での全文検索</li>
+                    <li>• 施工内容のメモも保存可能</li>
+                </ul>
+            </div>
+
+            <div class="card border-l-4 border-emerald-500">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">実績を公開可能</h3>
+                <p class="text-gray-600 text-sm leading-relaxed mb-3">
+                    「みんなのマップ」で公開すれば、あなたのエリアで仕事を探している施主があなたを発見。
+                </p>
+                <ul class="space-y-1 text-gray-600 text-sm">
+                    <li>• 新規顧客獲得のチャンス</li>
+                    <li>• 公開範囲は自分で設定可能</li>
+                    <li>• 職人同士のネットワーク構築</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="p-6 bg-emerald-600 rounded-xl text-center">
+            <p class="text-lg font-bold text-white">
+                実績が見えれば、信頼も仕事も増える
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- スクリーンショットセクション -->
+<section class="section" id="screenshots">
+    <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-10">
+            <h2 class="text-3xl sm:text-4xl font-black text-gray-900 mb-4">実際の画面</h2>
+            <p class="text-base text-gray-600">シンプルで使いやすいインターフェース</p>
+        </div>
+
+        <!-- 施工実績マップ -->
+        <div class="mb-12">
+            <h3 class="text-2xl font-bold text-gray-900 mb-4">施工実績マップ</h3>
+            <p class="text-sm text-gray-600 mb-4">あなたの全ての実績が地図上に可視化されます</p>
+            <div class="bg-gradient-to-br from-gray-50 to-white p-4 rounded-2xl">
+                <img src="file:///C:/Users/thaat/OneDrive/%E7%94%BB%E5%83%8F/Screenshots/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88%202025-10-27%20174917.png"
+                     alt="施工実績マップ"
+                     class="screenshot">
+            </div>
+        </div>
+
+        <!-- アルバム -->
+        <div class="mb-12">
+            <h3 class="text-2xl font-bold text-gray-900 mb-4">アルバム機能</h3>
+            <p class="text-sm text-gray-600 mb-4">施工写真を美しいギャラリー形式で管理・共有</p>
+            <div class="bg-gradient-to-br from-gray-50 to-white p-4 rounded-2xl">
+                <img src="file:///C:/Users/thaat/OneDrive/%E7%94%BB%E5%83%8F/Screenshots/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88%202025-10-27%20174735.png"
+                     alt="アルバム画面"
+                     class="screenshot">
+            </div>
+        </div>
+
+        <!-- 現場MAP -->
+        <div class="mb-12">
+            <h3 class="text-2xl font-bold text-gray-900 mb-4">みんなのマップ</h3>
+            <p class="text-sm text-gray-600 mb-4">全国の職人の実績を共有し、新しい仕事のチャンスを広げる</p>
+            <div class="bg-gradient-to-br from-gray-50 to-white p-4 rounded-2xl">
+                <img src="file:///C:/Users/thaat/OneDrive/%E7%94%BB%E5%83%8F/Screenshots/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88%202025-10-27%20174703.png"
+                     alt="現場MAP画面"
+                     class="screenshot">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- メリットセクション -->
+<section class="section section-gray">
+    <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-10">
+            <h2 class="text-3xl sm:text-4xl font-black text-gray-900 mb-4">こんな職人におすすめ</h2>
+            <p class="text-base text-gray-600">MapLogで営業力を劇的に向上させましょう</p>
+        </div>
+
+        <div class="space-y-4">
+            <div class="card text-center">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">個人事業主</h3>
+                <p class="text-gray-600 text-sm mb-2">営業資料がないから、いつも口頭で説明している</p>
+                <p class="text-base font-bold text-emerald-600">→ 自動でプロ仕様の資料作成</p>
+            </div>
+
+            <div class="card text-center">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">ベテラン職人</h3>
+                <p class="text-gray-600 text-sm mb-2">30年の実績があるのに、見せる方法がない</p>
+                <p class="text-base font-bold text-emerald-600">→ 長年の実績を可視化</p>
+            </div>
+
+            <div class="card text-center">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">小規模事業者</h3>
+                <p class="text-gray-600 text-sm mb-2">施工エリアをお客様に説明しづらい</p>
+                <p class="text-base font-bold text-emerald-600">→ 地図で一目瞭然</p>
+            </div>
+
+            <div class="card text-center">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">若手職人</h3>
+                <p class="text-gray-600 text-sm mb-2">実績を積みたいが、記録が残らない</p>
+                <p class="text-base font-bold text-emerald-600">→ 今日から自動記録</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 使い方セクション -->
+<section class="section">
+    <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-10">
+            <h2 class="text-3xl sm:text-4xl font-black text-gray-900 mb-4">使い方はとても簡単</h2>
+            <p class="text-base text-gray-600">3ステップで実績管理が始まります</p>
+        </div>
+
+        <div class="space-y-6">
+            <div class="text-center">
+                <div class="text-5xl font-black bg-gradient-to-br from-emerald-600 to-emerald-500 bg-clip-text text-transparent mb-3">1</div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">写真を撮る</h3>
+                <p class="text-gray-600 text-sm">施工現場でスマホで撮影するだけ</p>
+            </div>
+
+            <div class="text-center">
+                <div class="text-5xl font-black bg-gradient-to-br from-emerald-600 to-emerald-500 bg-clip-text text-transparent mb-3">2</div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">登録する</h3>
+                <p class="text-gray-600 text-sm">現場名を入力するだけ。GPS自動記録</p>
+            </div>
+
+            <div class="text-center">
+                <div class="text-5xl font-black bg-gradient-to-br from-emerald-600 to-emerald-500 bg-clip-text text-transparent mb-3">3</div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">完成</h3>
+                <p class="text-gray-600 text-sm">地図上に自動表示されます</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTAセクション -->
+<section class="section section-gray" id="cta">
+    <div class="max-w-4xl mx-auto text-center">
+        <h2 class="text-3xl sm:text-4xl font-black text-gray-900 mb-4">今すぐ無料で始める</h2>
+        <p class="text-base text-gray-600 mb-8">
+            アカウント登録不要。アプリのダウンロードも不要。<br>Webブラウザからすぐに利用できます。
+        </p>
+
+        <div class="bg-white p-6 rounded-2xl shadow-lg mb-8">
+            <p class="text-xs text-gray-500 mb-2">アプリURL</p>
+            <p class="text-2xl font-bold text-emerald-600 mb-6">https://maplog.app</p>
+            <a href="https://maplog.app" class="btn-primary bg-gradient-to-r from-emerald-600 to-emerald-500 text-white inline-block">
+                無料で始める
+            </a>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 text-center mb-8">
+            <div>
+                <p class="font-bold text-gray-900 text-sm">完全無料</p>
+                <p class="text-xs text-gray-500">手数料なし</p>
+            </div>
+            <div>
+                <p class="font-bold text-gray-900 text-sm">アプリ不要</p>
+                <p class="text-xs text-gray-500">Web版利用可能</p>
+            </div>
+            <div>
+                <p class="font-bold text-gray-900 text-sm">両対応</p>
+                <p class="text-xs text-gray-500">スマホ・PC</p>
+            </div>
+        </div>
+
+        <div class="p-4 bg-gray-100 rounded-xl">
+            <p class="text-xs text-gray-600 mb-1">お問い合わせ</p>
+            <p class="text-sm font-bold text-gray-900">support@maplog.app</p>
+        </div>
+    </div>
+</section>
+
+<!-- フッター -->
+<footer class="bg-gray-900 text-white py-8">
+    <div class="max-w-4xl mx-auto px-4 text-center">
+        <div class="text-2xl font-black mb-2 text-emerald-400">MapLog</div>
+        <p class="text-gray-400 text-sm mb-4">職人の実績を地図で可視化</p>
+        <p class="text-xs text-gray-500">&copy; 2025 MapLog. All rights reserved.</p>
+    </div>
+</footer>
+
+<script>
+window.addEventListener('scroll', function() {
+    const navbar = document.getElementById('navbar');
+    if (window.scrollY > 50) {
+        navbar.classList.add('scrolled');
+    } else {
+        navbar.classList.remove('scrolled');
+    }
+});
+
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    });
+});
+</script>
+
+</body>
+</html>

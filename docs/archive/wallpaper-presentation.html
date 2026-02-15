@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>湯澤様邸 壁紙リフォームご提案</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Noto+Serif+JP:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Noto Serif JP', serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .slide {
+            display: none;
+            width: 100%;
+            aspect-ratio: 1.414 / 1;
+            max-width: 1000px;
+            margin: 1rem auto;
+            background: white;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            page-break-after: always;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* A4横向き（297mm x 210mm）= 1.414:1 */
+
+        .slide.active {
+            display: block;
+        }
+
+        .slide-content {
+            padding: 3.5rem 5rem;
+            height: 100%;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+
+        /* 商品カード */
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            transition: transform 0.3s;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* 特徴バッジ */
+        .feature-badge {
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 0.3rem;
+        }
+
+        /* 印刷用スタイル */
+        @media print {
+            body {
+                background: white;
+            }
+            .slide {
+                display: block !important;
+                max-width: 100%;
+                margin: 0;
+                box-shadow: none;
+                page-break-after: always;
+            }
+            #navigation {
+                display: none;
+            }
+        }
+
+        /* カラーパレット */
+        .color-swatch {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border: 4px solid white;
+        }
+
+        /* タイポグラフィ強化 */
+        .serif-title {
+            font-family: 'Cormorant Garamond', 'Noto Serif JP', serif;
+            letter-spacing: 0.05em;
+        }
+
+        /* グリッド用のヘルパー */
+        .split-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2.5rem;
+            flex: 1;
+            margin-top: 1.5rem;
+            max-height: calc(100% - 7rem);
+        }
+
+        /* 商品レイアウト統一 */
+        .product-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2.5rem;
+            flex: 1;
+            margin-top: 1.5rem;
+            max-height: calc(100% - 8rem);
+        }
+
+        .product-info-box {
+            padding: 1.5rem;
+            background: #f9fafb;
+            border-radius: 12px;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body class="flex flex-col justify-center items-center min-h-screen p-4">
+
+    <div id="slide-container" class="w-full">
+
+        <!-- スライド 1: 表紙 -->
+        <div class="slide active">
+            <div class="slide-content relative overflow-hidden p-0" style="background: linear-gradient(135deg, #1a5f3f 0%, #0d2f20 50%, #1a1a1a 100%);">
+                <!-- 背景装飾 -->
+                <div class="absolute inset-0 opacity-10">
+                    <div class="absolute top-0 right-0 w-96 h-96 bg-green-400 rounded-full blur-3xl"></div>
+                    <div class="absolute bottom-0 left-0 w-80 h-80 bg-emerald-400 rounded-full blur-3xl"></div>
+                </div>
+
+                <!-- 透過画像背景 -->
+                <div class="absolute inset-0 opacity-15">
+                    <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=80" alt="背景" class="w-full h-full object-cover">
+                </div>
+
+                <!-- コンテンツ -->
+                <div class="relative z-10 flex flex-col justify-center items-center h-full text-center px-12">
+                    <!-- メインタイトル -->
+                    <div class="mb-8">
+                        <div class="inline-block px-6 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 mb-6">
+                            <p class="text-sm text-green-200 font-bold tracking-widest">WALLPAPER RENOVATION PROPOSAL</p>
+                        </div>
+                        <h1 class="text-7xl font-bold text-white mb-4 serif-title" style="line-height: 1.2; text-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                            湯澤様邸
+                        </h1>
+                        <div class="flex items-center justify-center gap-4 mb-4">
+                            <div class="w-16 h-0.5 bg-gradient-to-r from-transparent via-green-400 to-green-400"></div>
+                            <p class="text-2xl text-green-300 font-bold">壁紙リフォームご提案</p>
+                            <div class="w-16 h-0.5 bg-gradient-to-l from-transparent via-green-400 to-green-400"></div>
+                        </div>
+                    </div>
+
+                    <!-- サブタイトル -->
+                    <div class="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 p-6 mb-8 max-w-2xl">
+                        <p class="text-xl text-white font-medium leading-relaxed">
+                            外壁グリーンと調和する、<br/>
+                            <span class="text-green-300 font-bold text-2xl">上質な室内空間</span>
+                        </p>
+                    </div>
+
+                    <!-- カラーパレット -->
+                    <div class="flex gap-3 mb-10">
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 shadow-lg border-2 border-white/20"></div>
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-lime-300 to-green-500 shadow-lg border-2 border-white/20"></div>
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-200 to-teal-400 shadow-lg border-2 border-white/20"></div>
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-sage-100 to-green-300 shadow-lg border-2 border-white/20" style="background: linear-gradient(135deg, #e8f5e9 0%, #81c784 100%);"></div>
+                    </div>
+
+                    <!-- フッター情報 -->
+                    <div class="flex items-center gap-8 text-white/70">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <p class="text-lg">2025年10月25日</p>
+                        </div>
+                        <div class="w-px h-6 bg-white/20"></div>
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                            </svg>
+                            <p class="text-lg font-bold text-white">イワサキ内装</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- スライド 2: ご要望の確認 -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="text-4xl font-bold mb-5 text-gray-800 serif-title">1. ご要望の確認</h2>
+                <p class="text-xl mb-8 text-gray-600">湯澤様のご要望を3つのポイントで整理いたしました。</p>
+
+                <div class="space-y-6 flex-1 flex flex-col justify-center">
+                    <div class="p-6 rounded-xl" style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);">
+                        <h3 class="text-2xl font-bold text-green-900 mb-2">① 色へのこだわり</h3>
+                        <p class="text-lg text-gray-700">外壁のグリーンと調和する室内空間で、<strong>統一感のある美しい住まい</strong>を実現したい。</p>
+                    </div>
+
+                    <div class="p-6 rounded-xl" style="background: linear-gradient(135deg, #fff9c4 0%, #fff59d 100%);">
+                        <h3 class="text-2xl font-bold text-yellow-900 mb-2">② 品質への懸念</h3>
+                        <p class="text-lg text-gray-700">過去の継ぎ目トラブルの経験から、<strong>丁寧で美しい仕上がり</strong>を何より重視。</p>
+                    </div>
+
+                    <div class="p-6 rounded-xl" style="background: linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%);">
+                        <h3 class="text-2xl font-bold text-blue-900 mb-2">③ ご家族の納得感</h3>
+                        <p class="text-lg text-gray-700">デザイン性だけでなく、<strong>機能性・耐久性</strong>も考慮した、皆様がご納得いただけるご提案。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- スライド 3: 色彩調和の考え方 -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="text-4xl font-bold mb-2 text-gray-800 serif-title text-center">2. 外壁と室内の色彩調和</h2>
+                <p class="text-sm mb-3 text-gray-600 text-center">色彩工学に基づいた配色テクニック</p>
+
+                <div class="grid grid-cols-2 gap-5" style="flex: 1;">
+                    <!-- 左側：明るいグリーン -->
+                    <div class="flex flex-col rounded-2xl overflow-hidden shadow-2xl border-3 border-green-300" style="border-width: 3px;">
+                        <!-- タイトル -->
+                        <div class="bg-gradient-to-r from-green-400 to-emerald-500 text-white p-4 text-center">
+                            <h3 class="text-2xl font-bold">外壁が「明るい」グリーンの場合</h3>
+                        </div>
+
+                        <!-- 説明コンテンツ -->
+                        <div class="flex-1 flex flex-col bg-gradient-to-br from-green-50 to-emerald-50 p-3">
+                            <!-- 配色理論 -->
+                            <div class="bg-white rounded-xl p-2 mb-2 shadow-lg border-2 border-green-200">
+                                <p class="text-sm font-bold text-green-900 mb-1 text-center">トーンオントーン配色</p>
+                                <p class="text-xs text-gray-700 text-center mb-1">同じ色相で明度（明るさ）を変化させる技法</p>
+                                <p class="text-xs text-gray-600 text-center">→ 統一感が強く穏やかで優しい印象。空間が広く明るく感じられる</p>
+                            </div>
+
+                            <!-- 配色サンプル -->
+                            <div class="bg-white rounded-xl p-3 mb-2 shadow-lg border-2 border-green-200">
+                                <p class="text-xs font-bold text-green-900 mb-2 text-center">推奨カラーパレット</p>
+                                <div class="flex gap-2 justify-center mb-2">
+                                    <div class="flex flex-col items-center gap-1">
+                                        <div class="w-12 h-12 rounded-lg shadow-md" style="background: #a8d5ba;"></div>
+                                        <p class="text-xs text-gray-600">外壁</p>
+                                    </div>
+                                    <div class="flex flex-col items-center gap-1">
+                                        <div class="w-12 h-12 rounded-lg shadow-md" style="background: #c8e6c9;"></div>
+                                        <p class="text-xs text-gray-600">室内壁</p>
+                                    </div>
+                                    <div class="flex flex-col items-center gap-1">
+                                        <div class="w-12 h-12 rounded-lg shadow-md" style="background: #e8f5e9;"></div>
+                                        <p class="text-xs text-gray-600">アクセント</p>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-600 text-center">明度を段階的に上げることで、自然なグラデーション効果</p>
+                            </div>
+
+                            <!-- 実際の適用例 -->
+                            <div class="bg-green-600 text-white rounded-xl p-2 shadow-lg mt-auto">
+                                <p class="text-xs font-bold mb-1 text-center">実際の適用</p>
+                                <p class="text-xs text-center">外壁 → 室内壁 → 天井・建具の順に明度を上げ、優しく明るい空間に</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右側：深いグリーン -->
+                    <div class="flex flex-col rounded-2xl overflow-hidden shadow-2xl border-3 border-emerald-700" style="border-width: 3px;">
+                        <!-- タイトル -->
+                        <div class="bg-gradient-to-r from-emerald-700 to-teal-800 text-white p-4 text-center">
+                            <h3 class="text-2xl font-bold">外壁が「深い」グリーンの場合</h3>
+                        </div>
+
+                        <!-- 説明コンテンツ -->
+                        <div class="flex-1 flex flex-col bg-gradient-to-br from-slate-800 to-emerald-900 p-3">
+                            <!-- 配色理論 -->
+                            <div class="bg-white/95 rounded-xl p-2 mb-2 shadow-lg border-2 border-emerald-200">
+                                <p class="text-sm font-bold text-emerald-900 mb-1 text-center">トーンイントーン配色</p>
+                                <p class="text-xs text-gray-700 text-center mb-1">同じ色相で彩度（鮮やかさ）を変化させる技法</p>
+                                <p class="text-xs text-gray-600 text-center">→ 落ち着きと深みがあり上品な印象。奥行きとメリハリが生まれる</p>
+                            </div>
+
+                            <!-- 配色サンプル -->
+                            <div class="bg-white/95 rounded-xl p-3 mb-2 shadow-lg border-2 border-emerald-200">
+                                <p class="text-xs font-bold text-emerald-900 mb-2 text-center">推奨カラーパレット</p>
+                                <div class="flex gap-2 justify-center mb-2">
+                                    <div class="flex flex-col items-center gap-1">
+                                        <div class="w-12 h-12 rounded-lg shadow-md" style="background: #5a7a5f;"></div>
+                                        <p class="text-xs text-gray-600">外壁</p>
+                                    </div>
+                                    <div class="flex flex-col items-center gap-1">
+                                        <div class="w-12 h-12 rounded-lg shadow-md" style="background: #8b9d8a;"></div>
+                                        <p class="text-xs text-gray-600">室内壁</p>
+                                    </div>
+                                    <div class="flex flex-col items-center gap-1">
+                                        <div class="w-12 h-12 rounded-lg shadow-md" style="background: #d4e8d4;"></div>
+                                        <p class="text-xs text-gray-600">アクセント</p>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-600 text-center">彩度を段階的に下げることで、くすみ感のある調和</p>
+                            </div>
+
+                            <!-- 実際の適用例 -->
+                            <div class="bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl p-2 shadow-lg mt-auto">
+                                <p class="text-xs font-bold mb-1 text-center">実際の適用</p>
+                                <p class="text-xs text-center">外壁 → 室内壁 → 天井・建具の順に彩度を下げ、品良く落ち着いた空間に</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 下部メッセージ -->
+                <div class="mt-3 text-center">
+                    <div class="inline-block bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl px-6 py-2 shadow-lg">
+                        <p class="text-sm font-bold">湯澤様の外壁に合わせた最適な室内配色をご提案いたします</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- スライド 4: 商品提案① リビング -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="text-4xl font-bold mb-3 text-gray-800 serif-title">3. ご提案① リビング（2F・10畳）</h2>
+                <p class="text-lg mb-4 text-gray-600">色彩心理学：グリーンは<strong>「鎮静・リラックス」</strong>の色。ご家族が集まる空間に最適です。</p>
+
+                <div class="product-layout">
+                    <!-- メイン画像 -->
+                    <div class="product-card">
+                        <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=80" alt="落ち着いたグリーンのリビング" class="w-full h-72 object-cover">
+                        <div class="p-4 bg-gradient-to-r from-green-50 to-green-100">
+                            <p class="text-center text-lg font-bold text-green-900">落ち着きと上質感を兼ね備えた空間</p>
+                        </div>
+                    </div>
+
+                    <!-- 商品詳細 -->
+                    <div class="flex flex-col">
+                        <div class="product-card p-5 flex-1">
+                            <h3 class="text-xl font-bold mb-3 text-green-900">おすすめ商品</h3>
+                            <div class="mb-3">
+                                <p class="text-2xl font-bold text-gray-800">サンゲツ</p>
+                                <p class="text-lg text-green-700 mt-1">RE53410</p>
+                            </div>
+                            <div class="mb-4 flex flex-wrap gap-2">
+                                <span class="feature-badge bg-green-100 text-green-800">塗り壁調</span>
+                                <span class="feature-badge bg-blue-100 text-blue-800">汚れ防止</span>
+                                <span class="feature-badge bg-yellow-100 text-yellow-800">抗菌</span>
+                            </div>
+                            <p class="text-sm text-gray-600 leading-relaxed mb-4">光を和らげる質感。継ぎ目が目立たず、長く美しさを保ちます。</p>
+
+                            <div class="product-info-box mt-auto">
+                                <p class="text-xs font-bold mb-2 text-gray-800">テーマ</p>
+                                <ul class="text-xs space-y-1 text-gray-700">
+                                    <li>• 安らぎと癒やし</li>
+                                    <li>• 開放感</li>
+                                    <li>• 上質な空間</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- スライド 5: 商品提案② 個室 -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="text-4xl font-bold mb-3 text-gray-800 serif-title">4. ご提案② 個室（3F・6畳+8畳）</h2>
+                <p class="text-lg mb-4 text-gray-600">プライベート空間には<strong>「アクセントウォール」</strong>でメリハリを。個性が映える空間に。</p>
+
+                <div class="product-layout">
+                    <!-- メイン画像 -->
+                    <div class="product-card">
+                        <img src="https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=1200&q=80" alt="アクセントウォールの寝室" class="w-full h-72 object-cover">
+                        <div class="p-4 bg-gradient-to-r from-emerald-50 to-emerald-100">
+                            <p class="text-center text-lg font-bold text-emerald-900">深いグリーンで空間を引き締める</p>
+                        </div>
+                    </div>
+
+                    <!-- 商品詳細 -->
+                    <div class="flex flex-col">
+                        <div class="product-card p-5 flex-1">
+                            <h3 class="text-xl font-bold mb-3 text-emerald-900">おすすめ商品</h3>
+                            <div class="mb-3">
+                                <p class="text-2xl font-bold text-gray-800">リリカラ</p>
+                                <p class="text-lg text-emerald-700 mt-1">LV-3220</p>
+                            </div>
+                            <div class="mb-4 flex flex-wrap gap-2">
+                                <span class="feature-badge bg-emerald-100 text-emerald-800">深みのある色</span>
+                                <span class="feature-badge bg-purple-100 text-purple-800">鎮静効果</span>
+                                <span class="feature-badge bg-gray-100 text-gray-800">高級感</span>
+                            </div>
+                            <p class="text-sm text-gray-600 leading-relaxed mb-4">寝室に使えば深い眠りを誘う鎮静効果。空間を引き締める収縮色です。</p>
+
+                            <div class="product-info-box mt-auto">
+                                <p class="text-xs font-bold mb-2 text-gray-800">テーマ</p>
+                                <ul class="text-xs space-y-1 text-gray-700">
+                                    <li>• メリハリのある空間</li>
+                                    <li>• 深いリラックス</li>
+                                    <li>• 集中力向上</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- スライド 5a: ウィリアム・モリス（哲学と歴史） -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="text-4xl font-bold mb-1 serif-title" style="color: #8b4513;">5. ウィリアム・モリス William Morris</h2>
+                <p class="text-sm mb-2 text-gray-600">19世紀英国が生んだデザインの巨匠。150年経った今も世界中で愛され続ける理由。</p>
+
+                <div class="grid grid-cols-2 gap-2" style="flex: 1;">
+                    <!-- 左上：モリスの生涯と哲学 -->
+                    <div class="bg-gradient-to-br from-amber-50 to-orange-50 p-3 rounded-xl">
+                        <h3 class="text-base font-bold mb-2 border-b-2 border-amber-300 pb-1" style="color: #8b4513;">ウィリアム・モリスとは</h3>
+                        <div class="space-y-2">
+                            <div>
+                                <p class="text-xs font-bold text-gray-800 mb-1">🏴󠁧󠁢󠁥󠁮󠁧󠁿 1834-1896 英国ヴィクトリア朝時代</p>
+                                <p class="text-xs text-gray-600 leading-relaxed">詩人、デザイナー、社会思想家として多才な活躍。産業革命による粗悪な大量生産品に異を唱え、手仕事の美しさを追求しました。</p>
+                            </div>
+
+                            <div class="bg-white p-2 rounded border border-amber-200">
+                                <p class="text-xs font-bold text-gray-800 mb-1">📜 モリスの名言</p>
+                                <p class="text-xs italic text-gray-700 leading-relaxed">「役に立たないもの、美しいと思わないものを、家に置いてはならない」</p>
+                                <p class="text-xs text-gray-500 mt-1 text-right">- William Morris</p>
+                            </div>
+
+                            <div>
+                                <p class="text-xs font-bold text-gray-800 mb-1">🎨 デザイン哲学</p>
+                                <ul class="text-xs text-gray-600 space-y-0.5 pl-3">
+                                    <li>• 自然からインスピレーションを得る</li>
+                                    <li>• 手仕事による誠実なものづくり</li>
+                                    <li>• 機能美と装飾美の調和</li>
+                                    <li>• 日常に美を取り入れる民主化</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右上：アーツ・アンド・クラフツ運動 -->
+                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 p-3 rounded-xl">
+                        <h3 class="text-base font-bold mb-2 border-b-2 border-green-300 pb-1 text-green-900">アーツ・アンド・クラフツ運動</h3>
+                        <div class="space-y-2">
+                            <div>
+                                <p class="text-xs font-bold text-gray-800 mb-1">🏭 産業革命への反発</p>
+                                <p class="text-xs text-gray-600 leading-relaxed">機械による大量生産が生む「美しくない」製品に対し、職人の手仕事による「誠実なデザイン」を提唱しました。</p>
+                            </div>
+
+                            <div class="bg-white p-2 rounded border border-green-200">
+                                <p class="text-xs font-bold text-gray-800 mb-1">🌍 世界への影響</p>
+                                <p class="text-xs text-gray-600">この運動は欧米全域に広がり、後の<strong>バウハウス</strong>や<strong>北欧デザイン</strong>、日本の<strong>民藝運動</strong>にも多大な影響を与えました。</p>
+                            </div>
+
+                            <div>
+                                <p class="text-xs font-bold text-gray-800 mb-1">🔄 現代への継承</p>
+                                <p class="text-xs text-gray-600 leading-relaxed">150年前の思想が、サステナブルデザイン、スローライフ、手仕事の見直しとして現代に蘇っています。</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 左下：自然モチーフへのこだわり -->
+                    <div class="bg-gradient-to-br from-blue-50 to-cyan-50 p-3 rounded-xl">
+                        <h3 class="text-base font-bold mb-2 border-b-2 border-blue-300 pb-1 text-blue-900">自然モチーフへの徹底的なこだわり</h3>
+                        <div class="space-y-2">
+                            <div>
+                                <p class="text-xs font-bold text-gray-800 mb-1">🌿 植物観察の日々</p>
+                                <p class="text-xs text-gray-600 leading-relaxed">モリスは自宅の庭で植物を育て、毎日観察しながらスケッチ。葉脈の一本一本、花びらの重なり方まで忠実に描きました。</p>
+                            </div>
+
+                            <div class="bg-white p-2 rounded border border-blue-200">
+                                <p class="text-xs font-bold text-gray-800 mb-1">🎨 代表的なモチーフ</p>
+                                <ul class="text-xs text-gray-600 space-y-0.5 pl-3">
+                                    <li><strong>柳の枝 (Willow Boughs)</strong> - 1887年</li>
+                                    <li><strong>いちご泥棒 (Strawberry Thief)</strong> - 1883年</li>
+                                    <li><strong>デイジー (Daisy)</strong> - 1864年</li>
+                                    <li><strong>アカンサス (Acanthus)</strong> - 1875年</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <p class="text-xs text-gray-600 leading-relaxed">単なる装飾ではなく、<strong>「生命の息吹」</strong>を感じさせるデザイン。それがモリスの真骨頂です。</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右下：なぜ今も愛されるのか -->
+                    <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-3 rounded-xl">
+                        <h3 class="text-base font-bold mb-2 border-b-2 border-purple-300 pb-1 text-purple-900">なぜ150年経っても愛されるのか</h3>
+                        <div class="space-y-2">
+                            <div class="flex items-start gap-2">
+                                <span class="text-purple-600 text-base">✓</span>
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">普遍的な美しさ</p>
+                                    <p class="text-xs text-gray-600">流行に左右されない、時代を超えた美的価値。</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-2">
+                                <span class="text-purple-600 text-base">✓</span>
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">手仕事の温もり</p>
+                                    <p class="text-xs text-gray-600">デジタル時代だからこそ、人の手の温かみが心に響く。</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-2">
+                                <span class="text-purple-600 text-base">✓</span>
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">自然との調和</p>
+                                    <p class="text-xs text-gray-600">環境意識が高まる現代に、自然モチーフが共感を呼ぶ。</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-2">
+                                <span class="text-purple-600 text-base">✓</span>
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">物語性</p>
+                                    <p class="text-xs text-gray-600">背景にある思想・歴史が、空間に深い意味を与える。</p>
+                                </div>
+                            </div>
+
+                            <div class="bg-gradient-to-r from-amber-500 to-orange-500 text-white p-2 rounded mt-2">
+                                <p class="text-xs text-center font-bold">「美しいものに囲まれて暮らす」モリスの理想を、あなたの住まいにも。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- スライド 5b: ウィリアム・モリス（商品提案） -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="text-3xl font-bold mb-1 serif-title" style="color: #8b4513;">ウィリアム・モリス「柳の枝 Willow Boughs」</h2>
+                <p class="text-sm mb-2 text-gray-600">1887年発表。モリス晩年の傑作。柳の優美な枝ぶりを、精緻に描いた永遠の名作。</p>
+
+                <div class="grid grid-cols-2 gap-2" style="flex: 1;">
+                    <!-- 左側：柄画像と施工イメージ -->
+                    <div class="flex flex-col gap-2">
+                        <!-- 実際の柄 -->
+                        <div class="product-card flex flex-col" style="flex: 1;">
+                            <div class="relative" style="flex: 1; min-height: 0;">
+                                <img src="william.png" alt="ウィリアム・モリス 柳の枝" class="w-full h-full object-cover rounded-t-xl">
+                                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                                    <p class="text-white font-bold text-sm">Willow Boughs (1887)</p>
+                                    <p class="text-white text-xs opacity-90">by William Morris</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 施工イメージ -->
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="product-card">
+                                <img src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=600&q=80" alt="モダンな空間" class="w-full h-28 object-cover rounded-xl">
+                            </div>
+                            <div class="product-card">
+                                <img src="https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=600&q=80" alt="寝室施工例" class="w-full h-28 object-cover rounded-xl">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右側：詳細情報 -->
+                    <div class="flex flex-col gap-2">
+                        <!-- 柳の枝について -->
+                        <div class="bg-gradient-to-br from-green-50 to-emerald-50 p-3 rounded-xl">
+                            <h3 class="text-base font-bold mb-2 border-b-2 border-green-300 pb-1 text-green-900">「柳の枝」に込められた想い</h3>
+                            <div class="space-y-2">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800 mb-1">🌳 柳へのこだわり</p>
+                                    <p class="text-xs text-gray-600 leading-relaxed">モリスの自宅ケルムスコット・マナーの庭に育つ柳の木。その優美なしだれる枝を、何度もスケッチして生み出されたデザインです。</p>
+                                </div>
+
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800 mb-1">🎨 デザインの特徴</p>
+                                    <ul class="text-xs text-gray-600 space-y-0.5 pl-3">
+                                        <li>• 柳の葉が風に揺れる動きを表現</li>
+                                        <li>• 繊細な曲線が生み出す優雅さ</li>
+                                        <li>• 深いグリーンが落ち着きを与える</li>
+                                        <li>• 継ぎ目が目立たない巧みな構成</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 適した場所とスタイル -->
+                        <div class="bg-gradient-to-br from-amber-50 to-orange-50 p-3 rounded-xl flex-1">
+                            <h3 class="text-base font-bold mb-2 border-b-2 border-amber-300 pb-1" style="color: #8b4513;">適した場所とスタイリング</h3>
+                            <div class="space-y-2">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800 mb-1">🏠 おすすめの場所</p>
+                                    <ul class="text-xs text-gray-600 space-y-1">
+                                        <li><strong>寝室の1面</strong> - 深い眠りを誘う鎮静効果</li>
+                                        <li><strong>書斎・応接間</strong> - 知的で格調高い印象</li>
+                                        <li><strong>玄関ホール</strong> - ゲストを魅了する第一印象</li>
+                                        <li><strong>ダイニング</strong> - 上質な食事時間を演出</li>
+                                    </ul>
+                                </div>
+
+                                <div class="bg-white p-2 rounded border border-amber-200">
+                                    <p class="text-xs font-bold text-gray-800 mb-1">🎨 コーディネートのコツ</p>
+                                    <p class="text-xs text-gray-600 leading-relaxed">モリスは<strong>「壁紙はアート」</strong>。1面のみアクセントウォールとして使い、他の壁は無地で引き立てるのが王道です。</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 価格と注意事項 -->
+                        <div class="bg-gradient-to-br from-blue-50 to-cyan-50 p-2 rounded-xl">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <p class="text-xs text-gray-500">参考価格（施工込み）</p>
+                                    <p class="text-xl font-bold" style="color: #8b4513;">¥8,500〜 <span class="text-xs font-normal text-gray-600">/㎡</span></p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="feature-badge bg-amber-100 text-amber-800" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;">輸入壁紙</span>
+                                    <p class="text-xs text-gray-500 mt-1">英国製</p>
+                                </div>
+                            </div>
+                            <div class="bg-white p-2 rounded border border-blue-200">
+                                <p class="text-xs text-gray-600"><strong>✓</strong> 継ぎ目を目立たせない職人技で施工</p>
+                                <p class="text-xs text-gray-600"><strong>✓</strong> 一面アクセント推奨（6〜8畳で1面）</p>
+                                <p class="text-xs text-gray-600"><strong>✓</strong> 30年以上の施工実績・安心の仕上がり</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 下部メッセージ -->
+                <div class="mt-2">
+                    <div class="bg-gradient-to-r from-green-700 to-emerald-700 text-white rounded-xl px-4 py-2 shadow-lg">
+                        <p class="text-xs text-center leading-relaxed">150年の時を超えて愛される、ウィリアム・モリスの世界。あなたの住まいに、物語と格調を。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- スライド 6a: 商品提案④ リリカラ LW681（基本情報） -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="text-4xl font-bold mb-1 text-gray-800 serif-title">6. ご提案④ リリカラ LW681</h2>
+                <p class="text-base mb-2 text-gray-600">長く快適に暮らせる住まいづくりに最適な高機能壁紙です。</p>
+
+                <div class="grid grid-cols-2 gap-3" style="flex: 1;">
+                    <!-- 左側：壁紙パターンと施工イメージ -->
+                    <div class="flex flex-col gap-2">
+                        <!-- 壁紙パターン画像 -->
+                        <div class="product-card flex flex-col" style="flex: 1;">
+                            <div class="relative" style="flex: 1; min-height: 0;">
+                                <img src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80" alt="リリカラ LW681 パターン" class="w-full h-full object-cover rounded-t-xl">
+                                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                                    <p class="text-white font-bold text-sm">リリカラ WILL LW681</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 施工イメージ写真 -->
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="product-card">
+                                <img src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&q=80" alt="リビング施工例" class="w-full h-28 object-cover rounded-xl">
+                            </div>
+                            <div class="product-card">
+                                <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&q=80" alt="寝室施工例" class="w-full h-28 object-cover rounded-xl">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右側：商品特徴 -->
+                    <div class="flex flex-col gap-2">
+                        <!-- 商品情報ヘッダー -->
+                        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-2 rounded-xl border-2 border-blue-100">
+                            <h3 class="text-xl font-bold text-blue-900 mb-1">リリカラ WILL LW681</h3>
+                            <div class="flex flex-wrap gap-1 mt-1">
+                                <span class="feature-badge bg-blue-100 text-blue-800" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;">撥水</span>
+                                <span class="feature-badge bg-green-100 text-green-800" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;">耐クラック</span>
+                                <span class="feature-badge bg-purple-100 text-purple-800" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;">防カビ</span>
+                                <span class="feature-badge bg-red-100 text-red-800" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;">不燃</span>
+                                <span class="feature-badge bg-yellow-100 text-yellow-800" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;">抗菌</span>
+                            </div>
+                        </div>
+
+                        <!-- 住宅にお勧めする5つの理由 -->
+                        <div class="bg-gradient-to-br from-amber-50 to-orange-50 p-2 rounded-xl flex-1" style="min-height: 0; overflow-y: auto;">
+                            <h4 class="text-sm font-bold text-amber-900 mb-1 border-b-2 border-amber-200 pb-1">住宅にお勧めする5つの理由</h4>
+
+                            <div class="space-y-1.5">
+                                <div class="flex items-start gap-1.5">
+                                    <span class="text-amber-600 font-bold text-sm flex-shrink-0">✓</span>
+                                    <div>
+                                        <p class="text-xs font-bold text-gray-800">撥水トップコート加工で汚れに強い</p>
+                                        <p class="text-xs text-gray-600">水回りやキッチン周辺、リビングなど、汚れが気になる場所でも安心。サッと拭き取るだけで清潔を保てます。</p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-start gap-1.5">
+                                    <span class="text-amber-600 font-bold text-sm flex-shrink-0">✓</span>
+                                    <div>
+                                        <p class="text-xs font-bold text-gray-800">軽量・耐クラック性能</p>
+                                        <p class="text-xs text-gray-600">地震の多い日本の住宅環境に配慮した設計。下地の微細なひび割れに追従するため、長期間美しい壁面を保ちます。</p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-start gap-1.5">
+                                    <span class="text-amber-600 font-bold text-sm flex-shrink-0">✓</span>
+                                    <div>
+                                        <p class="text-xs font-bold text-gray-800">表面強化で傷つきにくい</p>
+                                        <p class="text-xs text-gray-600">家具の移動時や日常生活での擦れに強く、美観を長期間維持。お子様やペットがいるご家庭でも安心してお使いいただけます。</p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-start gap-1.5">
+                                    <span class="text-amber-600 font-bold text-sm flex-shrink-0">✓</span>
+                                    <div>
+                                        <p class="text-xs font-bold text-gray-800">防カビ・抗菌機能で清潔</p>
+                                        <p class="text-xs text-gray-600">湿気の多い日本の気候でもカビの発生を抑制。家族の健康を守り、清潔な室内環境を保ちます。</p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-start gap-1.5">
+                                    <span class="text-amber-600 font-bold text-sm flex-shrink-0">✓</span>
+                                    <div>
+                                        <p class="text-xs font-bold text-gray-800">不燃認定品で安全</p>
+                                        <p class="text-xs text-gray-600">万が一の火災時にも安全性を確保。大切なご家族を守る住まいづくりに貢献します。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- スライド 6b: 東リ WVP8284（プロ仕様壁紙） -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="text-4xl font-bold mb-1 text-gray-800 serif-title">7. ご提案⑤ 東リ WVP8284</h2>
+                <p class="text-base mb-2 text-gray-600"><strong>プロ仕様の最高品質壁紙</strong> - 住宅から商業施設まで信頼される、東リの技術力を結集した高性能壁紙です。</p>
+
+                <div class="grid grid-cols-3 gap-3" style="flex: 1;">
+                    <!-- 左列：メイン画像と製品情報 -->
+                    <div class="flex flex-col gap-2">
+                        <!-- 製品ヘッダー -->
+                        <div class="bg-gradient-to-br from-red-600 to-orange-600 text-white p-3 rounded-xl shadow-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <div>
+                                    <p class="text-xs font-bold opacity-90">TOLI DECOPOWER</p>
+                                    <h3 class="text-2xl font-bold">WVP8284</h3>
+                                </div>
+                                <div class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
+                                    <p class="text-xs font-bold">PRO SPEC</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-1">
+                                <span class="feature-badge bg-white/90 text-red-900" style="font-size: 0.6rem; padding: 0.2rem 0.5rem;">不燃認定</span>
+                                <span class="feature-badge bg-white/90 text-orange-900" style="font-size: 0.6rem; padding: 0.2rem 0.5rem;">防カビ</span>
+                                <span class="feature-badge bg-white/90 text-red-900" style="font-size: 0.6rem; padding: 0.2rem 0.5rem;">東リ品質</span>
+                            </div>
+                        </div>
+
+                        <!-- 壁紙イメージ -->
+                        <div class="product-card flex-1" style="min-height: 0;">
+                            <img src="https://images.unsplash.com/photo-1618219908412-a29a1bb7b86e?w=800&q=80" alt="東リ WVP8284 テクスチャー" class="w-full h-full object-cover rounded-xl">
+                        </div>
+
+                        <!-- 施工イメージ小 -->
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="product-card">
+                                <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&q=80" alt="施工例1" class="w-full h-20 object-cover rounded-lg">
+                            </div>
+                            <div class="product-card">
+                                <img src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=400&q=80" alt="施工例2" class="w-full h-20 object-cover rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 中央列：東リ WVP8284の5つの独自性 -->
+                    <div class="bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 p-3 rounded-xl border-2 border-orange-200">
+                        <h4 class="text-base font-bold text-red-900 mb-2 border-b-2 border-red-300 pb-1 flex items-center gap-2">
+                            <span class="text-xl">🏆</span>
+                            東リ WVP8284の独自性
+                        </h4>
+
+                        <div class="space-y-2" style="font-size: 0.8rem;">
+                            <div class="bg-white/70 backdrop-blur-sm p-2 rounded-lg border border-orange-200">
+                                <div class="flex items-start gap-2">
+                                    <span class="text-red-600 font-bold text-lg flex-shrink-0">1</span>
+                                    <div>
+                                        <p class="text-xs font-bold text-red-900">東リ独自の「DECOPOWER」技術</p>
+                                        <p class="text-xs text-gray-700 mt-0.5">商業施設で実績のある業務用グレード。ホテル・病院で鍛えられた耐久性を、住宅でも実現します。</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white/70 backdrop-blur-sm p-2 rounded-lg border border-orange-200">
+                                <div class="flex items-start gap-2">
+                                    <span class="text-red-600 font-bold text-lg flex-shrink-0">2</span>
+                                    <div>
+                                        <p class="text-xs font-bold text-red-900">不燃材料認定（国土交通大臣認定）</p>
+                                        <p class="text-xs text-gray-700 mt-0.5">防火・準防火地域の建築でも安心。法的要件を満たし、保険面でも有利になる場合があります。</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white/70 backdrop-blur-sm p-2 rounded-lg border border-orange-200">
+                                <div class="flex items-start gap-2">
+                                    <span class="text-red-600 font-bold text-lg flex-shrink-0">3</span>
+                                    <div>
+                                        <p class="text-xs font-bold text-red-900">継ぎ目の目立ちにくさ（職人評価No.1）</p>
+                                        <p class="text-xs text-gray-700 mt-0.5">伸縮性と柔軟性のバランスが絶妙。施工後の経年変化でも継ぎ目が開きにくく、長期間美しさを保ちます。</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white/70 backdrop-blur-sm p-2 rounded-lg border border-orange-200">
+                                <div class="flex items-start gap-2">
+                                    <span class="text-red-600 font-bold text-lg flex-shrink-0">4</span>
+                                    <div>
+                                        <p class="text-xs font-bold text-red-900">塗り壁のような質感（マットな仕上がり）</p>
+                                        <p class="text-xs text-gray-700 mt-0.5">光沢を抑えた上品な表面仕上げ。照明の反射を抑え、落ち着いた高級感のある空間を演出します。</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white/70 backdrop-blur-sm p-2 rounded-lg border border-orange-200">
+                                <div class="flex items-start gap-2">
+                                    <span class="text-red-600 font-bold text-lg flex-shrink-0">5</span>
+                                    <div>
+                                        <p class="text-xs font-bold text-red-900">環境配慮（F☆☆☆☆ + 低VOC）</p>
+                                        <p class="text-xs text-gray-700 mt-0.5">シックハウス対策最高等級。化学物質の放散量が極めて少なく、赤ちゃんやペットにも安心です。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右列：適した場所と実績 -->
+                    <div class="flex flex-col gap-2">
+                        <!-- 適した場所 -->
+                        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-3 rounded-xl border-2 border-blue-200 flex-1">
+                            <h4 class="text-base font-bold text-blue-900 mb-2 border-b-2 border-blue-300 pb-1">適した場所</h4>
+                            <div class="space-y-1.5">
+                                <div class="flex items-center gap-2 bg-white/60 p-1.5 rounded">
+                                    <span class="text-blue-600 text-base">🏠</span>
+                                    <p class="text-xs font-bold text-gray-800">リビング・寝室（全居室）</p>
+                                </div>
+                                <div class="flex items-center gap-2 bg-white/60 p-1.5 rounded">
+                                    <span class="text-blue-600 text-base">🍳</span>
+                                    <p class="text-xs font-bold text-gray-800">キッチン・洗面所</p>
+                                </div>
+                                <div class="flex items-center gap-2 bg-white/60 p-1.5 rounded">
+                                    <span class="text-blue-600 text-base">🚪</span>
+                                    <p class="text-xs font-bold text-gray-800">玄関・廊下・階段</p>
+                                </div>
+                                <div class="flex items-center gap-2 bg-white/60 p-1.5 rounded">
+                                    <span class="text-blue-600 text-base">🏢</span>
+                                    <p class="text-xs font-bold text-gray-800">オフィス・店舗（業務用にも）</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 東リを選ぶべき決め手 -->
+                        <div class="bg-gradient-to-br from-green-50 to-emerald-50 p-3 rounded-xl border-2 border-green-200">
+                            <h4 class="text-base font-bold text-green-900 mb-2 border-b-2 border-green-300 pb-1">東リを選ぶべき決め手</h4>
+                            <div class="space-y-1.5">
+                                <div class="flex items-start gap-1.5">
+                                    <span class="text-green-600 font-bold text-sm">✓</span>
+                                    <p class="text-xs text-gray-800"><strong>防火地域</strong>にお住まいの方</p>
+                                </div>
+                                <div class="flex items-start gap-1.5">
+                                    <span class="text-green-600 font-bold text-sm">✓</span>
+                                    <p class="text-xs text-gray-800"><strong>継ぎ目の失敗</strong>を二度と繰り返したくない方</p>
+                                </div>
+                                <div class="flex items-start gap-1.5">
+                                    <span class="text-green-600 font-bold text-sm">✓</span>
+                                    <p class="text-xs text-gray-800"><strong>マットな高級感</strong>を求める方</p>
+                                </div>
+                                <div class="flex items-start gap-1.5">
+                                    <span class="text-green-600 font-bold text-sm">✓</span>
+                                    <p class="text-xs text-gray-800"><strong>商業グレード</strong>の耐久性がほしい方</p>
+                                </div>
+                                <div class="flex items-start gap-1.5">
+                                    <span class="text-green-600 font-bold text-sm">✓</span>
+                                    <p class="text-xs text-gray-800"><strong>化学物質に敏感</strong>な方</p>
+                                </div>
+                                <div class="flex items-start gap-1.5">
+                                    <span class="text-green-600 font-bold text-sm">✓</span>
+                                    <p class="text-xs text-gray-800"><strong>10年以上張り替えたくない</strong>方</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- シンプルな緑のビジュアル -->
+                        <div class="product-card rounded-xl overflow-hidden shadow-lg">
+                            <img src="https://images.unsplash.com/photo-1497250681960-ef046c08a56e?w=800&q=80" alt="グリーンの自然" class="w-full h-full object-cover">
+                        </div>
+
+                        <!-- イワサキ内装からのメッセージ -->
+                        <div class="bg-gradient-to-br from-red-600 to-orange-600 text-white p-3 rounded-xl shadow-lg">
+                            <p class="text-xs font-bold mb-1">職人から見た東リ WVP8284</p>
+                            <p class="text-xs leading-relaxed opacity-95">「過去の継ぎ目トラブルは二度と起こさない」— この壁紙の施工性の良さと、経年での継ぎ目の安定性は、30年の経験の中でもトップクラスです。湯澤様のご要望に最も応える一品と確信しています。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- スライド 7: クロス張替えのイメージ -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="text-4xl font-bold mb-3 text-gray-800 serif-title text-center">クロス張替えで生まれ変わる空間</h2>
+                <p class="text-lg mb-4 text-gray-600 text-center">わずか数日で、お住まいが新築のような美しさに。</p>
+
+                <div class="grid grid-cols-2 gap-4" style="flex: 1;">
+                    <!-- 左側：BEFORE -->
+                    <div class="flex flex-col">
+                        <div class="bg-gradient-to-br from-gray-600 to-gray-800 text-white p-3 rounded-t-xl">
+                            <h3 class="text-2xl font-bold text-center">BEFORE</h3>
+                            <p class="text-sm text-center opacity-90 mt-1">張替え前の状態</p>
+                        </div>
+                        <div class="product-card flex-1 rounded-t-none" style="min-height: 0;">
+                            <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80" alt="古い壁紙の状態" class="w-full h-full object-cover">
+                        </div>
+                        <div class="bg-gray-100 p-3 rounded-b-xl">
+                            <ul class="text-sm text-gray-700 space-y-1">
+                                <li>❌ 黄ばみ・汚れが目立つ</li>
+                                <li>❌ 継ぎ目が開いている</li>
+                                <li>❌ 古臭い印象</li>
+                                <li>❌ 暗く狭く感じる</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 右側：AFTER -->
+                    <div class="flex flex-col">
+                        <div class="bg-gradient-to-br from-green-600 to-emerald-700 text-white p-3 rounded-t-xl">
+                            <h3 class="text-2xl font-bold text-center">AFTER</h3>
+                            <p class="text-sm text-center opacity-90 mt-1">張替え後の美しさ</p>
+                        </div>
+                        <div class="product-card flex-1 rounded-t-none" style="min-height: 0;">
+                            <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80" alt="新しい壁紙の美しさ" class="w-full h-full object-cover">
+                        </div>
+                        <div class="bg-gradient-to-br from-green-50 to-emerald-50 p-3 rounded-b-xl border-2 border-green-200">
+                            <ul class="text-sm text-gray-800 space-y-1">
+                                <li>✅ 清潔で明るい印象</li>
+                                <li>✅ 継ぎ目が目立たない美しさ</li>
+                                <li>✅ 新築のような仕上がり</li>
+                                <li>✅ 広く開放的に感じる</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 下部メッセージ -->
+                <div class="mt-4 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 text-white p-4 rounded-xl shadow-lg">
+                    <p class="text-center text-xl font-bold mb-2">イワサキ内装の約束</p>
+                    <p class="text-center text-base leading-relaxed">「継ぎ目を目立たせない」職人技と、30年の実績で培った丁寧な施工。<br/>湯澤様の過去のご不満を、二度と繰り返しません。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- スライド 8: サンゲツ RE55032「そよ風」 -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="text-4xl font-bold mb-1 text-gray-800 serif-title">8. ご提案⑥ サンゲツ RE55032</h2>
+                <p class="text-base mb-2 text-gray-600"><strong>「そよ風」— ナチュラルで優しい空間を作る壁紙</strong></p>
+
+                <div class="grid grid-cols-3 gap-3" style="flex: 1;">
+                    <!-- 左列：メイン画像と製品情報 -->
+                    <div class="flex flex-col gap-2">
+                        <!-- 製品ヘッダー -->
+                        <div class="bg-gradient-to-br from-lime-500 to-green-600 text-white p-3 rounded-xl shadow-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <div>
+                                    <p class="text-xs font-bold opacity-90">SANGETSU RESERVE</p>
+                                    <h3 class="text-2xl font-bold">RE55032</h3>
+                                </div>
+                                <div class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
+                                    <p class="text-xs font-bold">そよ風</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-1">
+                                <span class="feature-badge bg-white/90 text-green-900" style="font-size: 0.6rem; padding: 0.2rem 0.5rem;">くすみグリーン</span>
+                                <span class="feature-badge bg-white/90 text-lime-900" style="font-size: 0.6rem; padding: 0.2rem 0.5rem;">ペイント調</span>
+                                <span class="feature-badge bg-white/90 text-green-900" style="font-size: 0.6rem; padding: 0.2rem 0.5rem;">マット質感</span>
+                            </div>
+                        </div>
+
+                        <!-- 壁紙イメージ -->
+                        <div class="product-card flex-1" style="min-height: 0;">
+                            <img src="https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800&q=80" alt="サンゲツ RE55032 テクスチャー" class="w-full h-full object-cover rounded-xl">
+                        </div>
+
+                        <!-- 施工イメージ小 -->
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="product-card">
+                                <img src="https://images.unsplash.com/photo-1600210492493-0946911123ea?w=400&q=80" alt="リビング施工例" class="w-full h-20 object-cover rounded-lg">
+                            </div>
+                            <div class="product-card">
+                                <img src="https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=400&q=80" alt="寝室施工例" class="w-full h-20 object-cover rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 中央列：住宅にお勧めする5つの理由 -->
+                    <div class="bg-gradient-to-br from-lime-50 via-green-50 to-emerald-50 p-3 rounded-xl border-2 border-green-200">
+                        <h4 class="text-base font-bold text-green-900 mb-2 border-b-2 border-green-300 pb-1 flex items-center gap-2">
+                            <span class="text-xl">🍃</span>
+                            住宅にお勧めする5つの理由
+                        </h4>
+
+                        <div class="space-y-2" style="font-size: 0.8rem;">
+                            <div class="bg-white/70 backdrop-blur-sm p-2 rounded-lg border border-green-200">
+                                <div class="flex items-start gap-2">
+                                    <span class="text-green-600 font-bold text-lg flex-shrink-0">1</span>
+                                    <div>
+                                        <p class="text-xs font-bold text-green-900">優しいくすみカラーで癒しの空間</p>
+                                        <p class="text-xs text-gray-700 mt-0.5">黄緑系のくすんだカラーとマットな質感が、まるで塗り壁のような温かみのある仕上がりを実現。リビングや寝室を落ち着いた雰囲気に演出します。</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white/70 backdrop-blur-sm p-2 rounded-lg border border-green-200">
+                                <div class="flex items-start gap-2">
+                                    <span class="text-green-600 font-bold text-lg flex-shrink-0">2</span>
+                                    <div>
+                                        <p class="text-xs font-bold text-green-900">外壁グリーンと自然に調和</p>
+                                        <p class="text-xs text-gray-700 mt-0.5">湯澤様の外壁グリーンと相性抜群。トーンオントーン配色で、外と中が優しくつながる統一感のある空間が完成します。</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white/70 backdrop-blur-sm p-2 rounded-lg border border-green-200">
+                                <div class="flex items-start gap-2">
+                                    <span class="text-green-600 font-bold text-lg flex-shrink-0">3</span>
+                                    <div>
+                                        <p class="text-xs font-bold text-green-900">光を柔らかく反射するマット仕上げ</p>
+                                        <p class="text-xs text-gray-700 mt-0.5">ツヤを抑えた上品な質感が、自然光を優しく拡散。照明の反射がなく、目に優しい空間を作ります。</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white/70 backdrop-blur-sm p-2 rounded-lg border border-green-200">
+                                <div class="flex items-start gap-2">
+                                    <span class="text-green-600 font-bold text-lg flex-shrink-0">4</span>
+                                    <div>
+                                        <p class="text-xs font-bold text-green-900">北欧・ナチュラルインテリアに最適</p>
+                                        <p class="text-xs text-gray-700 mt-0.5">木製家具、白いファブリック、観葉植物との相性が抜群。トレンドのナチュラルスタイルを完成させます。</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white/70 backdrop-blur-sm p-2 rounded-lg border border-green-200">
+                                <div class="flex items-start gap-2">
+                                    <span class="text-green-600 font-bold text-lg flex-shrink-0">5</span>
+                                    <div>
+                                        <p class="text-xs font-bold text-green-900">サンゲツの信頼性と施工性</p>
+                                        <p class="text-xs text-gray-700 mt-0.5">業界トップシェアのサンゲツ品質。施工しやすく、継ぎ目も目立ちにくい安定した品質です。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右列：適した場所と推奨ポイント -->
+                    <div class="flex flex-col gap-2">
+                        <!-- 適した場所 -->
+                        <div class="bg-gradient-to-br from-amber-50 to-yellow-50 p-3 rounded-xl border-2 border-amber-200 flex-1">
+                            <h4 class="text-base font-bold text-amber-900 mb-2 border-b-2 border-amber-300 pb-1">特におすすめの場所</h4>
+                            <div class="space-y-1.5">
+                                <div class="flex items-center gap-2 bg-white/60 p-1.5 rounded">
+                                    <span class="text-amber-600 text-base">🛋️</span>
+                                    <p class="text-xs font-bold text-gray-800">リビング（くつろぎ空間）</p>
+                                </div>
+                                <div class="flex items-center gap-2 bg-white/60 p-1.5 rounded">
+                                    <span class="text-amber-600 text-base">🛏️</span>
+                                    <p class="text-xs font-bold text-gray-800">寝室（安らぎ空間）</p>
+                                </div>
+                                <div class="flex items-center gap-2 bg-white/60 p-1.5 rounded">
+                                    <span class="text-amber-600 text-base">👶</span>
+                                    <p class="text-xs font-bold text-gray-800">子供部屋（優しい空間）</p>
+                                </div>
+                                <div class="flex items-center gap-2 bg-white/60 p-1.5 rounded">
+                                    <span class="text-amber-600 text-base">📖</span>
+                                    <p class="text-xs font-bold text-gray-800">書斎（集中空間）</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- こんな方に -->
+                        <div class="bg-gradient-to-br from-teal-50 to-cyan-50 p-3 rounded-xl border-2 border-teal-200">
+                            <h4 class="text-base font-bold text-teal-900 mb-2 border-b-2 border-teal-300 pb-1">こんな方に</h4>
+                            <div class="space-y-1.5">
+                                <div class="flex items-start gap-1.5">
+                                    <span class="text-teal-600 font-bold text-sm">✓</span>
+                                    <p class="text-xs text-gray-800"><strong>ナチュラル</strong>な雰囲気が好き</p>
+                                </div>
+                                <div class="flex items-start gap-1.5">
+                                    <span class="text-teal-600 font-bold text-sm">✓</span>
+                                    <p class="text-xs text-gray-800"><strong>派手すぎない</strong>グリーンがいい</p>
+                                </div>
+                                <div class="flex items-start gap-1.5">
+                                    <span class="text-teal-600 font-bold text-sm">✓</span>
+                                    <p class="text-xs text-gray-800"><strong>外壁と穏やかに</strong>調和させたい</p>
+                                </div>
+                                <div class="flex items-start gap-1.5">
+                                    <span class="text-teal-600 font-bold text-sm">✓</span>
+                                    <p class="text-xs text-gray-800"><strong>北欧風</strong>のインテリアが好き</p>
+                                </div>
+                                <div class="flex items-start gap-1.5">
+                                    <span class="text-teal-600 font-bold text-sm">✓</span>
+                                    <p class="text-xs text-gray-800"><strong>落ち着いた</strong>空間で過ごしたい</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 自然のイメージ -->
+                        <div class="product-card rounded-xl overflow-hidden shadow-lg">
+                            <img src="https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=600&q=80" alt="自然の葉" class="w-full h-full object-cover">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- スライド 9: リリカラ LW681（詳細情報） -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="text-3xl font-bold mb-1 text-gray-800 serif-title">リリカラ LW681 - さらに詳しく</h2>
+                <p class="text-sm mb-2 text-gray-600">機能性とデザイン性を兼ね備えた、快適で安心な住空間を実現します。</p>
+
+                <div class="grid grid-cols-2 gap-2" style="flex: 1;">
+                    <!-- 左上：適した場所 -->
+                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 p-3 rounded-xl">
+                        <h3 class="text-base font-bold text-green-900 mb-2 border-b-2 border-green-200 pb-1">適した場所</h3>
+                        <div class="space-y-2">
+                            <div class="flex items-start gap-2">
+                                <span class="text-green-600 text-lg">🏠</span>
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">リビング・ダイニング</p>
+                                    <p class="text-xs text-gray-600">家族が集まる場所。汚れに強く、美観を長く保ちます。</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <span class="text-green-600 text-lg">🍳</span>
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">キッチン・水回り</p>
+                                    <p class="text-xs text-gray-600">撥水性で油汚れや水滴をサッと拭き取り。清潔を保ちやすい。</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <span class="text-green-600 text-lg">🚪</span>
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">廊下・階段</p>
+                                    <p class="text-xs text-gray-600">傷つきにくく、長期間美しさを維持。頻繁な張り替え不要。</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <span class="text-green-600 text-lg">🧸</span>
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">子供部屋</p>
+                                    <p class="text-xs text-gray-600">表面強化・抗菌機能で、落書きや汚れにも対応。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右上：こんなご家庭におすすめ -->
+                    <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-3 rounded-xl">
+                        <h3 class="text-base font-bold text-purple-900 mb-2 border-b-2 border-purple-200 pb-1">こんなご家庭におすすめ</h3>
+                        <div class="space-y-2">
+                            <div class="flex items-start gap-2">
+                                <span class="text-purple-600 text-lg">👨‍👩‍👧‍👦</span>
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">小さなお子様がいるご家庭</p>
+                                    <p class="text-xs text-gray-600">汚れに強く、抗菌機能で清潔。安心して過ごせます。</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <span class="text-purple-600 text-lg">🐕</span>
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">ペットと暮らすご家庭</p>
+                                    <p class="text-xs text-gray-600">傷や汚れに強く、表面強化で爪痕も目立ちにくい。</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <span class="text-purple-600 text-lg">🏡</span>
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">長く住み続けたいご家庭</p>
+                                    <p class="text-xs text-gray-600">耐久性に優れ、頻繁なメンテナンス不要。長期的にコスト削減。</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <span class="text-purple-600 text-lg">💚</span>
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">健康志向のご家庭</p>
+                                    <p class="text-xs text-gray-600">防カビ・抗菌機能で清潔な室内環境。家族の健康を守ります。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 左下：他の壁紙との比較 -->
+                    <div class="bg-gradient-to-br from-blue-50 to-cyan-50 p-3 rounded-xl">
+                        <h3 class="text-base font-bold text-blue-900 mb-2 border-b-2 border-blue-200 pb-1">他の壁紙との比較</h3>
+                        <div class="space-y-2">
+                            <div>
+                                <p class="text-xs font-bold text-gray-800 mb-1">一般的な壁紙の場合</p>
+                                <ul class="text-xs text-gray-600 space-y-0.5 pl-4">
+                                    <li>❌ 汚れが染み込みやすい</li>
+                                    <li>❌ 地震でひび割れが発生しやすい</li>
+                                    <li>❌ 傷がつきやすく、張り替え頻度が高い</li>
+                                    <li>❌ カビが発生しやすい</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-green-800 mb-1">リリカラ LW681の場合</p>
+                                <ul class="text-xs text-gray-700 space-y-0.5 pl-4">
+                                    <li>✅ 撥水加工で汚れをサッと拭き取り</li>
+                                    <li>✅ 耐クラック性能で美しさ長持ち</li>
+                                    <li>✅ 表面強化で傷に強く、長期間美観維持</li>
+                                    <li>✅ 防カビ・抗菌で清潔な環境</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右下：イワサキ内装の実績とサポート -->
+                    <div class="bg-gradient-to-br from-amber-50 to-orange-50 p-3 rounded-xl">
+                        <h3 class="text-base font-bold text-amber-900 mb-2 border-b-2 border-amber-200 pb-1">イワサキ内装の実績とサポート</h3>
+
+                        <div class="space-y-2">
+                            <div class="bg-white p-2 rounded border border-amber-200">
+                                <p class="text-xs font-bold text-gray-800 mb-1">✓ 30年以上の施工実績</p>
+                                <p class="text-xs text-gray-600">東京都内を中心に、数多くの住宅リフォームを手掛けてきました。</p>
+                            </div>
+
+                            <div class="bg-white p-2 rounded border border-amber-200">
+                                <p class="text-xs font-bold text-gray-800 mb-1">✓ 丁寧な施工と美しい仕上がり</p>
+                                <p class="text-xs text-gray-600">継ぎ目を目立たせない職人技。過去のトラブルは二度と起こしません。</p>
+                            </div>
+
+                            <div class="bg-white p-2 rounded border border-amber-200">
+                                <p class="text-xs font-bold text-gray-800 mb-1">✓ お客様に最適な壁紙選び</p>
+                                <p class="text-xs text-gray-600">ご予算・ご要望・お住まいの環境に合わせた最適なご提案をいたします。</p>
+                            </div>
+
+                            <div class="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-2 rounded mt-2">
+                                <p class="text-xs text-center font-bold">大切なご家族を守る住まいづくりに貢献します</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ナビゲーション（印刷時は非表示） -->
+    <div id="navigation" class="flex justify-between w-full max-w-[1200px] mt-4">
+        <button id="prevBtn" class="bg-gray-800 text-white px-8 py-3 rounded-lg text-xl font-bold hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg">
+            ← 前へ
+        </button>
+        <div id="slide-counter" class="text-xl font-bold text-white flex items-center bg-gray-800 px-6 py-3 rounded-lg shadow-lg">
+            1 / 11
+        </div>
+        <button id="nextBtn" class="bg-gray-800 text-white px-8 py-3 rounded-lg text-xl font-bold hover:bg-gray-700 transition shadow-lg">
+            次へ →
+        </button>
+    </div>
+
+    <!-- 印刷ボタン（印刷時は非表示） -->
+    <div class="mt-4">
+        <button onclick="window.print()" class="bg-green-600 text-white px-10 py-4 rounded-lg text-xl font-bold hover:bg-green-700 transition shadow-xl">
+            🖨️ 印刷する
+        </button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const slides = document.querySelectorAll('.slide');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const slideCounter = document.getElementById('slide-counter');
+            let currentIndex = 0;
+            const totalSlides = slides.length;
+
+            function showSlide(index) {
+                slides.forEach((slide, i) => {
+                    slide.classList.toggle('active', i === index);
+                });
+
+                slideCounter.textContent = `${index + 1} / ${totalSlides}`;
+                prevBtn.disabled = index === 0;
+                nextBtn.disabled = index === totalSlides - 1;
+            }
+
+            prevBtn.addEventListener('click', () => {
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    showSlide(currentIndex);
+                }
+            });
+
+            nextBtn.addEventListener('click', () => {
+                if (currentIndex < totalSlides - 1) {
+                    currentIndex++;
+                    showSlide(currentIndex);
+                }
+            });
+
+            // キーボード操作対応
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft' && currentIndex > 0) {
+                    currentIndex--;
+                    showSlide(currentIndex);
+                } else if (e.key === 'ArrowRight' && currentIndex < totalSlides - 1) {
+                    currentIndex++;
+                    showSlide(currentIndex);
+                }
+            });
+
+            showSlide(currentIndex);
+        });
+    </script>
+</body>
+</html>

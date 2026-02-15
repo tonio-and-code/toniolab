@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>リペア（補修）サービスのご案内 | イワサキ内装</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a0a;
+            color: #fafafa;
+            line-height: 1.8;
+            font-weight: 400;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: linear-gradient(180deg, #0f0f0f 0%, #1a1a1a 100%);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        /* ヘッダー - 高級感のあるダーク×エメラルド */
+        .header {
+            background:
+                linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, transparent 100%),
+                linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 100%);
+            padding: 100px 80px;
+            border-bottom: 2px solid rgba(16, 185, 129, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                rgba(212, 175, 55, 0.5) 20%,
+                rgba(16, 185, 129, 0.8) 50%,
+                rgba(212, 175, 55, 0.5) 80%,
+                transparent 100%);
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .header .company-logo {
+            font-size: 13px;
+            font-weight: 500;
+            color: #d4af37;
+            margin-bottom: 32px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            display: inline-block;
+            padding: 8px 20px;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            background: rgba(212, 175, 55, 0.05);
+        }
+
+        .header h1 {
+            font-family: 'Playfair Display', 'Noto Sans JP', serif;
+            font-size: 56px;
+            font-weight: 700;
+            margin-bottom: 28px;
+            line-height: 1.3;
+            background: linear-gradient(135deg, #ffffff 0%, #10b981 50%, #d4af37 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -1px;
+        }
+
+        .header .tagline {
+            font-size: 22px;
+            color: #10b981;
+            font-weight: 400;
+            margin-bottom: 28px;
+            line-height: 1.7;
+            letter-spacing: 0.5px;
+        }
+
+        .header .description {
+            font-size: 16px;
+            color: #a3a3a3;
+            line-height: 2;
+            max-width: 1000px;
+            font-weight: 300;
+        }
+
+        /* アクセントライン */
+        .accent-bar {
+            height: 3px;
+            background: linear-gradient(90deg,
+                #d4af37 0%,
+                #10b981 25%,
+                #059669 50%,
+                #10b981 75%,
+                #d4af37 100%);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+        }
+
+        /* コンテンツエリア */
+        .content {
+            padding: 100px 80px;
+        }
+
+        /* セクション */
+        .section {
+            margin-bottom: 120px;
+        }
+
+        .section-title {
+            font-family: 'Playfair Display', 'Noto Sans JP', serif;
+            font-size: 38px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 16px;
+            letter-spacing: -1px;
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .section-title::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 60px;
+            background: linear-gradient(180deg, #d4af37 0%, #10b981 100%);
+            border-radius: 4px;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+        }
+
+        .section-subtitle {
+            font-size: 15px;
+            color: #737373;
+            margin-bottom: 80px;
+            padding-left: 30px;
+            font-weight: 300;
+            letter-spacing: 0.3px;
+        }
+
+        /* 事例カード - ラグジュアリー仕様 */
+        .case-study {
+            margin-bottom: 100px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            transition: all 0.4s ease;
+            position: relative;
+        }
+
+        .case-study::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #d4af37 0%, #10b981 50%, #d4af37 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .case-study:hover {
+            border-color: rgba(16, 185, 129, 0.5);
+            box-shadow: 0 20px 60px rgba(16, 185, 129, 0.3);
+            transform: translateY(-8px);
+        }
+
+        .case-study:hover::before {
+            opacity: 1;
+        }
+
+        .case-header {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, transparent 100%);
+            padding: 50px 60px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        .case-number {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 6px 18px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(16, 185, 129, 0.2) 100%);
+            color: #d4af37;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .case-title {
+            font-family: 'Playfair Display', 'Noto Sans JP', serif;
+            font-size: 28px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 32px;
+            letter-spacing: -0.5px;
+        }
+
+        .case-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 28px;
+        }
+
+        .case-meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 20px;
+            background: rgba(16, 185, 129, 0.03);
+            border-radius: 8px;
+            border-left: 3px solid #10b981;
+        }
+
+        .case-meta-item .label {
+            font-size: 10px;
+            color: #d4af37;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .case-meta-item .text {
+            font-size: 14px;
+            color: #d4d4d4;
+            line-height: 1.8;
+            font-weight: 400;
+        }
+
+        .case-body {
+            padding: 60px;
+        }
+
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+        }
+
+        .ba-column {
+            position: relative;
+        }
+
+        .ba-label {
+            font-size: 14px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            display: inline-block;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%);
+            border-left: 3px solid #10b981;
+        }
+
+        .ba-image {
+            width: 100%;
+            aspect-ratio: 4/3;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #0a0a0a;
+            border: 2px solid rgba(16, 185, 129, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            transition: all 0.4s ease;
+        }
+
+        .ba-image:hover {
+            border-color: rgba(212, 175, 55, 0.6);
+            box-shadow: 0 12px 48px rgba(16, 185, 129, 0.4);
+            transform: scale(1.02);
+        }
+
+        .ba-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            filter: brightness(0.95) contrast(1.1);
+        }
+
+        .ba-caption {
+            font-size: 13px;
+            color: #a3a3a3;
+            margin-top: 16px;
+            line-height: 1.7;
+            font-weight: 300;
+            padding-left: 20px;
+            border-left: 2px solid rgba(16, 185, 129, 0.3);
+        }
+
+        /* 料金セクション */
+        .pricing-section {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%);
+            padding: 80px;
+            border-radius: 16px;
+            border: 2px solid rgba(16, 185, 129, 0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 40px;
+            margin-bottom: 50px;
+        }
+
+        .pricing-card {
+            background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+            border-radius: 12px;
+            padding: 60px 50px;
+            border: 2px solid rgba(16, 185, 129, 0.2);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pricing-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .pricing-card:hover {
+            border-color: rgba(212, 175, 55, 0.5);
+            box-shadow: 0 15px 50px rgba(16, 185, 129, 0.3);
+            transform: translateY(-8px);
+        }
+
+        .pricing-card:hover::before {
+            opacity: 1;
+        }
+
+        .pricing-card .label {
+            position: relative;
+            font-size: 12px;
+            color: #d4af37;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .pricing-card .price {
+            position: relative;
+            font-family: 'Playfair Display', serif;
+            font-size: 48px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff 0%, #10b981 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 24px;
+            line-height: 1;
+            letter-spacing: -2px;
+        }
+
+        .pricing-card .price .unit {
+            font-size: 22px;
+            font-weight: 400;
+            color: #737373;
+        }
+
+        .pricing-card .description {
+            position: relative;
+            font-size: 15px;
+            color: #a3a3a3;
+            line-height: 1.9;
+            font-weight: 300;
+        }
+
+        .pricing-note {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+            border-left: 4px solid #d4af37;
+            padding: 32px 40px;
+            border-radius: 8px;
+            box-shadow: inset 0 0 30px rgba(212, 175, 55, 0.1);
+        }
+
+        .pricing-note .title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #d4af37;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .pricing-note p {
+            font-size: 14px;
+            color: #d4d4d4;
+            line-height: 1.9;
+            font-weight: 300;
+        }
+
+        /* 強みセクション */
+        .strengths {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 50px;
+        }
+
+        .strength-card {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, transparent 100%);
+            padding: 60px 50px;
+            border-radius: 12px;
+            border: 2px solid rgba(16, 185, 129, 0.2);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .strength-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .strength-card:hover {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%);
+            border-color: rgba(212, 175, 55, 0.4);
+            box-shadow: 0 15px 50px rgba(16, 185, 129, 0.3);
+        }
+
+        .strength-card h3 {
+            position: relative;
+            font-family: 'Playfair Display', 'Noto Sans JP', serif;
+            font-size: 24px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 20px;
+            letter-spacing: -0.5px;
+        }
+
+        .strength-card p {
+            position: relative;
+            font-size: 15px;
+            color: #d4d4d4;
+            line-height: 2;
+            font-weight: 300;
+        }
+
+        /* フッター */
+        .footer {
+            background: linear-gradient(180deg, #0a0a0a 0%, #000000 100%);
+            padding: 80px 80px;
+            text-align: center;
+            border-top: 2px solid rgba(16, 185, 129, 0.3);
+            position: relative;
+        }
+
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                rgba(212, 175, 55, 0.5) 20%,
+                rgba(16, 185, 129, 0.8) 50%,
+                rgba(212, 175, 55, 0.5) 80%,
+                transparent 100%);
+        }
+
+        .footer .logo {
+            font-family: 'Playfair Display', 'Noto Sans JP', serif;
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #d4af37 0%, #10b981 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 24px;
+        }
+
+        .footer p {
+            font-size: 14px;
+            color: #a3a3a3;
+            line-height: 1.9;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .footer .contact {
+            margin-top: 32px;
+            font-size: 15px;
+            color: #10b981;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        /* レスポンシブ */
+        @media screen and (max-width: 768px) {
+            .header {
+                padding: 60px 40px;
+            }
+
+            .header h1 {
+                font-size: 36px;
+            }
+
+            .header .tagline {
+                font-size: 18px;
+            }
+
+            .content {
+                padding: 60px 40px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .pricing-grid,
+            .strengths {
+                grid-template-columns: 1fr;
+            }
+
+            .section-title {
+                font-size: 28px;
+            }
+
+            .case-title {
+                font-size: 22px;
+            }
+
+            .case-body {
+                padding: 40px 30px;
+            }
+
+            .footer {
+                padding: 60px 40px;
+            }
+        }
+
+        /* 印刷用 */
+        @media print {
+            body {
+                background: white;
+                color: black;
+            }
+
+            .case-study,
+            .pricing-card,
+            .strength-card {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- ヘッダー -->
+        <div class="header">
+            <div class="header-content">
+                <div class="company-logo">Iwasaki Interior | Craftsman Network Solution</div>
+                <h1>リペア（補修）サービスのご案内</h1>
+                <div class="tagline">
+                    オフィスの原状回復コスト削減、店舗の美観維持に。<br>
+                    「交換」から「再生（リペア）」へ。
+                </div>
+                <div class="description">
+                    イワサキ内装の「職人ネットワーク」には、濱端氏（ハマバタ）のような高度なリペア技術を持つ専門家が在籍しています。<br>
+                    「交換」するしかなかった傷や破損を「補修」することで、お客様（総務部長、店舗開発担当、管理組合理事長）の課題を低コストかつ短時間で解決します。
+                </div>
+            </div>
+        </div>
+
+        <div class="accent-bar"></div>
+
+        <!-- コンテンツ -->
+        <div class="content">
+            <!-- セクションタイトル -->
+            <div class="section">
+                <h2 class="section-title">B2Bターゲット別 施工事例</h2>
+                <p class="section-subtitle">実際の補修事例をBEFORE / AFTER写真でご紹介します</p>
+
+                <!-- 事例1: オフィスキッチン -->
+                <div class="case-study">
+                    <div class="case-header">
+                        <span class="case-number">CASE 01</span>
+                        <h3 class="case-title">オフィスキッチン・什器</h3>
+                        <div class="case-meta">
+                            <div class="case-meta-item">
+                                <div class="label">Target</div>
+                                <div class="text">総務部長、ビル管理ご担当者様</div>
+                            </div>
+                            <div class="case-meta-item">
+                                <div class="label">課題</div>
+                                <div class="text">退去時の原状回復で、小さな傷のために全面交換となり高額なコストが発生する</div>
+                            </div>
+                            <div class="case-meta-item">
+                                <div class="label">Solution</div>
+                                <div class="text">部分補修で新品同様に再生。原状回復コストを劇的に削減</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="case-body">
+                        <div class="before-after">
+                            <div class="ba-column">
+                                <div class="ba-label">BEFORE（施工前）</div>
+                                <div class="ba-image">
+                                    <img src="1b.jpg" alt="施工前のキッチン">
+                                </div>
+                                <div class="ba-caption">オフィスキッチンのパネルや床に入った傷・汚れ</div>
+                            </div>
+                            <div class="ba-column">
+                                <div class="ba-label">AFTER（施工後）</div>
+                                <div class="ba-image">
+                                    <img src="1a.jpg" alt="施工後のキッチン">
+                                </div>
+                                <div class="ba-caption">木目調フロアタイル張替えで新品同様の仕上がりに</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 事例2: 店舗・オフィスのテーブル -->
+                <div class="case-study">
+                    <div class="case-header">
+                        <span class="case-number">CASE 02</span>
+                        <h3 class="case-title">店舗・オフィスのテーブル</h3>
+                        <div class="case-meta">
+                            <div class="case-meta-item">
+                                <div class="label">Target</div>
+                                <div class="text">店舗開発ご担当者様、ホテル・オフィス運営者様</div>
+                            </div>
+                            <div class="case-meta-item">
+                                <div class="label">課題</div>
+                                <div class="text">ブランドイメージを左右するテーブルやカウンターの傷。修復のために営業を止められない</div>
+                            </div>
+                            <div class="case-meta-item">
+                                <div class="label">Solution</div>
+                                <div class="text">営業終了後の夜間作業などで短時間に修復。交換コストと機会損失をゼロに</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="case-body">
+                        <div class="before-after">
+                            <div class="ba-column">
+                                <div class="ba-label">BEFORE（施工前）</div>
+                                <div class="ba-image">
+                                    <img src="2a.jpg" alt="施工前のテーブル">
+                                </div>
+                                <div class="ba-caption">傷や輪染みがついた高級テーブル</div>
+                            </div>
+                            <div class="ba-column">
+                                <div class="ba-label">AFTER（施工後）</div>
+                                <div class="ba-image">
+                                    <img src="2b.jpg" alt="施工後のテーブル">
+                                </div>
+                                <div class="ba-caption">研磨と塗装補修により、新品の輝きを再生</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 事例3: 外壁サイディング -->
+                <div class="case-study">
+                    <div class="case-header">
+                        <span class="case-number">CASE 03</span>
+                        <h3 class="case-title">外壁（サイディング）</h3>
+                        <div class="case-meta">
+                            <div class="case-meta-item">
+                                <div class="label">Target</div>
+                                <div class="text">管理組合理事長、ビルオーナー様</div>
+                            </div>
+                            <div class="case-meta-item">
+                                <div class="label">課題</div>
+                                <div class="text">一部が破損・変色した外壁。大規模修繕にはまだ早い</div>
+                            </div>
+                            <div class="case-meta-item">
+                                <div class="label">Solution</div>
+                                <div class="text">周囲の色と完全に合わせて部分補修。低コストで建物の美観と資産価値を維持</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="case-body">
+                        <div class="before-after">
+                            <div class="ba-column">
+                                <div class="ba-label">BEFORE（施工前）</div>
+                                <div class="ba-image">
+                                    <img src="3a.jpg" alt="施工前の外壁">
+                                </div>
+                                <div class="ba-caption">コーナー部が破損・変色した外壁サイディング</div>
+                            </div>
+                            <div class="ba-column">
+                                <div class="ba-label">AFTER（施工後）</div>
+                                <div class="ba-image">
+                                    <img src="3b.jpg" alt="施工後の外壁">
+                                </div>
+                                <div class="ba-caption">周囲の色と完全に合わせて部分補修完了</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 事例4: 外構の柱 -->
+                <div class="case-study">
+                    <div class="case-header">
+                        <span class="case-number">CASE 04</span>
+                        <h3 class="case-title">外構（柱・エクステリア）</h3>
+                        <div class="case-meta">
+                            <div class="case-meta-item">
+                                <div class="label">Target</div>
+                                <div class="text">施設管理ご担当者様</div>
+                            </div>
+                            <div class="case-meta-item">
+                                <div class="label">課題</div>
+                                <div class="text">建物の「顔」であるエントランスや外構の柱が欠けてしまい、安全面・美観面で問題がある</div>
+                            </div>
+                            <div class="case-meta-item">
+                                <div class="label">Solution</div>
+                                <div class="text">質感や模様まで忠実に再現。低コスト・短時間で安全と美観を両立</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="case-body">
+                        <div class="before-after">
+                            <div class="ba-column">
+                                <div class="ba-label">BEFORE（施工前）</div>
+                                <div class="ba-image">
+                                    <img src="4a.jpg" alt="施工前の外構柱">
+                                </div>
+                                <div class="ba-caption">欠けてしまった外構の柱</div>
+                            </div>
+                            <div class="ba-column">
+                                <div class="ba-label">AFTER（施工後）</div>
+                                <div class="ba-image">
+                                    <img src="4b.jpg" alt="施工後の外構柱">
+                                </div>
+                                <div class="ba-caption">質感や模様を再現し、補修完了</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 料金セクション -->
+            <div class="section">
+                <h2 class="section-title">料金体系（目安）</h2>
+                <p class="section-subtitle">濱端氏からの情報に基づき、B2B担当者にも分かりやすく整理しました</p>
+
+                <div class="pricing-section">
+                    <div class="pricing-grid">
+                        <div class="pricing-card">
+                            <div class="label">1日作業（目安）</div>
+                            <div class="price">
+                                ¥18,000<span class="unit">〜</span>¥35,000
+                                <div style="font-size: 16px; margin-top: 16px; color: #737373; font-weight: 400;">税別</div>
+                            </div>
+                            <div class="description">
+                                フルリフォーム、フローリング張替え、壁一面のクロス施工など、1日がかりの作業が対象です。
+                            </div>
+                        </div>
+
+                        <div class="pricing-card">
+                            <div class="label">短時間作業（半日目安）</div>
+                            <div class="price">
+                                ¥15,000<span class="unit">〜</span>
+                                <div style="font-size: 16px; margin-top: 16px; color: #737373; font-weight: 400;">税別</div>
+                            </div>
+                            <div class="description">
+                                部分補修、家具の塗装、小規模な施工など、2〜4時間程度で完了する作業が対象です。
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pricing-note">
+                        <div class="title">濱端氏のポリシー</div>
+                        <p>
+                            <strong>「私はなるべく料金はお客様のニーズに合わせております」</strong><br>
+                            上記はあくまで目安です。施工箇所の状況や数により変動します。イワサキ内装が責任を持って、お客様のニーズに合わせた最適なお見積もりを提示します。
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 強みセクション -->
+            <div class="section">
+                <h2 class="section-title">イワサキ内装の強み</h2>
+                <p class="section-subtitle">職人ネットワークとDX施工管理で、確実な品質をお届けします</p>
+
+                <div class="strengths">
+                    <div class="strength-card">
+                        <h3>品質の担保</h3>
+                        <p>
+                            濱端氏のような高い技術を持つ職人と、イワサキ内装の「AI・DX施工管理」の仕組み（デジタル日報、進捗管理）が連携。リペア作業であっても、施工品質と進捗を確実に管理します。
+                        </p>
+                    </div>
+
+                    <div class="strength-card">
+                        <h3>ワンストップ・ソリューション</h3>
+                        <p>
+                            リペア（補修）だけでなく、クロス張替え、塗装、内装工事一式まで、職人ネットワークと国際化のリソースで、あらゆる規模のプロジェクトにワンストップで対応可能です。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- フッター -->
+        <div class="footer">
+            <div class="logo">イワサキ内装</div>
+            <p>この資料に関するお問い合わせは、イワサキ内装までお気軽にご連絡ください。</p>
+            <p>現場調査・お見積もりは無料で承ります。</p>
+            <div class="contact">https://iwasaki-naisou.com</div>
+        </div>
+    </div>
+</body>
+</html>

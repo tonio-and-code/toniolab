@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>リペア（補修）サービスのご案内 | イワサキ内装</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#1a1a1a;line-height:1.8}
+.container{max-width:1600px;margin:0 auto;background:#fff}
+.header{background:linear-gradient(135deg,#f8fffe 0%,#f0fdf9 100%);padding:80px;border-bottom:3px solid #10b981;position:relative}
+.header-content{position:relative;z-index:1}
+.company-logo{font-size:12px;font-weight:600;color:#059669;margin-bottom:28px;letter-spacing:2px;text-transform:uppercase;padding:8px 20px;border:1px solid #10b981;background:rgba(16,185,129,.08);border-radius:4px;display:inline-block}
+h1{font-family:'Playfair Display','Noto Sans JP',serif;font-size:48px;font-weight:700;margin-bottom:24px;color:#0f172a}
+.tagline{font-size:20px;color:#059669;font-weight:500;margin-bottom:24px}
+.description{font-size:15px;color:#475569;line-height:2;max-width:1000px}
+.accent-bar{height:4px;background:linear-gradient(90deg,#10b981 0%,#059669 50%,#10b981 100%)}
+.content{padding:80px;background:#fff}
+.section{margin-bottom:100px}
+.section-title{font-family:'Playfair Display','Noto Sans JP',serif;font-size:36px;font-weight:700;color:#0f172a;margin-bottom:12px;padding-left:24px;position:relative}
+.section-title::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:6px;height:50px;background:#10b981;border-radius:3px}
+.section-subtitle{font-size:14px;color:#64748b;margin-bottom:60px;padding-left:24px}
+.case-study{margin-bottom:80px;background:#fff;border-radius:12px;border:2px solid #e2e8f0;box-shadow:0 4px 16px rgba(0,0,0,.06);transition:all .3s}
+.case-study:hover{border-color:#10b981;box-shadow:0 8px 32px rgba(16,185,129,.15);transform:translateY(-4px)}
+.case-header{background:linear-gradient(135deg,#f0fdf9 0%,#f8fffe 100%);padding:40px 50px;border-bottom:1px solid #d1fae5}
+.case-number{font-size:10px;font-weight:700;padding:6px 16px;border-radius:20px;margin-bottom:16px;background:#10b981;color:#fff;letter-spacing:1.5px;text-transform:uppercase;display:inline-block}
+.case-title{font-family:'Playfair Display','Noto Sans JP',serif;font-size:26px;font-weight:600;color:#0f172a;margin-bottom:28px}
+.case-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+.case-meta-item{padding:18px;background:#fff;border-radius:8px;border:1px solid #e2e8f0;border-left:4px solid #10b981}
+.label{font-size:10px;color:#059669;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px}
+.text{font-size:13px;color:#1e293b;line-height:1.7}
+.case-body{padding:50px;background:#fff}
+.before-after{display:grid;grid-template-columns:1fr 1fr;gap:40px}
+.ba-label{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:16px;letter-spacing:.5px;text-transform:uppercase;padding:6px 14px;background:#f0fdf9;border-left:3px solid #10b981;display:inline-block}
+.ba-image{width:100%;aspect-ratio:4/3;border-radius:8px;background:#f8fafc;border:2px solid #e2e8f0;box-shadow:0 4px 16px rgba(0,0,0,.08);transition:all .3s;overflow:hidden}
+.ba-image:hover{border-color:#10b981;box-shadow:0 8px 24px rgba(16,185,129,.2);transform:scale(1.02)}
+.ba-image img{width:100%;height:100%;object-fit:cover;display:block}
+.ba-caption{font-size:12px;color:#64748b;margin-top:12px;line-height:1.6;padding-left:16px;border-left:2px solid #d1fae5}
+.pricing-section{background:linear-gradient(135deg,#f0fdf9 0%,#f8fffe 100%);padding:60px;border-radius:12px;border:2px solid #d1fae5;box-shadow:0 4px 16px rgba(0,0,0,.06)}
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:32px;margin-bottom:40px}
+.pricing-card{background:#fff;border-radius:8px;padding:48px 40px;border:2px solid #e2e8f0;transition:all .3s}
+.pricing-card:hover{border-color:#10b981;box-shadow:0 8px 24px rgba(16,185,129,.15);transform:translateY(-4px)}
+.pricing-card .label{font-size:11px;color:#059669;font-weight:700;margin-bottom:16px;text-transform:uppercase;letter-spacing:1.5px}
+.price{font-family:'Playfair Display',serif;font-size:42px;font-weight:700;color:#10b981;margin-bottom:20px;line-height:1}
+.price .unit{font-size:20px;color:#64748b}
+.pricing-card .description{font-size:14px;color:#475569;line-height:1.8}
+.pricing-note{background:#fff;padding:28px 36px;border-radius:8px;border:1px solid #e2e8f0;border-left:4px solid #10b981}
+.pricing-note .title{font-size:15px;font-weight:700;color:#059669;margin-bottom:10px}
+.pricing-note p{font-size:13px;color:#475569;line-height:1.8}
+.strengths{display:grid;grid-template-columns:repeat(auto-fit,minmax(460px,1fr));gap:40px}
+.strength-card{background:#fff;padding:48px 40px;border-radius:8px;border:2px solid #e2e8f0;transition:all .3s}
+.strength-card:hover{background:linear-gradient(135deg,#f0fdf9 0%,#fff 100%);border-color:#10b981;box-shadow:0 8px 24px rgba(16,185,129,.15)}
+.strength-card h3{font-family:'Playfair Display','Noto Sans JP',serif;font-size:22px;font-weight:600;color:#0f172a;margin-bottom:16px}
+.strength-card p{font-size:14px;color:#475569;line-height:1.9}
+.footer{background:linear-gradient(180deg,#f8fafc 0%,#f1f5f9 100%);padding:60px 80px;text-align:center;border-top:3px solid #10b981}
+.footer .logo{font-family:'Playfair Display','Noto Sans JP',serif;font-size:26px;font-weight:700;color:#10b981;margin-bottom:20px}
+.footer p{font-size:13px;color:#64748b;line-height:1.8;margin-bottom:8px}
+.footer .contact{margin-top:24px;font-size:14px;color:#10b981;font-weight:600}
+@media screen and (max-width:768px){
+.header{padding:50px 30px}
+h1{font-size:32px}
+.content{padding:50px 30px}
+.before-after{grid-template-columns:1fr}
+.pricing-grid,.strengths{grid-template-columns:1fr}
+}
+@media print{
+body{background:white;color:black}
+.case-study,.pricing-card,.strength-card{break-inside:avoid;page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<div class="header-content">
+<div class="company-logo">Iwasaki Interior | Craftsman Network Solution</div>
+<h1>リペア（補修）サービスのご案内</h1>
+<div class="tagline">オフィスの原状回復コスト削減、店舗の美観維持に。<br>「交換」から「再生（リペア）」へ。</div>
+<div class="description">イワサキ内装の「職人ネットワーク」には、濱端氏（ハマバタ）のような高度なリペア技術を持つ専門家が在籍しています。<br>「交換」するしかなかった傷や破損を「補修」することで、お客様（総務部長、店舗開発担当、管理組合理事長）の課題を低コストかつ短時間で解決します。</div>
+</div>
+</div>
+<div class="accent-bar"></div>
+<div class="content">
+<div class="section">
+<h2 class="section-title">B2Bターゲット別 施工事例</h2>
+<p class="section-subtitle">実際の補修事例をBEFORE / AFTER写真でご紹介します</p>
+<div class="case-study">
+<div class="case-header">
+<span class="case-number">CASE 01</span>
+<h3 class="case-title">オフィスキッチン・什器</h3>
+<div class="case-meta">
+<div class="case-meta-item"><div class="label">Target</div><div class="text">総務部長、ビル管理ご担当者様</div></div>
+<div class="case-meta-item"><div class="label">課題</div><div class="text">退去時の原状回復で、小さな傷のために全面交換となり高額なコストが発生する</div></div>
+<div class="case-meta-item"><div class="label">Solution</div><div class="text">部分補修で新品同様に再生。原状回復コストを劇的に削減</div></div>
+</div>
+</div>
+<div class="case-body">
+<div class="before-after">
+<div><div class="ba-label">BEFORE（施工前）</div><div class="ba-image"><img src="1b.jpg" alt="施工前のキッチン"></div><div class="ba-caption">オフィスキッチンのパネルや床に入った傷・汚れ</div></div>
+<div><div class="ba-label">AFTER（施工後）</div><div class="ba-image"><img src="1a.jpg" alt="施工後のキッチン"></div><div class="ba-caption">木目調フロアタイル張替えで新品同様の仕上がりに</div></div>
+</div>
+</div>
+</div>
+<div class="case-study">
+<div class="case-header">
+<span class="case-number">CASE 02</span>
+<h3 class="case-title">店舗・オフィスのテーブル</h3>
+<div class="case-meta">
+<div class="case-meta-item"><div class="label">Target</div><div class="text">店舗開発ご担当者様、ホテル・オフィス運営者様</div></div>
+<div class="case-meta-item"><div class="label">課題</div><div class="text">ブランドイメージを左右するテーブルやカウンターの傷。修復のために営業を止められない</div></div>
+<div class="case-meta-item"><div class="label">Solution</div><div class="text">営業終了後の夜間作業などで短時間に修復。交換コストと機会損失をゼロに</div></div>
+</div>
+</div>
+<div class="case-body">
+<div class="before-after">
+<div><div class="ba-label">BEFORE（施工前）</div><div class="ba-image"><img src="2a.jpg" alt="施工前のテーブル"></div><div class="ba-caption">傷や輪染みがついた高級テーブル</div></div>
+<div><div class="ba-label">AFTER（施工後）</div><div class="ba-image"><img src="2b.jpg" alt="施工後のテーブル"></div><div class="ba-caption">研磨と塗装補修により、新品の輝きを再生</div></div>
+</div>
+</div>
+</div>
+<div class="case-study">
+<div class="case-header">
+<span class="case-number">CASE 03</span>
+<h3 class="case-title">外壁（サイディング）</h3>
+<div class="case-meta">
+<div class="case-meta-item"><div class="label">Target</div><div class="text">管理組合理事長、ビルオーナー様</div></div>
+<div class="case-meta-item"><div class="label">課題</div><div class="text">一部が破損・変色した外壁。大規模修繕にはまだ早い</div></div>
+<div class="case-meta-item"><div class="label">Solution</div><div class="text">周囲の色と完全に合わせて部分補修。低コストで建物の美観と資産価値を維持</div></div>
+</div>
+</div>
+<div class="case-body">
+<div class="before-after">
+<div><div class="ba-label">BEFORE（施工前）</div><div class="ba-image"><img src="3a.jpg" alt="施工前の外壁"></div><div class="ba-caption">コーナー部が破損・変色した外壁サイディング</div></div>
+<div><div class="ba-label">AFTER（施工後）</div><div class="ba-image"><img src="3b.jpg" alt="施工後の外壁"></div><div class="ba-caption">周囲の色と完全に合わせて部分補修完了</div></div>
+</div>
+</div>
+</div>
+<div class="case-study">
+<div class="case-header">
+<span class="case-number">CASE 04</span>
+<h3 class="case-title">外構（柱・エクステリア）</h3>
+<div class="case-meta">
+<div class="case-meta-item"><div class="label">Target</div><div class="text">施設管理ご担当者様</div></div>
+<div class="case-meta-item"><div class="label">課題</div><div class="text">建物の「顔」であるエントランスや外構の柱が欠けてしまい、安全面・美観面で問題がある</div></div>
+<div class="case-meta-item"><div class="label">Solution</div><div class="text">質感や模様まで忠実に再現。低コスト・短時間で安全と美観を両立</div></div>
+</div>
+</div>
+<div class="case-body">
+<div class="before-after">
+<div><div class="ba-label">BEFORE（施工前）</div><div class="ba-image"><img src="4a.jpg" alt="施工前の外構柱"></div><div class="ba-caption">欠けてしまった外構の柱</div></div>
+<div><div class="ba-label">AFTER（施工後）</div><div class="ba-image"><img src="4b.jpg" alt="施工後の外構柱"></div><div class="ba-caption">質感や模様を再現し、補修完了</div></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section">
+<h2 class="section-title">料金体系（目安）</h2>
+<p class="section-subtitle">濱端氏からの情報に基づき、B2B担当者にも分かりやすく整理しました</p>
+<div class="pricing-section">
+<div class="pricing-grid">
+<div class="pricing-card">
+<div class="label">1日作業（目安）</div>
+<div class="price">¥18,000<span class="unit">〜</span>¥35,000<div style="font-size:15px;margin-top:14px;color:#64748b">税別</div></div>
+<div class="description">フルリフォーム、フローリング張替え、壁一面のクロス施工など、1日がかりの作業が対象です。</div>
+</div>
+<div class="pricing-card">
+<div class="label">短時間作業（半日目安）</div>
+<div class="price">¥15,000<span class="unit">〜</span><div style="font-size:15px;margin-top:14px;color:#64748b">税別</div></div>
+<div class="description">部分補修、家具の塗装、小規模な施工など、2〜4時間程度で完了する作業が対象です。</div>
+</div>
+</div>
+<div class="pricing-note">
+<div class="title">濱端氏のポリシー</div>
+<p><strong>「私はなるべく料金はお客様のニーズに合わせております」</strong><br>上記はあくまで目安です。施工箇所の状況や数により変動します。イワサキ内装が責任を持って、お客様のニーズに合わせた最適なお見積もりを提示します。</p>
+</div>
+</div>
+</div>
+<div class="section">
+<h2 class="section-title">イワサキ内装の強み</h2>
+<p class="section-subtitle">職人ネットワークとDX施工管理で、確実な品質をお届けします</p>
+<div class="strengths">
+<div class="strength-card">
+<h3>品質の担保</h3>
+<p>濱端氏のような高い技術を持つ職人と、イワサキ内装の「AI・DX施工管理」の仕組み（デジタル日報、進捗管理）が連携。リペア作業であっても、施工品質と進捗を確実に管理します。</p>
+</div>
+<div class="strength-card">
+<h3>ワンストップ・ソリューション</h3>
+<p>リペア（補修）だけでなく、クロス張替え、塗装、内装工事一式まで、職人ネットワークと国際化のリソースで、あらゆる規模のプロジェクトにワンストップで対応可能です。</p>
+</div>
+</div>
+</div>
+</div>
+<div class="footer">
+<div class="logo">イワサキ内装</div>
+<p>この資料に関するお問い合わせは、イワサキ内装までお気軽にご連絡ください。</p>
+<p>現場調査・お見積もりは無料で承ります。</p>
+<div class="contact">https://iwasaki-naisou.com</div>
+</div>
+</div>
+</body>
+</html>

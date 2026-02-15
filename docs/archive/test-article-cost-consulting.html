@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ケーススタディ：なぜ1,000万円規模の改修工事で「400万円の価格差」が生まれるのか？ | イワサキ内装</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+            line-height: 1.9;
+            color: #2c3e50;
+            background: linear-gradient(to bottom, #f7f9fc 0%, #ffffff 100%);
+            letter-spacing: 0.02em;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0;
+            background-color: #fff;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1a365d 0%, #2d5a8f 100%);
+            color: white;
+            padding: 50px 40px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="10" cy="10" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="30" r="1.5" fill="rgba(255,255,255,0.08)"/><circle cx="70" cy="20" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="30" cy="70" r="1.2" fill="rgba(255,255,255,0.09)"/><circle cx="90" cy="60" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+            opacity: 0.5;
+        }
+
+        .category {
+            display: inline-block;
+            background-color: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-bottom: 20px;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+
+        h1 {
+            font-size: 1.9rem;
+            line-height: 1.5;
+            color: white;
+            margin-bottom: 20px;
+            font-weight: 700;
+            position: relative;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 400;
+            margin-bottom: 25px;
+            line-height: 1.7;
+            position: relative;
+        }
+
+        .meta {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+            position: relative;
+        }
+
+        article {
+            padding: 50px 40px;
+        }
+
+        .intro-box {
+            background: #fff8f0;
+            border-left: 5px solid #f59e0b;
+            padding: 30px;
+            margin: 40px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 10px rgba(245, 158, 11, 0.1);
+        }
+
+        .intro-box h2 {
+            font-size: 1.15rem;
+            color: #92400e;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .intro-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .intro-box li {
+            padding: 12px 0;
+            padding-left: 2em;
+            position: relative;
+            color: #78350f;
+            line-height: 1.7;
+        }
+
+        .intro-box li::before {
+            content: "▸";
+            position: absolute;
+            left: 0.5em;
+            color: #f59e0b;
+            font-weight: bold;
+        }
+
+        h2 {
+            font-size: 1.6rem;
+            color: #1a365d;
+            margin-top: 60px;
+            margin-bottom: 25px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #e8edf5;
+            font-weight: 700;
+            position: relative;
+        }
+
+        h2::before {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background: #2d5a8f;
+        }
+
+        h3 {
+            font-size: 1.25rem;
+            color: #2c3e50;
+            margin-top: 35px;
+            margin-bottom: 18px;
+            font-weight: 600;
+        }
+
+        p {
+            margin-bottom: 24px;
+            color: #4a5568;
+            font-size: 1rem;
+        }
+
+        .emphasis {
+            background: linear-gradient(transparent 65%, rgba(251, 191, 36, 0.3) 65%);
+            font-weight: 600;
+            color: #1a365d;
+            padding: 0 2px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 40px 0;
+            font-size: 0.92rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #2d5a8f 0%, #1a365d 100%);
+            color: white;
+        }
+
+        th {
+            padding: 18px 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        td {
+            padding: 18px 16px;
+            border-bottom: 1px solid #f0f4f8;
+            background: white;
+        }
+
+        tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .highlight-row {
+            background-color: #fffbeb !important;
+        }
+
+        .highlight-row:hover {
+            background-color: #fef3c7 !important;
+        }
+
+        .value-box {
+            background: white;
+            border: 2px solid #e8edf5;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 35px 0;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .value-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .value-box h3 {
+            color: #1a365d;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+
+        .value-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .value-box li {
+            padding: 14px 0;
+            padding-left: 2.5em;
+            position: relative;
+            color: #4a5568;
+            line-height: 1.7;
+        }
+
+        .value-box li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #2d5a8f;
+            font-weight: bold;
+            font-size: 1.3rem;
+            top: 12px;
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, #fef2f2 0%, #fff5f5 100%);
+            border-left: 5px solid #dc2626;
+            padding: 28px;
+            margin: 35px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 10px rgba(220, 38, 38, 0.1);
+        }
+
+        .warning-box h3 {
+            color: #991b1b;
+            margin-top: 0;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+
+        .warning-box p {
+            color: #7f1d1d;
+            margin-bottom: 12px;
+        }
+
+        .cta-box {
+            background: linear-gradient(135deg, #1a365d 0%, #2d5a8f 100%);
+            color: white;
+            padding: 50px 40px;
+            margin: 60px 0 0;
+            border-radius: 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="10" cy="10" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="30" r="1.5" fill="rgba(255,255,255,0.08)"/><circle cx="70" cy="20" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="30" cy="70" r="1.2" fill="rgba(255,255,255,0.09)"/><circle cx="90" cy="60" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+        }
+
+        .cta-box h2 {
+            color: white;
+            border: none;
+            margin-top: 0;
+            font-size: 1.7rem;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .cta-box h2::before {
+            display: none;
+        }
+
+        .cta-box p {
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 1.05rem;
+            line-height: 1.8;
+            position: relative;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background-color: white;
+            color: #1a365d;
+            padding: 18px 45px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 25px;
+            transition: all 0.3s;
+            font-size: 1.05rem;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+            background-color: #fbbf24;
+        }
+
+        .price-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin: 40px 0;
+        }
+
+        .price-card {
+            border: 2px solid #e8edf5;
+            border-radius: 12px;
+            padding: 30px 25px;
+            text-align: center;
+            background: white;
+            transition: all 0.3s;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .price-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .price-card.winner {
+            border-color: #2d5a8f;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            position: relative;
+        }
+
+        .price-card.winner::before {
+            content: '推奨';
+            position: absolute;
+            top: -12px;
+            right: 20px;
+            background: #2d5a8f;
+            color: white;
+            padding: 4px 16px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
+        .price-card h4 {
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .price-card .price {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #1a365d;
+            margin: 20px 0;
+            font-family: 'Space Grotesk', monospace;
+        }
+
+        .price-card.winner .price {
+            color: #2d5a8f;
+        }
+
+        .price-card .badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 12px;
+        }
+
+        .badge.transparent {
+            background-color: #e0f2fe;
+            color: #075985;
+        }
+
+        .badge.opaque {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 20px;
+            }
+
+            header {
+                padding: 40px 25px 30px;
+            }
+
+            article {
+                padding: 40px 25px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            h2 {
+                font-size: 1.4rem;
+            }
+
+            .price-comparison {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            table {
+                font-size: 0.8rem;
+            }
+
+            th, td {
+                padding: 12px 10px;
+            }
+
+            .intro-box, .value-box, .warning-box {
+                padding: 20px;
+            }
+
+            .cta-box {
+                padding: 40px 25px;
+            }
+        }
+
+        footer {
+            margin-top: 0;
+            padding: 40px;
+            background: #f7f9fc;
+            text-align: center;
+            color: #64748b;
+            font-size: 0.9rem;
+            line-height: 1.8;
+        }
+
+        footer p {
+            margin-bottom: 8px;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="category">TOPICS / コスト最適化</div>
+            <h1>なぜ1,000万円規模の改修工事で「400万円の価格差」が生まれるのか？</h1>
+            <p class="subtitle">ある大学トイレ改修プロジェクトから見えた、見積もりの「透明性」の本質</p>
+            <div class="meta">イワサキ内装 コンサルティング部門 | 2025年1月</div>
+        </header>
+
+        <article>
+            <div class="intro-box">
+                <h2>施設担当者の方、こんな経験はありませんか？</h2>
+                <ul>
+                    <li>複数の見積もりを比較したが、価格差の理由が分からない</li>
+                    <li>長年の付き合いがある業者だが、本当に適正価格なのか不安</li>
+                    <li>上司や理事会に合理的な説明をするための根拠が欲しい</li>
+                </ul>
+            </div>
+
+            <p>今回ご紹介するのは、ある大学の<span class="emphasis">トイレブース改修工事（約36セット）</span>で、私たちが実際に分析を行った実例です。</p>
+
+            <p>2社から提出された見積もりには、なんと<strong>400万円以上の差額</strong>がありました。施設担当者の方は「この差は一体何なのか？」と疑問を持たれ、私たちにご相談くださいました。</p>
+
+            <h2>実例分析：400万円の価格差の正体</h2>
+
+            <div class="price-comparison">
+                <div class="price-card winner">
+                    <h4>A社</h4>
+                    <div class="price">¥5,642,704</div>
+                    <div class="badge transparent">明細が詳細</div>
+                </div>
+                <div class="price-card">
+                    <h4>B社</h4>
+                    <div class="price">¥9,680,000</div>
+                    <div class="badge opaque">一式計上が多い</div>
+                </div>
+            </div>
+
+            <p>結論から申し上げると、この<strong>400万円以上の差額</strong>は、工事の品質や使用する材料の違いによるものではありませんでした。</p>
+
+            <p>最大の違いは、<span class="emphasis">見積書の「透明性」</span>だったのです。</p>
+
+            <h3>見積もりの比較分析</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>A社</th>
+                        <th>B社</th>
+                        <th>分析結果</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>明細の詳しさ</strong></td>
+                        <td>各項目を明細化</td>
+                        <td>「工事費一式」で計上</td>
+                        <td>B社は880万円を「一式」として計上。内訳が不明確</td>
+                    </tr>
+                    <tr>
+                        <td><strong>材料費の掛率</strong></td>
+                        <td>52%<br>（明示あり）</td>
+                        <td>記載なし</td>
+                        <td>A社は定価913万円に掛率52%を適用し、474万円で計上。計算根拠が明確</td>
+                    </tr>
+                    <tr>
+                        <td><strong>会社経費</strong></td>
+                        <td>0円</td>
+                        <td>88万円</td>
+                        <td>B社は工事費とは別に「会社諸経費」を計上</td>
+                    </tr>
+                    <tr class="highlight-row">
+                        <td><strong>搬入・現場経費</strong></td>
+                        <td>合計43万円</td>
+                        <td>合計95万円</td>
+                        <td>間接経費だけで52万円の差。B社の積算根拠が不明</td>
+                    </tr>
+                    <tr>
+                        <td><strong>合計（税抜）</strong></td>
+                        <td><strong>¥5,642,704</strong></td>
+                        <td><strong>¥9,680,000</strong></td>
+                        <td><strong style="color: #2d5a8f;">差額 ¥4,037,296</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>私たちのコンサルティングが提供する価値</h2>
+
+            <p>「AIを使えば誰でも分析できるのでは？」というご質問をよくいただきます。</p>
+
+            <p>確かに、AIツール自体は誰でも使えます。しかし重要なのは、<span class="emphasis">「何を」「どう」分析すべきか</span>という視点です。</p>
+
+            <div class="warning-box">
+                <h3>よくある課題</h3>
+                <p>見積書をAIに読み込ませても、「この金額は適正ですか？」という質問には答えられません。</p>
+                <p style="margin-bottom: 0;">なぜなら、<strong>比較するための業界データや過去の実例がないから</strong>です。</p>
+            </div>
+
+            <h3>私たちが提供できること</h3>
+
+            <div class="value-box">
+                <h3>30年の現場経験に基づく分析視点</h3>
+                <ul>
+                    <li>「一式計上」や「会社諸経費」など、注意すべきポイントを的確に見抜きます</li>
+                    <li>業界の相場観から、各項目の妥当性を判断できます</li>
+                    <li>過去の類似プロジェクトとの比較により、客観的な評価を提供します</li>
+                </ul>
+            </div>
+
+            <div class="value-box">
+                <h3>豊富な実績データベース</h3>
+                <ul>
+                    <li>過去の工事実績から、適正価格の範囲を提示できます</li>
+                    <li>同規模・同種の工事との比較データを保有しています</li>
+                    <li>材料費や施工費の相場感を、具体的な数字で示せます</li>
+                </ul>
+            </div>
+
+            <div class="value-box">
+                <h3>中立的な立場からの分析</h3>
+                <ul>
+                    <li>工事を請け負わないため、完全に中立的な視点で評価できます</li>
+                    <li>特定の業者に偏らない、公平な分析レポートを提供します</li>
+                    <li>発注者の立場に立った、実用的なアドバイスができます</li>
+                </ul>
+            </div>
+
+            <h2>導入によって得られる成果</h2>
+
+            <p>今回のような見積もり分析により、以下のような成果が期待できます。</p>
+
+            <div class="value-box">
+                <h3>客観的な判断材料の獲得</h3>
+                <ul>
+                    <li>上司や理事会への説明に使える、根拠のある分析資料</li>
+                    <li>長年の取引関係を見直す際の、客観的な判断基準</li>
+                    <li>稟議書作成や予算申請に活用できる、詳細なデータ</li>
+                </ul>
+            </div>
+
+            <div class="value-box">
+                <h3>大幅なコスト削減の実現</h3>
+                <ul>
+                    <li>今回の事例では、400万円以上のコスト削減を実現</li>
+                    <li>「高いから安心」ではなく、「透明だから安心」という考え方</li>
+                    <li>適正価格での発注により、予算の有効活用が可能に</li>
+                </ul>
+            </div>
+
+            <div class="value-box">
+                <h3>リスクのない分析サービス</h3>
+                <ul>
+                    <li>工事は発注しないため、施工リスクは一切ありません</li>
+                    <li>見積もりの分析のみを行い、客観的な評価を提供します</li>
+                    <li>分析結果をもとに、最適な発注判断が可能になります</li>
+                </ul>
+            </div>
+
+            <h2>こんな方におすすめです</h2>
+
+            <ul style="list-style: none; padding-left: 0;">
+                <li style="padding: 10px 0; padding-left: 2em; position: relative;">
+                    <span style="position: absolute; left: 0; color: #2d5a8f; font-weight: bold;">✓</span>
+                    大学・病院などの施設管理を担当されている方
+                </li>
+                <li style="padding: 10px 0; padding-left: 2em; position: relative;">
+                    <span style="position: absolute; left: 0; color: #2d5a8f; font-weight: bold;">✓</span>
+                    数百万円規模の改修工事を予定している方
+                </li>
+                <li style="padding: 10px 0; padding-left: 2em; position: relative;">
+                    <span style="position: absolute; left: 0; color: #2d5a8f; font-weight: bold;">✓</span>
+                    複数の見積もりを比較したいが、判断材料が欲しい方
+                </li>
+                <li style="padding: 10px 0; padding-left: 2em; position: relative;">
+                    <span style="position: absolute; left: 0; color: #2d5a8f; font-weight: bold;">✓</span>
+                    長年の取引先の価格が本当に適正か確認したい方
+                </li>
+            </ul>
+
+            <div class="cta-box">
+                <h2>まずはお気軽にご相談ください</h2>
+                <p>お手元の見積書を、30年の経験とAI技術で分析いたします。</p>
+                <p>初回のご相談は無料です。まずは、お気軽にお問い合わせください。</p>
+                <a href="#" class="cta-button">見積もり分析のご相談はこちら</a>
+            </div>
+        </article>
+
+        <footer>
+            <p>イワサキ内装 AI仲介コンサルティング部門</p>
+            <p>東京都 | 創業30年の内装工事ノウハウ × 最新AI技術</p>
+        </footer>
+    </div>
+</body>
+</html>

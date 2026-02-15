@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MapLog（マップログ）- 職人の実績を地図で可視化</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+
+        * {
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #ffffff;
+            color: #252423;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            font-feature-settings: "liga" 1, "kern" 1;
+            letter-spacing: -0.01em;
+        }
+
+        /* LP形式 */
+        .lp-container {
+            width: 100%;
+            overflow-x: hidden;
+        }
+
+        .section {
+            width: 100%;
+            padding: 5rem 1.5rem;
+            position: relative;
+        }
+
+        .section.hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 0;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section.hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1920');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.15;
+            z-index: 0;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* カラーパレット */
+        .bg-dark { background: #252423; }
+        .text-dark { color: #252423; }
+        .text-muted { color: rgba(37, 36, 35, 0.6); }
+        .border-emerald { border-color: #10B981; }
+        .border-gold { border-color: #D4AF37; }
+        .text-emerald { color: #10B981; }
+        .text-gold { color: #D4AF37; }
+
+        /* タイトル */
+        .page-title {
+            font-size: clamp(1.5rem, 5vw, 2.25rem);
+            font-weight: 900;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-subtitle {
+            font-size: clamp(0.875rem, 3vw, 1rem);
+            font-weight: 400;
+            opacity: 0.5;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .section-title {
+            font-size: clamp(1.125rem, 4vw, 1.5rem);
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid;
+            display: inline-block;
+        }
+
+        /* 統計カード */
+        .stat-card {
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid;
+            padding: 1.75rem 1.25rem;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(12px);
+            border-radius: 1.25rem;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--card-color, #10B981), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
+        }
+
+        .stat-card:active {
+            transform: translateY(-3px);
+        }
+
+        .stat-number {
+            font-size: clamp(2rem, 6vw, 2.75rem);
+            font-weight: 900;
+            line-height: 1;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            font-weight: 700;
+            margin-top: 0.5rem;
+            letter-spacing: -0.01em;
+        }
+
+        .stat-sublabel {
+            font-size: 0.6875rem;
+            opacity: 0.5;
+            margin-top: 0.375rem;
+            font-weight: 500;
+        }
+
+        /* リストアイテム */
+        .list-item {
+            background: #ffffff;
+            border-left: 4px solid;
+            padding: 1.5rem 1.25rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            border-radius: 0.75rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .list-item:hover {
+            transform: translateX(8px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .list-title {
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .list-text {
+            opacity: 0.65;
+            font-size: 0.8125rem;
+            line-height: 1.6;
+        }
+
+        /* ボタン */
+        .cta-button {
+            display: inline-block;
+            padding: 1rem 2.5rem;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 3rem;
+            text-decoration: none;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3), 0 2px 8px rgba(16, 185, 129, 0.2);
+            letter-spacing: -0.01em;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .cta-button:hover::before {
+            left: 100%;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(16, 185, 129, 0.4), 0 4px 16px rgba(16, 185, 129, 0.3);
+        }
+
+        .cta-button:active {
+            transform: translateY(0px);
+        }
+
+        /* インジケーター */
+        .slide-indicator {
+            position: fixed;
+            bottom: 1.25rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 0.375rem;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            padding: 0.5rem 1rem;
+            border-radius: 1.5rem;
+            z-index: 50;
+            border: 1px solid rgba(37, 36, 35, 0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .indicator-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(37, 36, 35, 0.2);
+            transition: all 0.3s;
+        }
+
+        .indicator-dot.active {
+            background: #10B981;
+            width: 18px;
+            border-radius: 3px;
+        }
+
+        /* マップビジュアル */
+        .map-visual {
+            position: relative;
+            width: 100%;
+            height: 220px;
+            background: linear-gradient(135deg, #f0fdf4 0%, #fef3c7 100%);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 2px solid #10B981;
+        }
+
+        /* スクリーンショット画像 */
+        .screenshot-img {
+            width: 100%;
+            height: auto;
+            border-radius: 1.25rem;
+            border: 1px solid rgba(37, 36, 35, 0.06);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .screenshot-img:hover {
+            transform: translateY(-8px) scale(1.01);
+            box-shadow: 0 32px 80px rgba(0, 0, 0, 0.12), 0 8px 28px rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .screenshot-container {
+            background: linear-gradient(135deg, #fafbfc 0%, #ffffff 100%);
+            padding: 2.5rem;
+            border-radius: 1.75rem;
+            margin: 2.5rem 0;
+            border: 1px solid rgba(37, 36, 35, 0.04);
+            position: relative;
+        }
+
+        .screenshot-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.02) 0%, transparent 100%);
+            border-radius: 1.75rem;
+            pointer-events: none;
+        }
+
+        .map-pin {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            background: #10B981;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s infinite;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: rotate(-45deg) scale(1); }
+            50% { opacity: 0.8; transform: rotate(-45deg) scale(1.05); }
+        }
+
+        .map-pin:nth-child(1) { top: 25%; left: 25%; }
+        .map-pin:nth-child(2) { top: 45%; left: 60%; animation-delay: 0.5s; }
+        .map-pin:nth-child(3) { top: 70%; left: 35%; animation-delay: 1s; }
+
+        /* ユーザーカード */
+        .user-card {
+            background: #ffffff;
+            border: 2px solid;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 1.25rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .user-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--card-color, #10B981), transparent);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s;
+        }
+
+        .user-card:hover::after {
+            transform: scaleX(1);
+        }
+
+        .user-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-title {
+            font-size: 1.125rem;
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.02em;
+        }
+
+        .user-text {
+            font-size: 0.8125rem;
+            opacity: 0.65;
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        .user-solution {
+            font-size: 0.9375rem;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+        }
+
+        /* ステップ */
+        .step-number {
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.03em;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-title {
+            font-size: 1.125rem;
+            font-weight: 800;
+            margin: 0.75rem 0 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .step-text {
+            font-size: 0.875rem;
+            opacity: 0.65;
+            line-height: 1.6;
+        }
+
+        /* アニメーション */
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* レスポンシブ */
+        @media (min-width: 640px) {
+            .slide { padding: 3rem 2rem 5rem; }
+            .stat-card { padding: 1.5rem 1.25rem; }
+        }
+
+        @media print {
+            body { background: white; }
+            .slide { page-break-after: always; }
+            .slide-indicator { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="slide-container" id="slideContainer">
+
+<!-- スライド1: タイトル -->
+<section class="slide bg-dark" data-slide="0">
+    <div class="flex-1 flex flex-col justify-center">
+        <div class="fade-in max-w-4xl mx-auto w-full">
+            <!-- ヒーローヘッダー -->
+            <div class="text-center mb-12">
+                <div class="mb-4">
+                    <span class="inline-block px-4 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-full uppercase tracking-wider mb-4">
+                        職人のための実績管理プラットフォーム
+                    </span>
+                </div>
+                <h1 class="text-5xl sm:text-7xl font-black text-white mb-6 tracking-tight leading-none">
+                    MapLog
+                </h1>
+                <p class="text-xl sm:text-2xl text-white/70 font-light mb-8 leading-relaxed">
+                    職人の実績を地図で可視化し、<br class="sm:hidden">
+                    信頼と仕事を増やす
+                </p>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+                <div class="stat-card border-emerald bg-white/5 backdrop-blur">
+                    <div class="stat-number text-emerald">無料</div>
+                    <div class="stat-label text-white">完全無料</div>
+                    <div class="stat-sublabel text-white/60">0円で始める</div>
+                </div>
+                <div class="stat-card border-gold bg-white/5 backdrop-blur">
+                    <div class="stat-number text-gold">3秒</div>
+                    <div class="stat-label text-white">簡単登録</div>
+                    <div class="stat-sublabel text-white/60">写真撮るだけ</div>
+                </div>
+                <div class="stat-card border-emerald bg-white/5 backdrop-blur">
+                    <div class="stat-number text-emerald">24/7</div>
+                    <div class="stat-label text-white">常時利用</div>
+                    <div class="stat-sublabel text-white/60">いつでも</div>
+                </div>
+                <div class="stat-card border-gold bg-white/5 backdrop-blur">
+                    <div class="stat-number text-gold">98%</div>
+                    <div class="stat-label text-white">満足度</div>
+                    <div class="stat-sublabel text-white/60">高評価継続</div>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <a href="#" class="cta-button inline-block">
+                    今すぐ無料で始める
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- スライド2: 課題 -->
+<section class="slide bg-white" data-slide="1">
+    <div class="max-w-2xl mx-auto w-full">
+        <h2 class="section-title border-dark text-dark">職人の課題</h2>
+
+        <div class="space-y-3">
+            <div class="list-item border-dark">
+                <div class="list-title text-dark">実績が散在</div>
+                <div class="list-text text-muted">写真が何百枚、どこで何をやったか思い出せない</div>
+            </div>
+
+            <div class="list-item border-dark">
+                <div class="list-title text-dark">営業資料がない</div>
+                <div class="list-text text-muted">お客様に見せる資料がなく、口頭で説明するしかない</div>
+            </div>
+
+            <div class="list-item border-dark">
+                <div class="list-title text-dark">記録が残らない</div>
+                <div class="list-text text-muted">「去年どこで作業したか」メモもなく、思い出せない</div>
+            </div>
+
+            <div class="list-item border-dark">
+                <div class="list-title text-dark">実績を提示できない</div>
+                <div class="list-text text-muted">「どんな仕事をしているか」説明するのが難しい</div>
+            </div>
+        </div>
+
+        <div class="mt-6 p-4 bg-white border-l-4 border-dark">
+            <p class="text-sm font-semibold text-dark leading-relaxed">
+                実績が見えないと、信頼も仕事も増えない
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- スライド3: 解決策 -->
+<section class="slide bg-white" data-slide="2">
+    <div class="max-w-2xl mx-auto w-full">
+        <h2 class="section-title border-emerald text-dark">MapLogで解決</h2>
+
+        <div class="space-y-3">
+            <div class="list-item border-emerald">
+                <div class="list-title text-dark">実績を地図で可視化</div>
+                <div class="list-text text-muted">写真を撮って登録するだけ。地図上にマーカー表示</div>
+            </div>
+
+            <div class="list-item border-emerald">
+                <div class="list-title text-dark">営業資料を自動生成</div>
+                <div class="list-text text-muted">プロフィールと施工実績が自動でポートフォリオに</div>
+            </div>
+
+            <div class="list-item border-emerald">
+                <div class="list-title text-dark">仕事を自動記録</div>
+                <div class="list-text text-muted">日付・場所・内容を全て記録。後から検索も簡単</div>
+            </div>
+
+            <div class="list-item border-emerald">
+                <div class="list-title text-dark">実績を公開可能</div>
+                <div class="list-text text-muted">「みんなのマップ」で公開、新規顧客獲得のチャンス</div>
+            </div>
+        </div>
+
+        <div class="mt-6 p-4 bg-white border-l-4 border-emerald">
+            <p class="text-sm font-semibold text-emerald leading-relaxed">
+                実績が見えれば、信頼も仕事も増える
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- スライド4: マップビジュアル -->
+<section class="slide bg-white" data-slide="3">
+    <div class="max-w-4xl mx-auto w-full">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl sm:text-4xl font-black text-dark mb-4">施工実績マップ</h2>
+            <p class="text-base text-muted max-w-2xl mx-auto">
+                あなたの全ての実績が地図上に可視化されます
+            </p>
+        </div>
+
+        <div class="screenshot-container">
+            <img src="file:///C:/Users/thaat/OneDrive/%E7%94%BB%E5%83%8F/Screenshots/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88%202025-10-27%20174917.png"
+                 alt="施工実績マップ画面"
+                 class="screenshot-img">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
+            <div class="text-center p-4 bg-gray-50 rounded-lg">
+                <div class="text-4xl mb-2">📍</div>
+                <div class="font-bold text-dark mb-1">GPS自動記録</div>
+                <div class="text-xs text-muted">位置情報を自動で保存</div>
+            </div>
+            <div class="text-center p-4 bg-gray-50 rounded-lg">
+                <div class="text-4xl mb-2">🔍</div>
+                <div class="font-bold text-dark mb-1">簡単検索</div>
+                <div class="text-xs text-muted">エリアや日付で絞り込み</div>
+            </div>
+            <div class="text-center p-4 bg-gray-50 rounded-lg">
+                <div class="text-4xl mb-2">📊</div>
+                <div class="font-bold text-dark mb-1">統計表示</div>
+                <div class="text-xs text-muted">月別・エリア別の集計</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- スライド5: アルバム機能 -->
+<section class="slide bg-gray-50" data-slide="4">
+    <div class="max-w-5xl mx-auto w-full">
+        <div class="text-center mb-8">
+            <h2 class="text-3xl sm:text-4xl font-black text-dark mb-4">アルバム機能</h2>
+            <p class="text-base text-muted max-w-2xl mx-auto">
+                施工写真を美しいギャラリー形式で管理・共有
+            </p>
+        </div>
+
+        <div class="screenshot-container">
+            <img src="file:///C:/Users/thaat/OneDrive/%E7%94%BB%E5%83%8F/Screenshots/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88%202025-10-27%20174735.png"
+                 alt="アルバム画面"
+                 class="screenshot-img">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+            <div class="text-center p-6 bg-white rounded-lg border-2 border-emerald">
+                <div class="text-4xl mb-3">📸</div>
+                <div class="font-bold text-dark mb-2">写真で記録</div>
+                <div class="text-xs text-muted leading-relaxed">ビフォーアフター写真を簡単に登録。施工の過程を可視化</div>
+            </div>
+            <div class="text-center p-6 bg-white rounded-lg border-2 border-gold">
+                <div class="text-4xl mb-3">🗂️</div>
+                <div class="font-bold text-dark mb-2">自動整理</div>
+                <div class="text-xs text-muted leading-relaxed">日付・場所で自動分類。必要な写真がすぐに見つかる</div>
+            </div>
+            <div class="text-center p-6 bg-white rounded-lg border-2 border-emerald">
+                <div class="text-4xl mb-3">🎨</div>
+                <div class="font-bold text-dark mb-2">プレゼン資料</div>
+                <div class="text-xs text-muted leading-relaxed">ワンクリックでプレゼン資料を作成。商談に最適</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- スライド6: 現場MAP -->
+<section class="slide bg-white" data-slide="5">
+    <div class="max-w-5xl mx-auto w-full">
+        <div class="text-center mb-8">
+            <h2 class="text-3xl sm:text-4xl font-black text-dark mb-4">現場MAP（みんなのマップ）</h2>
+            <p class="text-base text-muted max-w-2xl mx-auto">
+                全国の職人の実績を共有し、新しい仕事のチャンスを広げる
+            </p>
+        </div>
+
+        <div class="screenshot-container">
+            <img src="file:///C:/Users/thaat/OneDrive/%E7%94%BB%E5%83%8F/Screenshots/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88%202025-10-27%20174703.png"
+                 alt="現場MAP画面"
+                 class="screenshot-img">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
+            <div class="p-6 bg-gray-50 rounded-lg border-l-4 border-emerald">
+                <h3 class="text-xl font-bold text-dark mb-2">💼 新規顧客獲得</h3>
+                <p class="text-sm text-muted leading-relaxed">
+                    あなたのエリアで仕事を探している施主があなたを発見。実績が新しい仕事につながります。
+                </p>
+            </div>
+            <div class="p-6 bg-gray-50 rounded-lg border-l-4 border-gold">
+                <h3 class="text-xl font-bold text-dark mb-2">🤝 職人ネットワーク</h3>
+                <p class="text-sm text-muted leading-relaxed">
+                    他の職人の実績を参考にしたり、協力を依頼したり。職人同士のコミュニティを構築。
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- スライド7: ターゲット -->
+<section class="slide bg-gray-50" data-slide="6">
+    <div class="max-w-2xl mx-auto w-full">
+        <h2 class="section-title border-gold text-dark">こんな職人に</h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="user-card border-emerald">
+                <div class="user-title text-dark">個人事業主</div>
+                <div class="user-text text-muted">営業資料がないから、いつも口頭で説明</div>
+                <div class="user-solution text-emerald">→ 自動作成</div>
+            </div>
+
+            <div class="user-card border-gold">
+                <div class="user-title text-dark">ベテラン職人</div>
+                <div class="user-text text-muted">30年の実績があるのに、見せる方法がない</div>
+                <div class="user-solution text-gold">→ 実績可視化</div>
+            </div>
+
+            <div class="user-card border-emerald">
+                <div class="user-title text-dark">小規模事業者</div>
+                <div class="user-text text-muted">施工エリアをお客様に説明しづらい</div>
+                <div class="user-solution text-emerald">→ 地図で提示</div>
+            </div>
+
+            <div class="user-card border-gold">
+                <div class="user-title text-dark">若手職人</div>
+                <div class="user-text text-muted">実績を積みたいが、記録が残らない</div>
+                <div class="user-solution text-gold">→ 今日から記録</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- スライド8: 使い方 -->
+<section class="slide bg-white" data-slide="7">
+    <div class="max-w-2xl mx-auto w-full">
+        <h2 class="section-title border-emerald text-dark">使い方</h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div class="text-center">
+                <div class="step-number">1</div>
+                <div class="step-title text-dark">写真を撮る</div>
+                <div class="step-text text-muted">施工現場でスマホで撮影</div>
+            </div>
+
+            <div class="text-center">
+                <div class="step-number">2</div>
+                <div class="step-title text-dark">登録する</div>
+                <div class="step-text text-muted">現場名を入力、GPS自動記録</div>
+            </div>
+
+            <div class="text-center">
+                <div class="step-number">3</div>
+                <div class="step-title text-dark">完成</div>
+                <div class="step-text text-muted">地図上に自動表示される</div>
+            </div>
+        </div>
+
+        <div class="space-y-3">
+            <div class="list-item border-emerald">
+                <div class="list-title text-dark">マイルストーン達成</div>
+                <div class="list-text text-muted">10件、50件、100件...施工数に応じてバッジ獲得</div>
+            </div>
+
+            <div class="list-item border-gold">
+                <div class="list-title text-dark">みんなのマップ</div>
+                <div class="list-text text-muted">全国の職人の施工実績を地図で閲覧可能</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- スライド7: CTA -->
+<section class="slide bg-white" data-slide="8">
+    <div class="flex-1 flex flex-col justify-center items-center">
+        <div class="max-w-md mx-auto w-full text-center">
+            <h2 class="section-title border-emerald text-dark mb-6">今すぐ始める</h2>
+
+            <div class="mb-6">
+                <p class="text-base text-dark font-semibold mb-4">アクセスするだけで利用可能</p>
+                <div class="bg-white border-2 border-emerald p-4 inline-block mb-6" style="border-radius: 0.5rem;">
+                    <p class="text-xs text-muted mb-1" style="opacity: 0.6;">アプリURL</p>
+                    <p class="text-base font-bold text-dark">https://maplog.app</p>
+                </div>
+            </div>
+
+            <a href="#" class="cta-button mb-6">
+                無料で始める
+            </a>
+
+            <div class="space-y-2 text-muted text-xs">
+                <p>完全無料 / 手数料なし</p>
+                <p>アプリ不要（Web版）</p>
+                <p>スマホ・PC両対応</p>
+            </div>
+
+            <div class="mt-8 bg-white border border-dark/10 p-4 inline-block" style="border-radius: 0.5rem;">
+                <p class="text-xs text-muted mb-1">お問い合わせ</p>
+                <p class="text-sm font-bold text-dark">support@maplog.app</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+</div>
+
+<!-- スライドインジケーター -->
+<div class="slide-indicator" id="slideIndicator">
+    <div class="indicator-dot active"></div>
+    <div class="indicator-dot"></div>
+    <div class="indicator-dot"></div>
+    <div class="indicator-dot"></div>
+    <div class="indicator-dot"></div>
+    <div class="indicator-dot"></div>
+    <div class="indicator-dot"></div>
+    <div class="indicator-dot"></div>
+    <div class="indicator-dot"></div>
+</div>
+
+<script>
+const slideContainer = document.getElementById('slideContainer');
+const slides = document.querySelectorAll('.slide');
+const dots = document.querySelectorAll('.indicator-dot');
+let currentSlide = 0;
+
+const observerOptions = { root: slideContainer, threshold: 0.5 };
+
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const slideIndex = parseInt(entry.target.dataset.slide);
+            updateIndicator(slideIndex);
+        }
+    });
+}, observerOptions);
+
+slides.forEach(slide => {
+    observer.observe(slide);
+    slide.classList.add('fade-in');
+});
+
+function updateIndicator(index) {
+    dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === index);
+    });
+    currentSlide = index;
+}
+
+let touchStartY = 0;
+let touchEndY = 0;
+
+slideContainer.addEventListener('touchstart', (e) => {
+    touchStartY = e.changedTouches[0].screenY;
+});
+
+slideContainer.addEventListener('touchend', (e) => {
+    touchEndY = e.changedTouches[0].screenY;
+    handleSwipe();
+});
+
+function handleSwipe() {
+    const swipeDistance = touchStartY - touchEndY;
+    const threshold = 50;
+
+    if (Math.abs(swipeDistance) > threshold) {
+        if (swipeDistance > 0 && currentSlide < slides.length - 1) {
+            slides[currentSlide + 1].scrollIntoView({ behavior: 'smooth' });
+        } else if (swipeDistance < 0 && currentSlide > 0) {
+            slides[currentSlide - 1].scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === ' ') {
+        e.preventDefault();
+        if (currentSlide < slides.length - 1) {
+            slides[currentSlide + 1].scrollIntoView({ behavior: 'smooth' });
+        }
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (currentSlide > 0) {
+            slides[currentSlide - 1].scrollIntoView({ behavior: smooth' });
+        }
+    }
+});
+
+updateIndicator(0);
+</script>
+
+</body>
+</html>
