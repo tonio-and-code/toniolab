@@ -38,34 +38,19 @@ export default function EnglishSidebar({ desktopOpen = true }: { desktopOpen?: b
         { id: '/english/expressions', label: 'スラング表現集' },
         { id: '/english/idiom-list', label: '熟語リスト一覧' },
         { id: '/english/everyday-words', label: '日常英単語' },
-        { id: '/english/dashboard-v2', label: 'Analytics' },
-        { id: '/english/world-map', label: 'World Map' },
-        { id: '/english/world-map-2', label: 'World Map 2' },
-        { id: '/english/world-map-3', label: 'World Map 3' },
-        { id: '/english/world-map-4', label: 'World Map 4' },
-        { id: '/english/world-map-5', label: 'Word Galaxy (Map 5)' },
-        { id: '/english/world-map-6', label: 'Conquest (Map 6)' },
         { id: '/english/us-map', label: 'US States' },
-        { id: '/english/jigsaw', label: 'Jigsaw Puzzle' },
-        { id: '/health-journal', label: 'ヘルスジャーナル' },
-        { id: '/cooking-journal', label: 'クッキングジャーナル' },
     ];
 
     const toolItems = [
         { label: 'note記事', href: '/english/note' },
         { label: 'スピーキングガイド', href: '/100h' },
         { label: 'フレーズマスター', href: '/english/mastery' },
-        { label: 'セッション音声', href: '/english/sessions' },
-        { label: 'Podcast', href: '/podcast' },
     ];
 
     const isActive = (path: string) => {
         if (!pathname) return false;
         if (path === '/english') return pathname === '/english';
         if (path === '/memoria') return pathname.startsWith('/memoria');
-        if (path === '/health-journal') return pathname.startsWith('/health-journal');
-        if (path === '/cooking-journal') return pathname.startsWith('/cooking-journal');
-        if (path === '/podcast') return pathname.startsWith('/podcast');
         if (path === '/100h') return pathname.startsWith('/100h');
         if (path === '/english/mastery') return pathname.startsWith('/english/mastery');
         return pathname.startsWith(path);
