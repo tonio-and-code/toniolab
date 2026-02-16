@@ -8,7 +8,7 @@ const R2_BUCKET = process.env.R2_BUCKET || 'podcast-audio';
 const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || 'https://pub-628af24ae7da43ac93bbfb202b34b73e.r2.dev';
 
 // Upload to R2 using Cloudflare API
-async function uploadToR2(key: string, buffer: Buffer, contentType: string): Promise<void> {
+async function uploadToR2(key: string, buffer: ArrayBuffer, contentType: string): Promise<void> {
     if (!R2_API_TOKEN) {
         throw new Error('CLOUDFLARE_API_TOKEN is not configured');
     }
@@ -76,9 +76,8 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Convert File to Buffer
-        const arrayBuffer = await audioFile.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
+        // Convert File to ArrayBuffer
+        const buffer = await audioFile.arrayBuffer();
 
         // Generate unique filename
         const timestamp = Date.now();
