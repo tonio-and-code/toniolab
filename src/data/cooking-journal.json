@@ -1,0 +1,434 @@
+[
+  {
+    "id": "1738368000000",
+    "date": "2025-02-01",
+    "title": "2/1 - 特製カレー",
+    "dishName": "スパイスから作る本格チキンカレー",
+    "dishNameEn": "Authentic Chicken Curry from Scratch",
+    "ingredients": "鶏もも肉 400g、玉ねぎ 2個、トマト缶 1缶、にんにく 4片、生姜 1片、ヨーグルト 100g、クミンシード、コリアンダーパウダー、ターメリック、ガラムマサラ、カイエンペッパー、塩、油",
+    "process": "1. 玉ねぎを飴色になるまで40分炒める\n2. にんにく生姜を加えて香りを出す\n3. スパイスを順番に投入してテンパリング\n4. トマトを加えて水分を飛ばす\n5. ヨーグルトでマリネした鶏肉を投入\n6. 弱火で30分煮込む\n7. 最後にガラムマサラで香りづけ",
+    "tasteRating": 5,
+    "presentationRating": 4,
+    "difficultyRating": 4,
+    "notes": "玉ねぎの飴色炒めに時間かかったけど、これがコクの秘訣だった。スパイスの香りが部屋中に広がって幸せ。市販ルーとは別次元の味。",
+    "englishTranslation": {
+      "conversation": [
+        {"speaker": "chef", "text": "Welcome! I can smell those spices from here. What did you make today?", "japanese": "おかえり！スパイスの香りがここまで届くよ。今日は何を作ったの？"},
+        {"speaker": "you", "text": "I made chicken curry completely from scratch - no store-bought roux!", "japanese": "チキンカレーを完全にゼロから作りました。市販ルーなしで！"},
+        {"speaker": "chef", "text": "That's impressive! Making curry from whole spices is a real skill. Walk me through it.", "japanese": "すごいね！ホールスパイスからカレーを作るのは本当の技術だよ。手順を教えて。"},
+        {"speaker": "you", "text": "First, I caramelized the onions for about 40 minutes until they turned deep golden brown.", "japanese": "まず玉ねぎを40分くらい、濃い黄金色になるまでカラメリゼしました。"},
+        {"speaker": "chef", "text": "Forty minutes! That patience pays off. Caramelized onions are the backbone of a great curry.", "japanese": "40分も！その忍耐が報われるんだ。カラメリゼした玉ねぎは素晴らしいカレーの土台だよ。"},
+        {"speaker": "you", "text": "Then I added garlic and ginger and let them get fragrant before adding the spices.", "japanese": "それからにんにくと生姜を加えて、スパイスを入れる前に香りを立たせました。"},
+        {"speaker": "chef", "text": "Perfect sequence. Which spices did you use?", "japanese": "完璧な順番だね。どんなスパイスを使った？"},
+        {"speaker": "you", "text": "Cumin seeds first for tempering, then coriander, turmeric, and cayenne pepper.", "japanese": "まずテンパリング用にクミンシード、それからコリアンダー、ターメリック、カイエンペッパー。"},
+        {"speaker": "chef", "text": "Excellent! Tempering the cumin seeds in hot oil releases their essential oils. That's authentic technique.", "japanese": "素晴らしい！熱い油でクミンシードをテンパリングするとエッセンシャルオイルが出るんだ。本格的な技術だね。"},
+        {"speaker": "you", "text": "After the spices bloomed, I added crushed tomatoes and cooked them down.", "japanese": "スパイスの香りが立ったら、潰したトマトを加えて水分を飛ばしました。"},
+        {"speaker": "chef", "text": "Cooking down the tomatoes removes the raw acidity. How did you prepare the chicken?", "japanese": "トマトを煮詰めると生の酸味が飛ぶんだ。鶏肉はどう準備した？"},
+        {"speaker": "you", "text": "I marinated it in yogurt for a couple of hours. It made the meat incredibly tender.", "japanese": "ヨーグルトで数時間マリネしました。お肉がめちゃくちゃ柔らかくなりました。"},
+        {"speaker": "chef", "text": "Yogurt marinade is a classic technique - the lactic acid tenderizes the protein. Smart move!", "japanese": "ヨーグルトマリネは古典的な技法だね。乳酸がタンパク質を柔らかくする。賢い選択！"},
+        {"speaker": "you", "text": "I simmered everything on low heat for 30 minutes, then finished with garam masala.", "japanese": "全部を弱火で30分煮込んで、最後にガラムマサラで仕上げました。"},
+        {"speaker": "chef", "text": "Adding garam masala at the end preserves its aromatic compounds. You rated the taste 5 out of 5?", "japanese": "最後にガラムマサラを加えると香り成分が保たれるんだ。味は5点満点？"},
+        {"speaker": "you", "text": "Yes! It was on a completely different level from store-bought curry. So much depth and complexity.", "japanese": "はい！市販カレーとは完全に別次元でした。深みと複雑さがすごかった。"},
+        {"speaker": "chef", "text": "That's the reward of cooking from scratch. The layers of flavor you build are irreplaceable. Well done!", "japanese": "それがゼロから作る報酬だよ。積み重ねた味の層は代えがきかない。よくやった！"}
+      ],
+      "vocabulary": [
+        {
+          "word": "from scratch",
+          "meaning": "ゼロから、一から",
+          "type": "phrase",
+          "example": "I made curry completely from scratch",
+          "category": "technique",
+          "culturalNote": "市販品や半調理品を使わない手作りを強調する表現"
+        },
+        {
+          "word": "caramelize",
+          "meaning": "カラメリゼする、飴色に炒める",
+          "type": "verb",
+          "example": "Caramelize the onions for 40 minutes",
+          "category": "technique",
+          "culturalNote": "砂糖を加えなくても、野菜の糖分で自然にカラメル化する"
+        },
+        {
+          "word": "tempering",
+          "meaning": "テンパリング（油でスパイスを熱して香りを出す技法）",
+          "type": "noun",
+          "example": "Cumin seeds first for tempering",
+          "category": "technique",
+          "culturalNote": "インド料理の基本技法。タルカ、バガールとも呼ばれる"
+        },
+        {
+          "word": "bloom",
+          "meaning": "（スパイスの）香りが立つ",
+          "type": "verb",
+          "example": "After the spices bloomed",
+          "category": "technique",
+          "culturalNote": "熱を加えてスパイスの香りを引き出すこと"
+        },
+        {
+          "word": "cook down",
+          "meaning": "煮詰める、水分を飛ばす",
+          "type": "phrase",
+          "example": "Cook the tomatoes down to remove acidity",
+          "category": "technique",
+          "culturalNote": "reduce（リデュース）も同様の意味で使える"
+        },
+        {
+          "word": "marinade",
+          "meaning": "マリネ液、漬け込む",
+          "type": "noun",
+          "example": "Yogurt marinade tenderizes the meat",
+          "category": "technique",
+          "culturalNote": "動詞形はmarinate（マリネする）"
+        },
+        {
+          "word": "simmer",
+          "meaning": "弱火でコトコト煮る",
+          "type": "verb",
+          "example": "Simmer on low heat for 30 minutes",
+          "category": "technique",
+          "culturalNote": "boil（沸騰）より低い温度でゆっくり加熱すること"
+        },
+        {
+          "word": "depth",
+          "meaning": "深み、奥行き",
+          "type": "noun",
+          "example": "So much depth and complexity",
+          "category": "taste",
+          "culturalNote": "味の重層的な豊かさを表現する時に使う"
+        },
+        {
+          "word": "aromatic compounds",
+          "meaning": "香り成分",
+          "type": "noun",
+          "example": "Preserves its aromatic compounds",
+          "category": "ingredient",
+          "culturalNote": "スパイスや香味野菜の香りの元となる化学物質"
+        }
+      ],
+      "generatedAt": "2025-02-01T18:00:00.000Z"
+    },
+    "cookingInsights": {
+      "tips": [
+        {
+          "titleJa": "飴色玉ねぎの科学",
+          "titleEn": "The Science of Caramelized Onions",
+          "contentJa": "玉ねぎを飴色にするには最低30-40分必要です。この間に起こるメイラード反応が、カレーの深い旨味とコクを生み出します。時短のために強火にすると焦げるだけで、この化学反応は起きません。",
+          "contentEn": "Caramelizing onions properly takes 30-40 minutes minimum. The Maillard reaction that occurs during this time creates the deep umami and richness in your curry. Using high heat to speed up just burns them without triggering this chemical reaction.",
+          "category": "technique"
+        },
+        {
+          "titleJa": "スパイスの入れ順が命",
+          "titleEn": "Spice Sequencing Matters",
+          "contentJa": "ホールスパイス（クミンシード等）は最初に油で炒めて香りを出し、パウダースパイスは後から加えます。逆にするとパウダーが焦げてしまいます。ガラムマサラは香りを飛ばさないために最後の仕上げで。",
+          "contentEn": "Whole spices like cumin seeds go in first to bloom in oil, while powdered spices are added later. Reversing this burns the powder. Garam masala goes in at the end to preserve its delicate aromatics.",
+          "category": "technique"
+        },
+        {
+          "titleJa": "日本vsインド：カレーの違い",
+          "titleEn": "Japanese vs Indian Curry",
+          "contentJa": "日本のカレーは小麦粉でとろみをつけた「シチュー系」で、イギリス海軍経由で伝わりました。インドカレーは玉ねぎとトマトがソースのベースで、小麦粉は使いません。今回作ったのは後者の本格派です。",
+          "contentEn": "Japanese curry is a stew-style dish thickened with flour, introduced via the British Navy. Indian curry uses onions and tomatoes as the sauce base without flour. What you made is the authentic latter style.",
+          "category": "culture"
+        },
+        {
+          "titleJa": "ヨーグルトマリネの効果",
+          "titleEn": "Why Yogurt Marinade Works",
+          "contentJa": "ヨーグルトの乳酸がタンパク質を分解し、肉を柔らかくします。さらに、脂肪分がスパイスの風味を肉に染み込ませる役割も。インドではタンドリーチキンにも同じ技法を使います。",
+          "contentEn": "The lactic acid in yogurt breaks down proteins, tenderizing the meat. The fat content also helps carry spice flavors into the meat. This same technique is used in tandoori chicken.",
+          "category": "technique"
+        }
+      ],
+      "improvements": [
+        "次回はチキンを一晩マリネしてみると、さらに柔らかくスパイスが染み込みます",
+        "カシューナッツをペーストにして加えると、よりクリーミーでリッチな仕上がりになります",
+        "フレッシュコリアンダー（パクチー）を最後にトッピングすると香りが華やかになります"
+      ],
+      "encouragement": "市販ルーを使わずにスパイスからカレーを作るのは、本当に素晴らしいチャレンジです！40分かけて玉ねぎを炒める忍耐力、スパイスの順番を守る知識、どちらも料理人として大切な資質です。味が5点なのは当然の結果。これからもスパイスの世界を探求してください！",
+      "generatedAt": "2025-02-01T18:00:00.000Z"
+    },
+    "createdAt": "2025-02-01T18:00:00.000Z",
+    "updatedAt": "2025-02-01T18:00:00.000Z"
+  },
+  {
+    "id": "1738281600001",
+    "date": "2025-01-31",
+    "title": "1/31 - 手作り餃子",
+    "dishName": "手作り餃子",
+    "dishNameEn": "Homemade Gyoza",
+    "ingredients": "豚ひき肉 200g、キャベツ 1/4個、ニラ 1束、にんにく 2片、生姜 1片、餃子の皮 30枚、醤油 大さじ1、ごま油 大さじ1、塩こしょう 少々",
+    "process": "1. キャベツとニラをみじん切りにして塩もみ\n2. 豚ひき肉に調味料を加えて練る\n3. 野菜と肉を混ぜて餡を作る\n4. 皮に包んで成形\n5. フライパンで焼き目をつけてから蒸し焼き",
+    "tasteRating": 4,
+    "presentationRating": 3,
+    "difficultyRating": 4,
+    "notes": "包むのが難しかった。もっと練習が必要。焼き加減は上手くいった。",
+    "englishTranslation": {
+      "conversation": [
+        {"speaker": "chef", "text": "Welcome back to the kitchen! What did you make today?", "japanese": "おかえり！今日は何を作ったの？"},
+        {"speaker": "you", "text": "I made homemade gyoza from scratch! It was my first time.", "japanese": "手作り餃子を一から作りました！初めてだったんです。"},
+        {"speaker": "chef", "text": "That's ambitious! Gyoza takes real skill. Walk me through your process.", "japanese": "意欲的だね！餃子は本当に技術が要るよ。どうやって作ったか教えて。"},
+        {"speaker": "you", "text": "First, I finely chopped the cabbage and chives, then salted them to draw out moisture.", "japanese": "まずキャベツとニラをみじん切りにして、塩もみして水分を抜きました。"},
+        {"speaker": "chef", "text": "Perfect technique! Removing excess moisture prevents soggy wrappers. How about the meat?", "japanese": "完璧な技術だね！余分な水分を取ると皮がベチャっとならない。肉はどうした？"},
+        {"speaker": "you", "text": "I mixed the ground pork with soy sauce, sesame oil, and seasonings until it got sticky.", "japanese": "豚ひき肉に醤油とごま油と調味料を加えて、粘りが出るまで練りました。"},
+        {"speaker": "chef", "text": "That stickiness is key - it helps bind everything together. Did you add garlic and ginger?", "japanese": "その粘りが大事なんだ - 全体をまとめる役割がある。にんにくと生姜は入れた？"},
+        {"speaker": "you", "text": "Yes! I minced them fresh. The aroma was amazing while cooking.", "japanese": "はい！新鮮なものをみじん切りにしました。焼いてる時の香りが最高でした。"},
+        {"speaker": "chef", "text": "Fresh aromatics make all the difference. Now, how did the wrapping go?", "japanese": "新鮮な香味野菜は全然違うからね。で、包むのはどうだった？"},
+        {"speaker": "you", "text": "Honestly, that was the hardest part. My folds weren't very neat.", "japanese": "正直、そこが一番難しかったです。ひだが綺麗にできませんでした。"},
+        {"speaker": "chef", "text": "Don't worry! Pleating takes practice. Even professionals take years to perfect it.", "japanese": "心配しないで！ひだを作るのは練習が必要だよ。プロでも何年もかかるものさ。"},
+        {"speaker": "you", "text": "That's reassuring. At least the pan-frying turned out well!", "japanese": "それを聞いて安心しました。少なくとも焼くのは上手くいきました！"},
+        {"speaker": "chef", "text": "Tell me about your frying technique. Did you get that crispy bottom?", "japanese": "焼き方を教えて。底はパリッとできた？"},
+        {"speaker": "you", "text": "Yes! I seared them first, then added water and covered to steam.", "japanese": "はい！まず焼き目をつけてから、水を加えて蓋をして蒸し焼きにしました。"},
+        {"speaker": "chef", "text": "Excellent! That's the authentic method - sear, steam, then crisp up. You rated taste 4 out of 5?", "japanese": "素晴らしい！それが本格的なやり方 - 焼く、蒸す、カリッとさせる。味は5点中4点？"},
+        {"speaker": "you", "text": "The flavor was great, but I think I could add more ginger next time.", "japanese": "味は良かったんですが、次はもっと生姜を入れてもいいかなと思います。"},
+        {"speaker": "chef", "text": "Great self-assessment! Keep practicing the wrapping, and you'll be a gyoza master in no time.", "japanese": "素晴らしい自己分析だね！包む練習を続ければ、すぐに餃子マスターになれるよ。"}
+      ],
+      "vocabulary": [
+        {
+          "word": "from scratch",
+          "meaning": "一から、最初から",
+          "type": "phrase",
+          "example": "I made the gyoza from scratch",
+          "category": "technique",
+          "culturalNote": "市販品を使わず手作りすることを強調する表現"
+        },
+        {
+          "word": "finely chop",
+          "meaning": "みじん切りにする",
+          "type": "verb",
+          "example": "Finely chop the cabbage and chives",
+          "category": "technique",
+          "culturalNote": "「mince」も同様の意味で使える"
+        },
+        {
+          "word": "draw out moisture",
+          "meaning": "水分を抜く",
+          "type": "phrase",
+          "example": "Salt the vegetables to draw out moisture",
+          "category": "technique",
+          "culturalNote": "塩もみの工程を説明する時に使う"
+        },
+        {
+          "word": "bind",
+          "meaning": "（材料を）つなぐ、まとめる",
+          "type": "verb",
+          "example": "The stickiness helps bind everything together",
+          "category": "technique",
+          "culturalNote": "肉だねがまとまる様子を表現"
+        },
+        {
+          "word": "pleat",
+          "meaning": "ひだを作る、折り目をつける",
+          "type": "verb",
+          "example": "Pleating the gyoza wrappers takes practice",
+          "category": "technique",
+          "culturalNote": "餃子の包み方特有の動作"
+        },
+        {
+          "word": "sear",
+          "meaning": "強火で焼き目をつける",
+          "type": "verb",
+          "example": "Sear the gyoza until golden brown",
+          "category": "technique",
+          "culturalNote": "高温で表面だけを焼く技法"
+        },
+        {
+          "word": "crispy",
+          "meaning": "パリパリ、カリカリ",
+          "type": "adjective",
+          "example": "The bottom should be crispy",
+          "category": "texture",
+          "culturalNote": "crunchy（ザクザク）とは少し違う"
+        },
+        {
+          "word": "aromatics",
+          "meaning": "香味野菜（にんにく、生姜など）",
+          "type": "noun",
+          "example": "Fresh aromatics make all the difference",
+          "category": "ingredient",
+          "culturalNote": "料理の香りのベースとなる材料の総称"
+        }
+      ],
+      "generatedAt": "2025-01-31T12:00:00.000Z"
+    },
+    "cookingInsights": {
+      "tips": [
+        {
+          "titleJa": "餃子の皮をパリッと焼くコツ",
+          "titleEn": "Tips for Crispy Gyoza Bottoms",
+          "contentJa": "フライパンに油を熱し、餃子を並べたらすぐに水を加えず、まず底に焼き色をつけます。その後、熱湯（水ではなく）を餃子の高さの1/3程度入れ、蓋をして蒸し焼きに。水分が完全に飛んだら、ごま油を回し入れてカリッと仕上げます。",
+          "contentEn": "Heat oil in the pan and let the gyoza bottoms brown before adding any liquid. Then add hot water (not cold) to about 1/3 the height of the gyoza, cover to steam. Once the water evaporates completely, drizzle sesame oil around the edges for extra crispiness.",
+          "category": "technique"
+        },
+        {
+          "titleJa": "肉汁を閉じ込める餡作り",
+          "titleEn": "Juicy Filling Secrets",
+          "contentJa": "肉を練る時に一方向にだけ混ぜると、タンパク質が結合して肉汁を閉じ込めやすくなります。また、具材と調味料を冷蔵庫で30分ほど冷やしてから包むと、脂が溶けにくくジューシーに仕上がります。",
+          "contentEn": "When mixing the meat, stir in one direction only to help proteins bind and trap juices. Also, refrigerate the filling for 30 minutes before wrapping - this keeps the fat from melting and results in juicier gyoza.",
+          "category": "technique"
+        },
+        {
+          "titleJa": "西洋vs日本：餃子とダンプリング",
+          "titleEn": "Cultural Note: Gyoza vs Western Dumplings",
+          "contentJa": "西洋のダンプリング（例：ピエロギやラビオリ）は主に茹でたり焼いたりしますが、日本の餃子は「焼き餃子」が主流。中国では水餃子が一般的ですが、日本では焼き目のパリパリ感を重視するのが特徴です。",
+          "contentEn": "Western dumplings like pierogi or ravioli are mainly boiled or baked, while Japanese gyoza are typically pan-fried. In China, boiled dumplings are common, but Japan prefers the crispy-bottomed pan-fried style - highlighting the cultural adaptation of this dish.",
+          "category": "culture"
+        },
+        {
+          "titleJa": "キャベツの水切りが命",
+          "titleEn": "The Importance of Draining Cabbage",
+          "contentJa": "キャベツは塩もみした後、しっかりと水気を絞ることが重要です。水分が多いと餡がベチャッとなり、皮が破れやすくなります。キッチンペーパーで包んで絞ると効率的です。",
+          "contentEn": "After salting the cabbage, squeeze out as much water as possible. Excess moisture makes the filling soggy and can cause the wrapper to tear. Wrapping in a kitchen towel and squeezing is very effective.",
+          "category": "technique"
+        }
+      ],
+      "improvements": [
+        "次回は肉だねを冷蔵庫で30分冷やしてから包むと、より肉汁たっぷりに仕上がります",
+        "生姜をもう少し多めに入れると、より風味豊かになりますよ",
+        "包む練習として、まず5個だけ丁寧に包んでみて、徐々にスピードを上げていくのがおすすめです"
+      ],
+      "encouragement": "初めての手作り餃子で味の評価4点は素晴らしい成果です！包むのは本当に練習が必要な技術なので、最初から完璧を目指さなくて大丈夫。焼き加減がバッチリだったのは、料理のセンスがある証拠ですよ。次回もぜひ挑戦してください！",
+      "generatedAt": "2025-01-31T12:00:00.000Z"
+    },
+    "createdAt": "2025-01-31T12:00:00.000Z",
+    "updatedAt": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": "1738195200000",
+    "date": "2025-01-30",
+    "title": "1/30 - ガーリックシュリンプ",
+    "dishName": "ハワイ風ガーリックシュリンプ",
+    "dishNameEn": "Hawaiian-Style Garlic Shrimp",
+    "ingredients": "殻付きエビ 300g、にんにく 8片、バター 60g、白ワイン 50ml、レモン 1個、パセリ、塩、黒こしょう、オリーブオイル、鷹の爪",
+    "process": "1. エビは背わたを取り、殻付きのまま塩をふる\n2. にんにくをみじん切りにする（たっぷり！）\n3. フライパンでバターとオリーブオイルを熱し、にんにくを弱火でじっくり炒める\n4. エビを加えて中火で両面を焼く\n5. 白ワインを加えてアルコールを飛ばす\n6. レモン汁とパセリを加えて完成",
+    "tasteRating": 5,
+    "presentationRating": 5,
+    "difficultyRating": 2,
+    "notes": "にんにくの量がすごかったけど、それが美味しさの秘訣。殻付きで焼くと旨味が逃げない。ご飯にソースをかけて食べたら最高だった。",
+    "englishTranslation": {
+      "conversation": [
+        {"speaker": "chef", "text": "Mmm, I can smell that garlic! What's on the menu today?", "japanese": "んー、にんにくの香りがする！今日のメニューは？"},
+        {"speaker": "you", "text": "Hawaiian-style garlic shrimp! I used a ton of garlic.", "japanese": "ハワイ風のガーリックシュリンプです！にんにくをたっぷり使いました。"},
+        {"speaker": "chef", "text": "Garlic shrimp is all about that garlic, so good call! Did you keep the shells on?", "japanese": "ガーリックシュリンプはにんにくが命だからね、いい判断！殻は付けたまま？"},
+        {"speaker": "you", "text": "Yes! I heard it keeps the shrimp more flavorful and juicy.", "japanese": "はい！そうすると風味が逃げないし、ジューシーになるって聞きました。"},
+        {"speaker": "chef", "text": "Exactly right. The shell protects the meat and adds flavor to the sauce. How much garlic did you use?", "japanese": "その通り。殻が身を守って、ソースにも風味を加えるんだ。にんにくはどれくらい使った？"},
+        {"speaker": "you", "text": "Eight cloves! I minced them all by hand.", "japanese": "8片！全部手でみじん切りにしました。"},
+        {"speaker": "chef", "text": "That's the Hawaiian way - they're not shy with garlic. How did you cook them?", "japanese": "それがハワイ流 - にんにくをケチらないんだ。どうやって調理した？"},
+        {"speaker": "you", "text": "I sauteed the garlic slowly in butter and olive oil until it was golden and fragrant.", "japanese": "バターとオリーブオイルでにんにくを黄金色になるまでじっくり炒めました。"},
+        {"speaker": "chef", "text": "Low and slow is key for garlic - high heat makes it bitter. Then you added the shrimp?", "japanese": "にんにくは低温でゆっくりが鍵 - 高温だと苦くなる。それからエビを入れた？"},
+        {"speaker": "you", "text": "Yes, I seared them on both sides until they turned pink and slightly charred.", "japanese": "はい、両面をピンク色になって少し焦げ目がつくまで焼きました。"},
+        {"speaker": "chef", "text": "Nice! A little char adds so much flavor. Did you deglaze the pan?", "japanese": "いいね！少しの焦げ目が風味を増す。パンをデグレーズした？"},
+        {"speaker": "you", "text": "I added white wine and let it bubble up, then squeezed in fresh lemon juice.", "japanese": "白ワインを加えてぶくぶくさせてから、レモン汁を絞り入れました。"},
+        {"speaker": "chef", "text": "Perfect! The wine lifts all those caramelized bits off the pan. That's flavor gold right there.", "japanese": "完璧！ワインがカラメル化した旨味をすべて溶かすんだ。それが味の宝だよ。"},
+        {"speaker": "you", "text": "I poured all that garlicky butter sauce over rice. It was incredible!", "japanese": "にんにくバターソースをご飯にかけました。最高でした！"},
+        {"speaker": "chef", "text": "Shrimp and garlic butter over rice - that's comfort food at its finest. Both taste AND presentation at 5? You nailed it!", "japanese": "エビとガーリックバターのご飯 - 最高のコンフォートフードだね。味も見た目も5点？完璧にやったね！"}
+      ],
+      "vocabulary": [
+        {
+          "word": "a ton of",
+          "meaning": "たくさんの、大量の",
+          "type": "phrase",
+          "example": "I used a ton of garlic",
+          "category": "measurement",
+          "culturalNote": "カジュアルな表現で「とても多い」を強調する"
+        },
+        {
+          "word": "clove",
+          "meaning": "（にんにくの）片",
+          "type": "noun",
+          "example": "Eight cloves of garlic",
+          "category": "measurement",
+          "culturalNote": "にんにく1個はbulb/head、その中の1片がclove"
+        },
+        {
+          "word": "sauté",
+          "meaning": "ソテーする、炒める",
+          "type": "verb",
+          "example": "Sauté the garlic slowly in butter",
+          "category": "technique",
+          "culturalNote": "フランス語由来。少量の油で高温で手早く炒める"
+        },
+        {
+          "word": "fragrant",
+          "meaning": "香りのよい、芳香のある",
+          "type": "adjective",
+          "example": "Until golden and fragrant",
+          "category": "taste",
+          "culturalNote": "良い香りを表現する時に使う（aromatic より軽い印象）"
+        },
+        {
+          "word": "deglaze",
+          "meaning": "デグレーズする（液体で旨味を溶かす）",
+          "type": "verb",
+          "example": "Deglaze the pan with white wine",
+          "category": "technique",
+          "culturalNote": "フライパンの底の焦げ付き（fond）を液体で溶かす技法"
+        },
+        {
+          "word": "char",
+          "meaning": "焦げ目、軽く焦がす",
+          "type": "noun",
+          "example": "A little char adds flavor",
+          "category": "technique",
+          "culturalNote": "意図的につける軽い焦げ。burn（焦げる）は失敗の意味"
+        },
+        {
+          "word": "comfort food",
+          "meaning": "心が落ち着く料理、懐かしい家庭料理",
+          "type": "noun",
+          "example": "That's comfort food at its finest",
+          "category": "culture",
+          "culturalNote": "食べると心が温まる、馴染みのある料理を指す"
+        },
+        {
+          "word": "nail it",
+          "meaning": "完璧にやる、大成功する",
+          "type": "phrase",
+          "example": "You nailed it!",
+          "category": "taste",
+          "culturalNote": "スラング。何かを完璧に成し遂げた時の褒め言葉"
+        }
+      ],
+      "generatedAt": "2025-01-30T19:00:00.000Z"
+    },
+    "cookingInsights": {
+      "tips": [
+        {
+          "titleJa": "にんにくは低温でじっくり",
+          "titleEn": "Low Heat for Perfect Garlic",
+          "contentJa": "にんにくは160度以上で苦味成分（アクリルアミド）が発生します。バターが泡立ち始めたら弱火に落とし、きつね色になるまでゆっくり炒めましょう。この段階で甘みと旨味が最大限に引き出されます。",
+          "contentEn": "Garlic develops bitter compounds above 160°C. Once the butter starts foaming, reduce to low heat and cook slowly until golden. This stage maximizes sweetness and umami development.",
+          "category": "technique"
+        },
+        {
+          "titleJa": "殻付きエビのメリット",
+          "titleEn": "Benefits of Shell-On Shrimp",
+          "contentJa": "殻には旨味成分（キチン）が含まれており、加熱すると身とソースに移ります。また、殻が保護膜となり、身のジューシーさを保ちます。食べる時に手が汚れますが、味は格段に上がります。",
+          "contentEn": "Shrimp shells contain chitin, which releases umami when heated into both the meat and sauce. The shell also acts as a protective barrier, keeping the flesh juicy. Worth the messy fingers!",
+          "category": "ingredient"
+        },
+        {
+          "titleJa": "デグレーズの魔法",
+          "titleEn": "The Magic of Deglazing",
+          "contentJa": "フライパンの底に残った茶色い焦げ（フォン）は旨味の塊です。ワインやレモン汁などの酸性の液体を加えると、この旨味が溶け出してソースになります。液体を加えた後、木べらでこすり取りましょう。",
+          "contentEn": "Those brown bits stuck to the pan (called fond) are concentrated flavor. Adding acidic liquid like wine or lemon juice dissolves this umami into your sauce. Scrape with a wooden spoon after adding the liquid.",
+          "category": "technique"
+        },
+        {
+          "titleJa": "ハワイvsスペイン：ガーリックシュリンプの違い",
+          "titleEn": "Hawaiian vs Spanish Garlic Shrimp",
+          "contentJa": "ハワイのガーリックシュリンプは殻付きでバター多め、ご飯と一緒に。スペインの「ガンバス・アル・アヒージョ」はオリーブオイルで煮る形式でパンと一緒に。どちらもにんにくたっぷりですが、調理法と食べ方が異なります。",
+          "contentEn": "Hawaiian garlic shrimp is shell-on, butter-heavy, served with rice. Spanish 'Gambas al Ajillo' is poached in olive oil, served with bread. Both are garlic-heavy but differ in cooking method and presentation.",
+          "category": "culture"
+        }
+      ],
+      "improvements": [
+        "次回は鷹の爪の量を調整して、辛さのバランスを好みに合わせてみましょう",
+        "パセリの代わりにバジルやコリアンダーを使うと、また違った風味が楽しめます",
+        "ワインの代わりにビールを使うと、よりカジュアルなハワイアン感が出ます"
+      ],
+      "encouragement": "味も見た目も満点のガーリックシュリンプ、素晴らしい！にんにくを惜しまず使ったこと、殻付きで焼いたこと、デグレーズしたこと、すべてプロの技です。難易度が低めでも、こういう「シンプルだけど完璧」な料理こそ、料理の醍醐味です！",
+      "generatedAt": "2025-01-30T19:00:00.000Z"
+    },
+    "createdAt": "2025-01-30T19:00:00.000Z",
+    "updatedAt": "2025-01-30T19:00:00.000Z"
+  }
+]
