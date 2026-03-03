@@ -13,6 +13,7 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@opennextjs/cloudflare": "^1.16.5",
+    "@supabase/supabase-js": "^2.98.0",
     "@types/d3-geo": "^3.1.0",
     "@types/d3-selection": "^3.0.11",
     "@types/d3-zoom": "^3.0.8",
@@ -35,7 +36,7 @@
     "topojson-client": "^3.1.0"
   },
   "devDependencies": {
-"@tailwindcss/postcss": "^4",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
