@@ -1,13 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import EnglishSidebar from '@/components/EnglishSidebar';
 import { createClient } from '@/lib/supabase/client';
 import { signIn, signUp } from '@/lib/auth';
 
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
-
-const supabase = createClient();
 
 export default function EnglishLayout({ children }: { children: React.ReactNode }) {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -20,6 +18,7 @@ export default function EnglishLayout({ children }: { children: React.ReactNode 
     const [isSignUp, setIsSignUp] = useState(false);
     const [displayName, setDisplayName] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null);
 
     useEffect(() => {
         const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -28,20 +27,41 @@ export default function EnglishLayout({ children }: { children: React.ReactNode 
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    // Listen to Supabase auth state changes
+    // Auth check - client only (inside useEffect to avoid SSR issues)
     useEffect(() => {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setIsAuthenticated(!!session?.user);
-            setIsLoading(false);
-        });
+        let subscription: { unsubscribe: () => void } | null = null;
 
-        // Check initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setIsAuthenticated(!!session?.user);
-            setIsLoading(false);
-        });
+        try {
+            const supabase = createClient();
+            supabaseRef.current = supabase;
 
-        return () => subscription.unsubscribe();
+            const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+                setIsAuthenticated(!!session?.user);
+                setIsLoading(false);
+            });
+            subscription = data.subscription;
+
+            supabase.auth.getSession().then(({ data: { session } }) => {
+                setIsAuthenticated(!!session?.user);
+                setIsLoading(false);
+            }).catch(() => {
+                setIsAuthenticated(false);
+                setIsLoading(false);
+            });
+        } catch {
+            setIsAuthenticated(false);
+            setIsLoading(false);
+        }
+
+        // Safety timeout: if auth check hangs, show login form
+        const timeout = setTimeout(() => {
+            setIsLoading(false);
+        }, 5000);
+
+        return () => {
+            subscription?.unsubscribe();
+            clearTimeout(timeout);
+        };
     }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
