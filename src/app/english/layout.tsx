@@ -2,16 +2,24 @@
 
 import { useState, useEffect } from 'react';
 import EnglishSidebar from '@/components/EnglishSidebar';
+import { createClient } from '@/lib/supabase/client';
+import { signIn, signUp } from '@/lib/auth';
 
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
+const supabase = createClient();
+
 export default function EnglishLayout({ children }: { children: React.ReactNode }) {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState(false);
+    const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
     const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
+    const [isSignUp, setIsSignUp] = useState(false);
+    const [displayName, setDisplayName] = useState('');
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -20,20 +28,42 @@ export default function EnglishLayout({ children }: { children: React.ReactNode 
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
+    // Listen to Supabase auth state changes
     useEffect(() => {
-        const auth = sessionStorage.getItem('english_auth');
-        if (auth === 'true') setIsAuthenticated(true);
-        setIsLoading(false);
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setIsAuthenticated(!!session?.user);
+            setIsLoading(false);
+        });
+
+        // Check initial session
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setIsAuthenticated(!!session?.user);
+            setIsLoading(false);
+        });
+
+        return () => subscription.unsubscribe();
     }, []);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (password === 'wim') {
-            setIsAuthenticated(true);
-            sessionStorage.setItem('english_auth', 'true');
-            setError(false);
-        } else {
-            setError(true);
+        setError('');
+        setSubmitting(true);
+
+        try {
+            if (isSignUp) {
+                await signUp({
+                    email,
+                    password,
+                    displayName: displayName || email.split('@')[0],
+                });
+                setError('Check your email for a confirmation link.');
+            } else {
+                await signIn({ email, password });
+            }
+        } catch (err: any) {
+            setError(err.message || 'Authentication failed');
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -62,46 +92,109 @@ export default function EnglishLayout({ children }: { children: React.ReactNode 
                     boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
                     textAlign: 'center',
                     width: '100%',
-                    maxWidth: '320px',
+                    maxWidth: '360px',
                 }}>
                     <div style={{ fontSize: '28px', fontWeight: '700', marginBottom: '8px', color: '#1a1a2e' }}>
                         English
                     </div>
                     <div style={{ fontSize: '13px', color: '#888', marginBottom: '32px' }}>
-                        Enter password to continue
+                        {isSignUp ? 'Create your account' : 'Sign in to continue'}
                     </div>
+
+                    {isSignUp && (
+                        <input
+                            type="text"
+                            value={displayName}
+                            onChange={(e) => setDisplayName(e.target.value)}
+                            placeholder="Display Name"
+                            style={{
+                                width: '100%',
+                                padding: '14px 18px',
+                                borderRadius: '10px',
+                                border: '1px solid #e5e5e5',
+                                backgroundColor: '#f8f9fa',
+                                fontSize: '16px',
+                                outline: 'none',
+                                boxSizing: 'border-box',
+                                marginBottom: '12px',
+                            }}
+                        />
+                    )}
+
                     <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Password"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Email"
                         autoFocus
                         style={{
                             width: '100%',
                             padding: '14px 18px',
                             borderRadius: '10px',
-                            border: `1px solid ${error ? '#ef4444' : '#e5e5e5'}`,
+                            border: '1px solid #e5e5e5',
+                            backgroundColor: '#f8f9fa',
+                            fontSize: '16px',
+                            outline: 'none',
+                            boxSizing: 'border-box',
+                            marginBottom: '12px',
+                        }}
+                    />
+                    <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Password"
+                        style={{
+                            width: '100%',
+                            padding: '14px 18px',
+                            borderRadius: '10px',
+                            border: `1px solid ${error && !error.includes('Check your email') ? '#ef4444' : '#e5e5e5'}`,
                             backgroundColor: '#f8f9fa',
                             fontSize: '16px',
                             outline: 'none',
                             boxSizing: 'border-box',
                         }}
                     />
-                    {error && <div style={{ fontSize: '12px', color: '#ef4444', marginTop: '10px' }}>Incorrect</div>}
-                    <button type="submit" style={{
+                    {error && (
+                        <div style={{
+                            fontSize: '12px',
+                            color: error.includes('Check your email') ? '#10b981' : '#ef4444',
+                            marginTop: '10px',
+                        }}>
+                            {error}
+                        </div>
+                    )}
+                    <button type="submit" disabled={submitting} style={{
                         width: '100%',
                         padding: '14px',
                         borderRadius: '10px',
                         border: 'none',
-                        backgroundColor: '#10b981',
+                        backgroundColor: submitting ? '#9ca3af' : '#10b981',
                         color: '#fff',
                         fontSize: '14px',
                         fontWeight: '600',
-                        cursor: 'pointer',
+                        cursor: submitting ? 'not-allowed' : 'pointer',
                         marginTop: '20px',
                     }}>
-                        Enter
+                        {submitting ? '...' : isSignUp ? 'Sign Up' : 'Sign In'}
                     </button>
+
+                    <div style={{ marginTop: '16px', fontSize: '13px', color: '#888' }}>
+                        <button
+                            type="button"
+                            onClick={() => { setIsSignUp(!isSignUp); setError(''); }}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#10b981',
+                                cursor: 'pointer',
+                                fontSize: '13px',
+                                textDecoration: 'underline',
+                            }}
+                        >
+                            {isSignUp ? 'Already have an account? Sign In' : 'New user? Sign Up'}
+                        </button>
+                    </div>
                 </form>
             </div>
         );
