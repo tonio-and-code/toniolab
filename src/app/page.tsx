@@ -32,6 +32,21 @@ export default function Home() {
               System
             </a>
             <a
+              href="/english/training"
+              style={{
+                fontSize: '12px',
+                fontWeight: '600',
+                color: '#fff',
+                backgroundColor: '#D4AF37',
+                padding: '6px 16px',
+                borderRadius: '6px',
+                textDecoration: 'none',
+                letterSpacing: '0.3px',
+              }}
+            >
+              Login
+            </a>
+            <a
               href="https://github.com/tonio-and-code"
               target="_blank"
               rel="noopener noreferrer"
