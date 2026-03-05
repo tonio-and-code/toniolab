@@ -18,17 +18,8 @@ echo "=== Syncing English features from iwasaki-naisou-website ==="
 echo ""
 
 # ── Pages ────────────────────────────────────────
-echo "[1/6] Pages (src/app/english/)"
-PAGES="arena goroku goroku-v2 pro conversation nihongo nihongo-list self-master settings dev bookmarks review"
-for p in $PAGES; do
-  if [ -d "$SRC/src/app/english/$p" ]; then
-    rm -rf "$DST/src/app/english/$p"
-    cp -r "$SRC/src/app/english/$p" "$DST/src/app/english/$p"
-  fi
-done
-# Also sync pages that exist in both (overwrite with latest)
-SHARED_PAGES="analyze expressions idiom-list lookup mastery my-phrases native note phrases practice training us-map vocabulary youtube"
-for p in $SHARED_PAGES; do
+echo "[1/6] Pages (src/app/english/) - sync ALL"
+for p in $(ls "$SRC/src/app/english/"); do
   if [ -d "$SRC/src/app/english/$p" ]; then
     rm -rf "$DST/src/app/english/$p"
     cp -r "$SRC/src/app/english/$p" "$DST/src/app/english/$p"
