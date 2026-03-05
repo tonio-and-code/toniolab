@@ -5,8 +5,6 @@
  * Feb 5-9, 2026
  */
 
-import type { ConversationTone } from '@/types/memoria';
-
 export interface PartyRecapEntry {
     id: string;
     date: string;
@@ -19,9 +17,9 @@ export interface PartyRecapEntry {
         english: Array<{ speaker: 'male' | 'female'; text: string }>;
         japanese: Array<{ speaker: 'male' | 'female'; text: string }>;
         generatedAt: Date;
-        tone: ConversationTone;
+        tone: string;
     };
-    tone: ConversationTone;
+    tone: string;
     tags: string[];
     createdAt: Date;
     updatedAt: Date;

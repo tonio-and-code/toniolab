@@ -5,22 +5,11 @@ import Link from 'next/link';
 import VoiceRecorder from '@/components/VoiceRecorder';
 import { getSettings } from '@/lib/settings';
 import {
-    getAllPhrases as sbGetAllPhrases,
-    addPhrase as sbAddPhrase,
-    updatePhrase as sbUpdatePhrase,
-    deleteLearningPhrase as sbDeletePhrase,
-    getAllMastery as sbGetAllMastery,
-    setMastery as sbSetMastery,
-    getVoiceRecordings as sbGetVoiceRecordings,
-    getPhraseLinks as sbGetPhraseLinks,
-    addPhraseLink as sbAddPhraseLink,
-    getPlayerStats as sbGetPlayerStats,
-    getDateTouchMap as sbGetDateTouchMap,
-    recordReviewTouch as sbRecordReviewTouch,
-    getMonthlyReviewCounts as sbGetMonthlyReviewCounts,
-    addCardPoints as sbAddCardPoints,
-} from '@/lib/supabase-phrases';
-import { rollGachaAndUpdate } from '@/lib/gacha';
+    getAudioCtx, playLevelSound, playSpinTick, playReelStop, playReachAlert,
+    playSpinStart, playGachaSound, playFeverEntrySound, playFeverExitSound,
+    startFeverBGM, stopFeverBGM, playCardRankSound, playRankUpSound, playFeverChainHit,
+} from '@/lib/training-sounds';
+import './training-animations.css';
 
 interface VoiceRecording {
     id: number;
@@ -67,13 +56,13 @@ type ChakraLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 // 7 Chakra Levels — mid-tone gradients, display Lv.1-7
 // SEED(0) = untouched, no XP. 4 reviews to reach OWN.
 const CHAKRA_CONFIG: Record<ChakraLevel, { name: string; ja: string; label: string; lv: number; color: string; bg: string; border: string; gradFrom: string; gradTo: string }> = {
-    0: { name: 'SEED', ja: '種', label: 'Lv.1 種 SEED', lv: 0, color: '#B91C1C', bg: '#FEF2F2', border: '#F87171', gradFrom: '#F87171', gradTo: '#FECACA' },
-    1: { name: 'SPARK', ja: '芽', label: 'Lv.2 芽 SPARK', lv: 3, color: '#C2410C', bg: '#FFF7ED', border: '#FB923C', gradFrom: '#FB923C', gradTo: '#FED7AA' },
-    2: { name: 'FORGE', ja: '鍛', label: 'Lv.3 鍛 FORGE', lv: 6, color: '#A16207', bg: '#FEFCE8', border: '#FACC15', gradFrom: '#FACC15', gradTo: '#FEF08A' },
-    3: { name: 'OWN', ja: '得', label: 'Lv.4 得 OWN', lv: 9, color: '#166534', bg: '#F0FDF4', border: '#4ADE80', gradFrom: '#4ADE80', gradTo: '#BBF7D0' },
-    4: { name: 'VOICE', ja: '声', label: 'Lv.5 声 VOICE', lv: 10, color: '#1E40AF', bg: '#EFF6FF', border: '#60A5FA', gradFrom: '#60A5FA', gradTo: '#BFDBFE' },
-    5: { name: 'VISION', ja: '研', label: 'Lv.6 研 VISION', lv: 10, color: '#3730A3', bg: '#EEF2FF', border: '#818CF8', gradFrom: '#818CF8', gradTo: '#C7D2FE' },
-    6: { name: 'CROWN', ja: '極', label: 'Lv.7 極 CROWN', lv: 15, color: '#6B21A8', bg: '#FAF5FF', border: '#A855F7', gradFrom: '#A855F7', gradTo: '#DDD6FE' },
+    0: { name: 'SEED', ja: '種', label: 'Lv.1 種', lv: 0, color: '#B91C1C', bg: '#FEF2F2', border: '#F87171', gradFrom: '#F87171', gradTo: '#FECACA' },
+    1: { name: 'SPARK', ja: '芽', label: 'Lv.2 芽', lv: 3, color: '#C2410C', bg: '#FFF7ED', border: '#FB923C', gradFrom: '#FB923C', gradTo: '#FED7AA' },
+    2: { name: 'FORGE', ja: '鍛', label: 'Lv.3 鍛', lv: 6, color: '#A16207', bg: '#FEFCE8', border: '#FACC15', gradFrom: '#FACC15', gradTo: '#FEF08A' },
+    3: { name: 'OWN', ja: '得', label: 'Lv.4 得', lv: 9, color: '#166534', bg: '#F0FDF4', border: '#4ADE80', gradFrom: '#4ADE80', gradTo: '#BBF7D0' },
+    4: { name: 'VOICE', ja: '声', label: 'Lv.5 声', lv: 10, color: '#1E40AF', bg: '#EFF6FF', border: '#60A5FA', gradFrom: '#60A5FA', gradTo: '#BFDBFE' },
+    5: { name: 'VISION', ja: '研', label: 'Lv.6 研', lv: 10, color: '#3730A3', bg: '#EEF2FF', border: '#818CF8', gradFrom: '#818CF8', gradTo: '#C7D2FE' },
+    6: { name: 'CROWN', ja: '極', label: 'Lv.7 極', lv: 15, color: '#6B21A8', bg: '#FAF5FF', border: '#A855F7', gradFrom: '#A855F7', gradTo: '#DDD6FE' },
 };
 
 function getChakraLevel(baseMastery: number, hasRecording: boolean, hasLink: boolean): ChakraLevel {
@@ -91,11 +80,11 @@ function getChakraInfo(baseMastery: number, hasRecording: boolean, hasLink: bool
 // Card Rank system — gacha sparks accumulate per phrase, visual rank upgrades
 type CardRank = 'NORMAL' | 'BRONZE' | 'SILVER' | 'GOLD' | 'HOLOGRAPHIC' | 'LEGENDARY';
 const CARD_RANKS: { rank: CardRank; threshold: number; borderColor: string; glow: string; label: string }[] = [
-    { rank: 'LEGENDARY', threshold: 250, borderColor: '#D4AF37', glow: '0 0 30px #D4AF3780, 0 0 60px #D4AF3740', label: 'LEGENDARY' },
-    { rank: 'HOLOGRAPHIC', threshold: 100, borderColor: '#A855F7', glow: '0 0 25px #A855F760, 0 0 45px #A855F730', label: 'HOLO' },
-    { rank: 'GOLD', threshold: 50, borderColor: '#F6C85F', glow: '0 0 16px #F6C85F50', label: 'GOLD' },
-    { rank: 'SILVER', threshold: 20, borderColor: '#94A3B8', glow: '0 0 10px #94A3B840', label: 'SILVER' },
-    { rank: 'BRONZE', threshold: 5, borderColor: '#CD7F32', glow: '0 0 4px rgba(205,127,50,0.2)', label: 'BRONZE' },
+    { rank: 'LEGENDARY', threshold: 250, borderColor: '#D4AF37', glow: '0 0 30px #D4AF3780, 0 0 60px #D4AF3740', label: '伝説' },
+    { rank: 'HOLOGRAPHIC', threshold: 100, borderColor: '#A855F7', glow: '0 0 25px #A855F760, 0 0 45px #A855F730', label: '虹' },
+    { rank: 'GOLD', threshold: 50, borderColor: '#F6C85F', glow: '0 0 16px #F6C85F50', label: '金' },
+    { rank: 'SILVER', threshold: 20, borderColor: '#94A3B8', glow: '0 0 10px #94A3B840', label: '銀' },
+    { rank: 'BRONZE', threshold: 5, borderColor: '#CD7F32', glow: '0 0 4px rgba(205,127,50,0.2)', label: '銅' },
     { rank: 'NORMAL', threshold: 0, borderColor: 'transparent', glow: 'none', label: '' },
 ];
 
@@ -178,378 +167,7 @@ function getFrameAccent(rank: CardRank): string {
     }
 }
 
-// Level-up sound per chakra level (Web Audio API, no files)
-// Shared AudioContext to avoid autoplay policy issues
-let _audioCtx: AudioContext | null = null;
-function getAudioCtx(): AudioContext {
-    if (!_audioCtx || _audioCtx.state === 'closed') {
-        _audioCtx = new AudioContext();
-    }
-    return _audioCtx;
-}
-
-function playLevelSound(level: ChakraLevel) {
-    try {
-        const st = getSettings(); if (!st.soundEnabled) return;
-        const vol = st.volume / 100;
-        const ctx = getAudioCtx();
-        if (ctx.state === 'suspended') ctx.resume();
-        const now = ctx.currentTime;
-
-        const sounds: Record<ChakraLevel, { freqs: number[]; dur: number; type: OscillatorType; gain: number }> = {
-            0: { freqs: [220], dur: 0.2, type: 'triangle', gain: 0.2 },
-            1: { freqs: [330, 440], dur: 0.25, type: 'triangle', gain: 0.18 },
-            2: { freqs: [392, 494, 587], dur: 0.3, type: 'triangle', gain: 0.16 },
-            3: { freqs: [523, 659, 784], dur: 0.4, type: 'sine', gain: 0.16 },
-            4: { freqs: [587, 740, 880, 1109], dur: 0.5, type: 'sine', gain: 0.14 },
-            5: { freqs: [659, 831, 988, 1245, 1480], dur: 0.6, type: 'sine', gain: 0.12 },
-            6: { freqs: [440, 554, 659, 880, 1109, 1319, 1760], dur: 0.9, type: 'sine', gain: 0.1 },
-        };
-
-        const s = sounds[level];
-        s.freqs.forEach((freq, i) => {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = s.type;
-            osc.frequency.value = freq;
-            const g = s.gain * vol;
-            gain.gain.setValueAtTime(0, now);
-            gain.gain.linearRampToValueAtTime(g, now + 0.03);
-            gain.gain.setValueAtTime(g, now + s.dur * 0.5);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + s.dur);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start(now + i * 0.05);
-            osc.stop(now + s.dur + 0.1);
-        });
-    } catch (e) {
-        console.warn('Audio failed:', e);
-    }
-}
-
-// Gacha reel tick sound (300ms, fast burst)
-function playReelSound() {
-    try {
-        const st = getSettings(); if (!st.soundEnabled) return;
-        const vol = st.volume / 100;
-        const ctx = getAudioCtx();
-        if (ctx.state === 'suspended') ctx.resume();
-        const now = ctx.currentTime;
-        // 6 rapid ticks: accelerating pitch
-        const delays = [0, 0.03, 0.065, 0.11, 0.17, 0.25];
-        for (let i = 0; i < delays.length; i++) {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.frequency.value = 700 + i * 80;
-            osc.type = 'triangle';
-            gain.gain.setValueAtTime(0.08 * vol, now + delays[i]);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + delays[i] + 0.03);
-            osc.connect(gain); gain.connect(ctx.destination);
-            osc.start(now + delays[i]); osc.stop(now + delays[i] + 0.05);
-        }
-    } catch { /* audio not available */ }
-}
-
-// Gacha tier reveal sound
-function playGachaSound(tier: string) {
-    try {
-        const st = getSettings(); if (!st.soundEnabled) return;
-        const vol = st.volume / 100;
-        const ctx = getAudioCtx();
-        if (ctx.state === 'suspended') ctx.resume();
-        const now = ctx.currentTime;
-        const sounds: Record<string, { freqs: number[]; dur: number; type: OscillatorType; gain: number; stagger: number }> = {
-            MISS: { freqs: [150], dur: 0.15, type: 'triangle', gain: 0.08, stagger: 0 },
-            BONUS: { freqs: [523, 659], dur: 0.25, type: 'sine', gain: 0.12, stagger: 0.08 },
-            GREAT: { freqs: [523, 659, 784], dur: 0.35, type: 'sine', gain: 0.14, stagger: 0.07 },
-            SUPER: { freqs: [262, 392, 523, 659, 784], dur: 0.50, type: 'triangle', gain: 0.10, stagger: 0.05 },
-            MEGA: { freqs: [220, 330, 440, 554, 659, 880], dur: 0.90, type: 'sine', gain: 0.08, stagger: 0.06 },
-            LEGENDARY: { freqs: [440, 554, 659, 880, 1109, 1319, 1760], dur: 1.20, type: 'sine', gain: 0.07, stagger: 0.05 },
-        };
-        const s = sounds[tier] || sounds.MISS;
-        s.freqs.forEach((freq, i) => {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = s.type;
-            osc.frequency.value = freq;
-            const g = s.gain * vol;
-            gain.gain.setValueAtTime(0, now);
-            gain.gain.linearRampToValueAtTime(g, now + 0.03);
-            gain.gain.setValueAtTime(g, now + s.dur * 0.5);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + s.dur);
-            osc.connect(gain); gain.connect(ctx.destination);
-            osc.start(now + i * s.stagger); osc.stop(now + s.dur + 0.1);
-        });
-        if (tier === 'LEGENDARY') {
-            const rumble = ctx.createOscillator();
-            const rGain = ctx.createGain();
-            rumble.frequency.value = 80; rumble.type = 'sawtooth';
-            rGain.gain.setValueAtTime(0.08 * vol, now);
-            rGain.gain.linearRampToValueAtTime(0.15 * vol, now + 0.3);
-            rGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
-            rumble.connect(rGain); rGain.connect(ctx.destination);
-            rumble.start(now); rumble.stop(now + 0.5);
-        }
-    } catch { /* audio not available */ }
-}
-
-// FEVER entry sound — pachinko kakuhen-level impact (~1.5s)
-function playFeverEntrySound() {
-    try {
-        const st = getSettings(); if (!st.soundEnabled) return;
-        const vol = st.volume / 100;
-        const ctx = getAudioCtx();
-        if (ctx.state === 'suspended') ctx.resume();
-        const now = ctx.currentTime;
-
-        // Phase 1 (0-0.3s): Low rumble 60Hz sawtooth → rising sweep
-        const sweep = ctx.createOscillator();
-        const sweepGain = ctx.createGain();
-        sweep.type = 'sawtooth';
-        sweep.frequency.setValueAtTime(60, now);
-        sweep.frequency.exponentialRampToValueAtTime(400, now + 0.3);
-        sweepGain.gain.setValueAtTime(0.12 * vol, now);
-        sweepGain.gain.linearRampToValueAtTime(0.18 * vol, now + 0.15);
-        sweepGain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
-        sweep.connect(sweepGain); sweepGain.connect(ctx.destination);
-        sweep.start(now); sweep.stop(now + 0.4);
-
-        // Phase 2 (0.3-0.8s): Rising arpeggio C4→E4→G4→C5→E5
-        const arpFreqs = [261.6, 329.6, 392.0, 523.3, 659.3];
-        arpFreqs.forEach((freq, i) => {
-            const osc = ctx.createOscillator();
-            const g = ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.value = freq;
-            const t = now + 0.3 + i * 0.1;
-            g.gain.setValueAtTime(0, t);
-            g.gain.linearRampToValueAtTime(0.15 * vol, t + 0.03);
-            g.gain.setValueAtTime(0.15 * vol, t + 0.06);
-            g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
-            osc.connect(g); g.connect(ctx.destination);
-            osc.start(t); osc.stop(t + 0.25);
-        });
-
-        // Phase 3 (0.8-1.2s): Power chord explosion C5+E5+G5+C6
-        const chordFreqs = [523.3, 659.3, 784.0, 1046.5];
-        chordFreqs.forEach(freq => {
-            const osc = ctx.createOscillator();
-            const g = ctx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.value = freq;
-            g.gain.setValueAtTime(0, now + 0.8);
-            g.gain.linearRampToValueAtTime(0.2 * vol, now + 0.85);
-            g.gain.setValueAtTime(0.2 * vol, now + 0.95);
-            g.gain.exponentialRampToValueAtTime(0.001, now + 1.25);
-            osc.connect(g); g.connect(ctx.destination);
-            osc.start(now + 0.8); osc.stop(now + 1.3);
-        });
-
-        // Phase 4 (0.8-1.5s): Sub-bass 40Hz + white noise shockwave
-        const sub = ctx.createOscillator();
-        const subGain = ctx.createGain();
-        sub.type = 'sine';
-        sub.frequency.value = 40;
-        subGain.gain.setValueAtTime(0.2 * vol, now + 0.8);
-        subGain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
-        sub.connect(subGain); subGain.connect(ctx.destination);
-        sub.start(now + 0.8); sub.stop(now + 1.6);
-
-        // White noise burst
-        const bufferSize = ctx.sampleRate * 0.3;
-        const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-        const data = noiseBuffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.5;
-        const noise = ctx.createBufferSource();
-        const noiseGain = ctx.createGain();
-        noise.buffer = noiseBuffer;
-        noiseGain.gain.setValueAtTime(0.12 * vol, now + 0.8);
-        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 1.1);
-        noise.connect(noiseGain); noiseGain.connect(ctx.destination);
-        noise.start(now + 0.8); noise.stop(now + 1.2);
-    } catch { /* audio not available */ }
-}
-
-// FEVER exit sound — descending sweep (~0.8s)
-function playFeverExitSound() {
-    try {
-        const st = getSettings(); if (!st.soundEnabled) return;
-        const vol = st.volume / 100;
-        const ctx = getAudioCtx();
-        if (ctx.state === 'suspended') ctx.resume();
-        const now = ctx.currentTime;
-
-        // Descending sweep 800Hz → 100Hz
-        const sweep = ctx.createOscillator();
-        const sweepGain = ctx.createGain();
-        sweep.type = 'sawtooth';
-        sweep.frequency.setValueAtTime(800, now);
-        sweep.frequency.exponentialRampToValueAtTime(100, now + 0.5);
-        sweepGain.gain.setValueAtTime(0.1 * vol, now);
-        sweepGain.gain.linearRampToValueAtTime(0.14 * vol, now + 0.1);
-        sweepGain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
-        sweep.connect(sweepGain); sweepGain.connect(ctx.destination);
-        sweep.start(now); sweep.stop(now + 0.7);
-
-        // Residual low tone
-        const low = ctx.createOscillator();
-        const lowGain = ctx.createGain();
-        low.type = 'triangle';
-        low.frequency.value = 80;
-        lowGain.gain.setValueAtTime(0.06 * vol, now + 0.4);
-        lowGain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
-        low.connect(lowGain); lowGain.connect(ctx.destination);
-        low.start(now + 0.4); low.stop(now + 0.9);
-    } catch { /* audio not available */ }
-}
-
-// FEVER BGM — looping MP3
-function startFeverBGM(): HTMLAudioElement | null {
-    try {
-        const st = getSettings(); if (!st.soundEnabled) return null;
-        const audio = new Audio('/audio/fever-bgm.mp3');
-        audio.loop = true;
-        audio.volume = (st.feverBgmVolume / 100) * (st.volume / 100);
-        audio.play().catch(() => { /* autoplay blocked */ });
-        return audio;
-    } catch { return null; }
-}
-
-function stopFeverBGM(audio: HTMLAudioElement | null) {
-    if (!audio) return;
-    try {
-        const startVol = audio.volume;
-        const steps = 8;
-        let step = 0;
-        const fade = setInterval(() => {
-            step++;
-            audio.volume = Math.max(0, startVol * (1 - step / steps));
-            if (step >= steps) {
-                clearInterval(fade);
-                audio.pause();
-                audio.currentTime = 0;
-            }
-        }, 30);
-    } catch { /* audio not available */ }
-}
-
-// Card rank reveal sound — per-rank SE
-function playCardRankSound(rank: CardRank) {
-    try {
-        if (rank === 'NORMAL') return;
-        const st = getSettings(); if (!st.soundEnabled) return;
-        const vol = st.volume / 100;
-        const ctx = getAudioCtx();
-        if (ctx.state === 'suspended') ctx.resume();
-        const now = ctx.currentTime;
-
-        const configs: Partial<Record<CardRank, { freqs: number[]; dur: number; type: OscillatorType; gain: number; stagger: number }>> = {
-            BRONZE: { freqs: [440], dur: 0.15, type: 'triangle', gain: 0.1, stagger: 0 },
-            SILVER: { freqs: [523, 659], dur: 0.2, type: 'sine', gain: 0.1, stagger: 0 },
-            GOLD: { freqs: [523, 659, 784], dur: 0.35, type: 'sine', gain: 0.12, stagger: 0.08 },
-            HOLOGRAPHIC: { freqs: [523, 659, 784, 988, 1175], dur: 0.6, type: 'sine', gain: 0.1, stagger: 0.06 },
-            LEGENDARY: { freqs: [440, 523, 659, 784, 988, 1175, 1568], dur: 0.9, type: 'sine', gain: 0.08, stagger: 0.05 },
-        };
-        const s = configs[rank];
-        if (!s) return;
-
-        s.freqs.forEach((freq, i) => {
-            const osc = ctx.createOscillator();
-            const g = ctx.createGain();
-            osc.type = s.type;
-            osc.frequency.value = freq;
-            const t = now + i * s.stagger;
-            const gv = s.gain * vol;
-            g.gain.setValueAtTime(0, t);
-            g.gain.linearRampToValueAtTime(gv, t + 0.02);
-            g.gain.setValueAtTime(gv, t + s.dur * 0.4);
-            g.gain.exponentialRampToValueAtTime(0.001, t + s.dur);
-            osc.connect(g); g.connect(ctx.destination);
-            osc.start(t); osc.stop(t + s.dur + 0.05);
-        });
-
-        // LEGENDARY: add low rumble
-        if (rank === 'LEGENDARY') {
-            const rumble = ctx.createOscillator();
-            const rg = ctx.createGain();
-            rumble.type = 'sawtooth'; rumble.frequency.value = 80;
-            rg.gain.setValueAtTime(0.06 * vol, now);
-            rg.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-            rumble.connect(rg); rg.connect(ctx.destination);
-            rumble.start(now); rumble.stop(now + 0.6);
-        }
-    } catch { /* audio not available */ }
-}
-
-// Rank-up fanfare — ascending celebration
-function playRankUpSound(newRank: CardRank) {
-    try {
-        const st = getSettings(); if (!st.soundEnabled) return;
-        const vol = st.volume / 100;
-        const ctx = getAudioCtx();
-        if (ctx.state === 'suspended') ctx.resume();
-        const now = ctx.currentTime;
-
-        // Rising fanfare base
-        const fanfareFreqs: Record<string, number[]> = {
-            BRONZE: [330, 440],
-            SILVER: [330, 440, 523],
-            GOLD: [330, 440, 523, 659],
-            HOLOGRAPHIC: [330, 440, 523, 659, 784],
-            LEGENDARY: [262, 330, 392, 523, 659, 784, 1047],
-        };
-        const freqs = fanfareFreqs[newRank] || [440, 523];
-        freqs.forEach((freq, i) => {
-            const osc = ctx.createOscillator();
-            const g = ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.value = freq;
-            const t = now + i * 0.08;
-            g.gain.setValueAtTime(0, t);
-            g.gain.linearRampToValueAtTime(0.14 * vol, t + 0.03);
-            g.gain.setValueAtTime(0.14 * vol, t + 0.15);
-            g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
-            osc.connect(g); g.connect(ctx.destination);
-            osc.start(t); osc.stop(t + 0.55);
-        });
-
-        // Final chord (all freqs together, delayed)
-        const chordTime = now + freqs.length * 0.08 + 0.1;
-        const topFreqs = freqs.slice(-3);
-        topFreqs.forEach(freq => {
-            const osc = ctx.createOscillator();
-            const g = ctx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.value = freq;
-            g.gain.setValueAtTime(0, chordTime);
-            g.gain.linearRampToValueAtTime(0.12 * vol, chordTime + 0.03);
-            g.gain.exponentialRampToValueAtTime(0.001, chordTime + 0.4);
-            osc.connect(g); g.connect(ctx.destination);
-            osc.start(chordTime); osc.stop(chordTime + 0.45);
-        });
-    } catch { /* audio not available */ }
-}
-
-// FEVER chain hit — metallic ping that rises with streak
-function playFeverChainHit(streak: number) {
-    try {
-        const st = getSettings(); if (!st.soundEnabled) return;
-        const vol = st.volume / 100;
-        const ctx = getAudioCtx();
-        if (ctx.state === 'suspended') ctx.resume();
-        const now = ctx.currentTime;
-        const freq = 1200 + streak * 50;
-        const osc = ctx.createOscillator();
-        const g = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.value = Math.min(freq, 3000);
-        g.gain.setValueAtTime(0.08 * vol, now);
-        g.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-        osc.connect(g); g.connect(ctx.destination);
-        osc.start(now); osc.stop(now + 0.2);
-    } catch { /* audio not available */ }
-}
-
+// Sound functions extracted to @/lib/training-sounds
 // Gacha tier config
 const GACHA_TIER_CONFIG: Record<string, {
     color: string; particles: number; duration: number;
@@ -561,10 +179,91 @@ const GACHA_TIER_CONFIG: Record<string, {
     SUPER: { color: '#EF4444', particles: 24, duration: 4200, fontSize: 80, mobileFontSize: 56 },
     MEGA: { color: '#8B5CF6', particles: 40, duration: 6000, fontSize: 100, mobileFontSize: 68 },
     LEGENDARY: { color: '#D4AF37', particles: 60, duration: 8500, fontSize: 130, mobileFontSize: 84 },
+    MYTHIC: { color: '#EC4899', particles: 80, duration: 10000, fontSize: 140, mobileFontSize: 90 },
+    SHINY: { color: '#06B6D4', particles: 120, duration: 13000, fontSize: 150, mobileFontSize: 96 },
+    PHANTOM: { color: '#FFFFFF', particles: 150, duration: 15000, fontSize: 160, mobileFontSize: 100 },
 };
 
-const GACHA_REEL_TIERS = ['BONUS', 'GREAT', 'SUPER', 'MEGA', 'LEGEND', 'ハズレ'];
-const GACHA_REEL_COLORS = ['#D4AF37', '#F59E0B', '#EF4444', '#8B5CF6', '#D4AF37', '#78716C'];
+// 3-Reel Slot Machine symbols
+type SlotSymbolId = 'seven-gold' | 'seven-red' | 'bar' | 'bell' | 'grape' | 'cherry' | 'blank' | 'god' | 'rainbow' | 'ghost';
+const SLOT_SYMBOLS: { id: SlotSymbolId; label: string; color: string; glow: string; scale: number; stroke?: string; ultra?: boolean }[] = [
+    { id: 'seven-gold', label: '7', color: '#D4AF37', glow: '#D4AF3790', scale: 1.3, stroke: '#8B6914' },
+    { id: 'seven-red', label: '7', color: '#DC2626', glow: '#DC262690', scale: 1.3, stroke: '#991B1B' },
+    { id: 'bar', label: 'BAR', color: '#1C1917', glow: '#78716C60', scale: 0.55, stroke: '#44403C' },
+    { id: 'bell', label: '鈴', color: '#D97706', glow: '#D9770660', scale: 0.75, stroke: '#92400E' },
+    { id: 'grape', label: '星', color: '#7C3AED', glow: '#7C3AED60', scale: 0.75, stroke: '#5B21B6' },
+    { id: 'cherry', label: '桜', color: '#E11D48', glow: '#E11D4860', scale: 0.75, stroke: '#9F1239' },
+    { id: 'blank', label: '×', color: '#A8A29E', glow: 'transparent', scale: 0.8 },
+    // Ultra-rare only — never in normal spin pool
+    { id: 'god', label: '神', color: '#EC4899', glow: '#EC489990', scale: 0.85, stroke: '#BE185D', ultra: true },
+    { id: 'rainbow', label: '虹', color: '#06B6D4', glow: '#06B6D490', scale: 0.85, stroke: '#0E7490', ultra: true },
+    { id: 'ghost', label: '幻', color: '#E2E8F0', glow: '#FFFFFF90', scale: 0.85, stroke: '#94A3B8', ultra: true },
+];
+const SLOT_SYMBOL_MAP = Object.fromEntries(SLOT_SYMBOLS.map(s => [s.id, s])) as Record<SlotSymbolId, typeof SLOT_SYMBOLS[0]>;
+
+// Spinnable pool (no blanks or ultra-rares during spin)
+const SPIN_POOL: SlotSymbolId[] = SLOT_SYMBOLS.filter(s => s.id !== 'blank' && !s.ultra).map(s => s.id);
+
+// Map backend tier -> which 3 symbols to show on the payline
+const TIER_TO_COMBO: Record<string, SlotSymbolId[]> = {
+    PHANTOM:   ['ghost', 'ghost', 'ghost'],       // 幻幻幻 — white flickering
+    SHINY:     ['rainbow', 'rainbow', 'rainbow'],  // 虹虹虹 — prismatic
+    MYTHIC:    ['god', 'god', 'god'],              // 神神神 — pink flash
+    LEGENDARY: ['seven-gold', 'seven-gold', 'seven-gold'],
+    MEGA:      ['seven-red', 'seven-red', 'seven-red'],
+    SUPER:     ['bar', 'bar', 'bar'],
+    GREAT:     ['bell', 'bell', 'bell'],
+    BONUS:     ['grape', 'grape', 'grape'],
+    MISS:      ['cherry', 'bar', 'blank'],
+};
+
+// Generate a random non-matching combo for MISS (no ultra-rares)
+function generateMissCombo(): [SlotSymbolId, SlotSymbolId, SlotSymbolId] {
+    const pool: SlotSymbolId[] = ['seven-red', 'bar', 'bell', 'grape', 'cherry', 'blank'];
+    let a: SlotSymbolId, b: SlotSymbolId, c: SlotSymbolId;
+    do {
+        a = pool[Math.floor(Math.random() * pool.length)];
+        b = pool[Math.floor(Math.random() * pool.length)];
+        c = pool[Math.floor(Math.random() * pool.length)];
+    } while (a === b && b === c);
+    return [a, b, c];
+}
+
+// Pick a random symbol different from the given one (for above/below filler)
+function randomOtherSymbol(exclude: SlotSymbolId): SlotSymbolId {
+    const candidates = SLOT_SYMBOLS.filter(s => s.id !== exclude && s.id !== 'blank' && !s.ultra);
+    return candidates[Math.floor(Math.random() * candidates.length)].id;
+}
+
+// Tier name mapping: internal English key → display Japanese
+const TIER_JA: Record<string, string> = {
+    BONUS: '光', GREAT: '輝', SUPER: '煌', MEGA: '極', LEGENDARY: '伝説',
+    MYTHIC: '神話', SHINY: '色違い', PHANTOM: '幻', MISS: '凡',
+};
+
+// 連荘 Chain system types and config (outside component to avoid bundler issues)
+type ChainMode = 'normal' | 'kakuhen' | 'gekiatsu' | 'god';
+
+function getChainMode(count: number): ChainMode {
+    if (count >= 10) return 'god';
+    if (count >= 5) return 'gekiatsu';
+    if (count >= 3) return 'kakuhen';
+    return 'normal';
+}
+
+function getChainTier(count: number): 0 | 1 | 2 | 3 {
+    if (count >= 10) return 3;
+    if (count >= 5) return 2;
+    if (count >= 3) return 1;
+    return 0;
+}
+
+const CHAIN_MODE_CONFIG: Record<ChainMode, { label: string; labelJa: string; color: string; gradient: string; spMultiplier: string }> = {
+    normal: { label: 'NORMAL', labelJa: '通常', color: '#78716C', gradient: 'linear-gradient(135deg, #78716C, #A8A29E)', spMultiplier: 'x1' },
+    kakuhen: { label: 'KAKUHEN', labelJa: '確変', color: '#D4AF37', gradient: 'linear-gradient(135deg, #D4AF37, #F59E0B)', spMultiplier: 'x1.5' },
+    gekiatsu: { label: 'GEKIATSU', labelJa: '激熱', color: '#DC2626', gradient: 'linear-gradient(135deg, #DC2626, #F97316)', spMultiplier: 'x2' },
+    god: { label: 'GOD MODE', labelJa: '神', color: '#7C3AED', gradient: 'linear-gradient(135deg, #7C3AED, #EC4899, #D4AF37)', spMultiplier: 'x3' },
+};
 
 // Puzzle background image (beautiful landscape for motivation)
 const PUZZLE_IMAGE = 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop';
@@ -627,14 +326,10 @@ function getDailyTitleForLevel(lv: number): { title: string; color: string } {
     return { title: '寝起き', color: '#78716C' };
 }
 
-const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-    'daily': { bg: '#EFF6FF', text: '#3B82F6', border: '#BFDBFE' },
-    'business': { bg: '#F0FDF4', text: '#16A34A', border: '#BBF7D0' },
-    'casual': { bg: '#FEF3C7', text: '#D97706', border: '#FDE68A' },
-    'idiom': { bg: '#FDF2F8', text: '#DB2777', border: '#FBCFE8' },
-    'slang': { bg: '#F5F3FF', text: '#7C3AED', border: '#DDD6FE' },
-    'ore-log': { bg: '#FFFBEB', text: '#D4AF37', border: '#F6C85F' },
-};
+// Element colors imported from shared constants
+import { ELEMENT_CATEGORY_COLORS, randomElement, calcBstTotal, getBstTier } from '@/data/english/elements';
+import { ElementBadge } from '@/components/english/ElementIcon';
+const CATEGORY_COLORS = ELEMENT_CATEGORY_COLORS;
 
 export default function PhrasesPage() {
     const [phrases, setPhrases] = useState<Phrase[]>([]);
@@ -683,7 +378,6 @@ export default function PhrasesPage() {
 
     // Gacha bonus system state
     const [playerSparks, setPlayerSparks] = useState(0);
-    const [todaySparks, setTodaySparks] = useState(0);
     const [gachaEffect, setGachaEffect] = useState<{
         phase: 'reel' | 'reveal';
         tier: string;
@@ -693,9 +387,21 @@ export default function PhrasesPage() {
         cardTotalPoints: number;
         key: number;
     } | null>(null);
-    const [reelText, setReelText] = useState('');
-
-    const [reelColor, setReelColor] = useState('#aaa');
+    // 3-reel slot machine state
+    const [slotReels, setSlotReels] = useState<{
+        // Current center symbol for each reel (what's displayed)
+        symbols: [SlotSymbolId, SlotSymbolId, SlotSymbolId];
+        // Which reels have stopped
+        stopped: [boolean, boolean, boolean];
+        // Target combo (what the reels should land on)
+        target: [SlotSymbolId, SlotSymbolId, SlotSymbolId];
+        // Reach mode (2 matching reels)
+        reach: boolean;
+        // Symbols above/below center for each reel
+        above: [SlotSymbolId, SlotSymbolId, SlotSymbolId];
+        below: [SlotSymbolId, SlotSymbolId, SlotSymbolId];
+    } | null>(null);
+    const slotSpinTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
     const pendingGachaRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Quiet points toast (shown when slot animation is OFF)
@@ -706,13 +412,20 @@ export default function PhrasesPage() {
         return () => clearTimeout(timer);
     }, [quietToast]);
 
-    // FEVER mode: session-only, triggered by GREAT+, ends on MISS
-    const [feverMode, setFeverMode] = useState<{ active: boolean; streak: number; key: number }>({ active: false, streak: 0, key: 0 });
+    // 連荘 Chain system state
+    const [chainState, setChainState] = useState<{ count: number; mode: ChainMode; key: number }>({ count: 0, mode: 'normal', key: 0 });
+    const [chainTransition, setChainTransition] = useState<{ from: ChainMode; to: ChainMode; key: number } | null>(null);
+    // Keep backward-compat aliases for FEVER visuals
+    const feverMode = { active: chainState.mode !== 'normal', streak: chainState.count, key: chainState.key };
     const [feverFlash, setFeverFlash] = useState<'enter' | 'exit' | null>(null);
     const [feverEntryEffect, setFeverEntryEffect] = useState(false);
     const [feverExitEffect, setFeverExitEffect] = useState<{ streak: number } | null>(null);
     const feverDroneRef = useRef<HTMLAudioElement | null>(null);
     const feverRef = useRef({ active: false, streak: 0 });
+    // SP milestone celebration
+    const [milestoneEffect, setMilestoneEffect] = useState<{ amount: number; key: number } | null>(null);
+    // Luck multiplier display
+    const [luckMultiplier, setLuckMultiplier] = useState(1.0);
     const [cardRankUpEffect, setCardRankUpEffect] = useState<{ oldRank: string; newRank: string; newRankColor: string; key: number } | null>(null);
 
     // Card level-up celebration: hold the card on screen before advancing
@@ -767,13 +480,13 @@ export default function PhrasesPage() {
 
     // Keep feverRef in sync (for race-condition-safe callbacks)
     useEffect(() => {
-        feverRef.current = { active: feverMode.active, streak: feverMode.streak };
-    }, [feverMode.active, feverMode.streak]);
+        feverRef.current = { active: chainState.mode !== 'normal', streak: chainState.count };
+    }, [chainState.mode, chainState.count]);
 
-    // Stop FEVER BGM when FEVER ends + duck/restore main BGM
+    // Stop FEVER BGM when chain ends + duck/restore main BGM
     useEffect(() => {
-        if (feverMode.active) {
-            // Mute main BGM during FEVER
+        if (chainState.mode !== 'normal') {
+            // Mute main BGM during chain mode
             if (mainBgmRef.current) mainBgmRef.current.volume = 0;
         } else {
             // Restore main BGM volume
@@ -786,7 +499,22 @@ export default function PhrasesPage() {
                 feverDroneRef.current = null;
             }
         }
-    }, [feverMode.active]);
+    }, [chainState.mode]);
+
+    // Auto-clear chain transition effect
+    useEffect(() => {
+        if (!chainTransition) return;
+        const timer = setTimeout(() => setChainTransition(null), 1500);
+        return () => clearTimeout(timer);
+    }, [chainTransition]);
+
+    // Auto-clear milestone effect
+    useEffect(() => {
+        if (!milestoneEffect) return;
+        const dur = milestoneEffect.amount >= 5000 ? 8000 : milestoneEffect.amount >= 1000 ? 5000 : milestoneEffect.amount >= 500 ? 3000 : milestoneEffect.amount >= 100 ? 2000 : 1500;
+        const timer = setTimeout(() => setMilestoneEffect(null), dur);
+        return () => clearTimeout(timer);
+    }, [milestoneEffect]);
 
     // ── Main BGM (always-on loop, independent of FEVER) ──
     const mainBgmRef = useRef<HTMLAudioElement | null>(null);
@@ -851,32 +579,158 @@ export default function PhrasesPage() {
         return () => clearTimeout(timer);
     }, [dailyLevelUpEffect]);
 
-    // Gacha reel phase: fast burst spin (500ms), then reveal
+    // 3-Reel Slot Machine — spin all 3, stop sequentially
     useEffect(() => {
         if (!gachaEffect || gachaEffect.phase !== 'reel') return;
-        playReelSound();
-        // 10 frames: rapid burst → short deceleration
-        const frameTimes = [0, 25, 55, 90, 130, 180, 240, 310, 390, 460];
-        const timers: ReturnType<typeof setTimeout>[] = [];
-        frameTimes.forEach((t, i) => {
-            timers.push(setTimeout(() => {
-                setReelText(GACHA_REEL_TIERS[i % GACHA_REEL_TIERS.length]);
-                setReelColor(GACHA_REEL_COLORS[i % GACHA_REEL_COLORS.length]);
-            }, t));
+
+        const tier = gachaEffect.tier;
+        const combo = tier === 'MISS' ? generateMissCombo() : (TIER_TO_COMBO[tier] || TIER_TO_COMBO.MISS) as [SlotSymbolId, SlotSymbolId, SlotSymbolId];
+        const isReach = tier !== 'MISS' && combo[0] === combo[1]; // 2 matching = reach
+        const isUltraRare = tier === 'MYTHIC' || tier === 'SHINY' || tier === 'PHANTOM';
+        const isEpicTier = tier === 'MEGA' || tier === 'LEGENDARY' || isUltraRare;
+
+        // Initialize slot state
+        const initSym: [SlotSymbolId, SlotSymbolId, SlotSymbolId] = [
+            SPIN_POOL[Math.floor(Math.random() * SPIN_POOL.length)],
+            SPIN_POOL[Math.floor(Math.random() * SPIN_POOL.length)],
+            SPIN_POOL[Math.floor(Math.random() * SPIN_POOL.length)],
+        ];
+        setSlotReels({
+            symbols: initSym,
+            stopped: [false, false, false],
+            target: combo,
+            reach: false,
+            above: [randomOtherSymbol(initSym[0]), randomOtherSymbol(initSym[1]), randomOtherSymbol(initSym[2])],
+            below: [randomOtherSymbol(initSym[0]), randomOtherSymbol(initSym[1]), randomOtherSymbol(initSym[2])],
         });
-        const revealTimer = setTimeout(() => {
+
+        playSpinStart();
+
+        const timers: ReturnType<typeof setTimeout>[] = [];
+        const intervals: ReturnType<typeof setInterval>[] = [];
+
+        // Spin all 3 reels — rapid symbol cycling
+        const spinInterval = 60; // ms between symbol changes
+        const spinTimer = setInterval(() => {
+            setSlotReels(prev => {
+                if (!prev) return prev;
+                const newSyms = [...prev.symbols] as [SlotSymbolId, SlotSymbolId, SlotSymbolId];
+                const newAbove = [...prev.above] as [SlotSymbolId, SlotSymbolId, SlotSymbolId];
+                const newBelow = [...prev.below] as [SlotSymbolId, SlotSymbolId, SlotSymbolId];
+                for (let r = 0; r < 3; r++) {
+                    if (!prev.stopped[r]) {
+                        const sym = SPIN_POOL[Math.floor(Math.random() * SPIN_POOL.length)];
+                        newSyms[r] = sym;
+                        newAbove[r] = randomOtherSymbol(sym);
+                        newBelow[r] = randomOtherSymbol(sym);
+                        playSpinTick();
+                    }
+                }
+                return { ...prev, symbols: newSyms, above: newAbove, below: newBelow };
+            });
+        }, spinInterval);
+        intervals.push(spinTimer);
+
+        // Stop reel 1 at 800ms
+        timers.push(setTimeout(() => {
+            playReelStop(0);
+            setSlotReels(prev => {
+                if (!prev) return prev;
+                const syms = [...prev.symbols] as [SlotSymbolId, SlotSymbolId, SlotSymbolId];
+                const ab = [...prev.above] as [SlotSymbolId, SlotSymbolId, SlotSymbolId];
+                const bl = [...prev.below] as [SlotSymbolId, SlotSymbolId, SlotSymbolId];
+                syms[0] = combo[0];
+                ab[0] = randomOtherSymbol(combo[0]);
+                bl[0] = randomOtherSymbol(combo[0]);
+                return { ...prev, symbols: syms, above: ab, below: bl, stopped: [true, false, false] };
+            });
+        }, 800));
+
+        // Stop reel 2 at 1400ms
+        timers.push(setTimeout(() => {
+            playReelStop(1);
+            setSlotReels(prev => {
+                if (!prev) return prev;
+                const syms = [...prev.symbols] as [SlotSymbolId, SlotSymbolId, SlotSymbolId];
+                const ab = [...prev.above] as [SlotSymbolId, SlotSymbolId, SlotSymbolId];
+                const bl = [...prev.below] as [SlotSymbolId, SlotSymbolId, SlotSymbolId];
+                syms[1] = combo[1];
+                ab[1] = randomOtherSymbol(combo[1]);
+                bl[1] = randomOtherSymbol(combo[1]);
+                const nowReach = isReach;
+                if (nowReach) playReachAlert();
+                return { ...prev, symbols: syms, above: ab, below: bl, stopped: [true, true, false], reach: nowReach };
+            });
+        }, 1400));
+
+        // Slow down reel 3 for reach / epic tiers
+        const reel3Delay = isReach ? (isUltraRare ? 5000 : isEpicTier ? 3200 : 2600) : 2000;
+
+        // If reach, slow the spin interval for reel 3
+        if (isReach) {
+            timers.push(setTimeout(() => {
+                // Replace fast spin with slow crawl for reel 3 only
+                clearInterval(spinTimer);
+                // For ultra-rare, tease the target symbol in the crawl
+                const ultraTarget = combo[2];
+                let crawlCount = 0;
+                const slowInterval = setInterval(() => {
+                    crawlCount++;
+                    setSlotReels(prev => {
+                        if (!prev || prev.stopped[2]) return prev;
+                        const newSyms = [...prev.symbols] as [SlotSymbolId, SlotSymbolId, SlotSymbolId];
+                        const newAbove = [...prev.above] as [SlotSymbolId, SlotSymbolId, SlotSymbolId];
+                        const newBelow = [...prev.below] as [SlotSymbolId, SlotSymbolId, SlotSymbolId];
+                        // Ultra-rare: flash the target symbol briefly ~20% of the time for teasing
+                        const teaseUltra = isUltraRare && Math.random() < 0.2;
+                        const sym = teaseUltra ? ultraTarget : SPIN_POOL[Math.floor(Math.random() * SPIN_POOL.length)];
+                        newSyms[2] = sym;
+                        newAbove[2] = randomOtherSymbol(SPIN_POOL[Math.floor(Math.random() * SPIN_POOL.length)]);
+                        newBelow[2] = randomOtherSymbol(SPIN_POOL[Math.floor(Math.random() * SPIN_POOL.length)]);
+                        playSpinTick();
+                        return { ...prev, symbols: newSyms, above: newAbove, below: newBelow };
+                    });
+                }, isUltraRare ? 400 : isEpicTier ? 280 : 180);
+                intervals.push(slowInterval);
+            }, 1500));
+        }
+
+        // Stop reel 3
+        timers.push(setTimeout(() => {
+            playReelStop(2);
+            setSlotReels(prev => {
+                if (!prev) return prev;
+                const syms = [...prev.symbols] as [SlotSymbolId, SlotSymbolId, SlotSymbolId];
+                const ab = [...prev.above] as [SlotSymbolId, SlotSymbolId, SlotSymbolId];
+                const bl = [...prev.below] as [SlotSymbolId, SlotSymbolId, SlotSymbolId];
+                syms[2] = combo[2];
+                ab[2] = randomOtherSymbol(combo[2]);
+                bl[2] = randomOtherSymbol(combo[2]);
+                return { ...prev, symbols: syms, above: ab, below: bl, stopped: [true, true, true] };
+            });
+            // Clear all spin intervals
+            intervals.forEach(clearInterval);
+        }, reel3Delay));
+
+        // Transition to reveal after all reels stopped + brief pause
+        timers.push(setTimeout(() => {
             playGachaSound(gachaEffect.tier);
+            setSlotReels(null);
             setGachaEffect(prev => prev ? { ...prev, phase: 'reveal' } : null);
-            // Play card rank sound 0.2s after reveal
             if (gachaEffect.phraseId && gachaEffect.cardTotalPoints > 0) {
                 setTimeout(() => {
                     const rank = getCardRank(gachaEffect.cardTotalPoints);
                     playCardRankSound(rank.rank);
                 }, 200);
             }
-        }, 500);
-        timers.push(revealTimer);
-        return () => timers.forEach(clearTimeout);
+        }, reel3Delay + 800));
+
+        slotSpinTimers.current = timers;
+
+        return () => {
+            timers.forEach(clearTimeout);
+            intervals.forEach(clearInterval);
+        };
     }, [gachaEffect?.phase, gachaEffect?.key]);
 
     // Gacha reveal phase: auto-clear after tier-specific duration (+2s if rank-up)
@@ -892,7 +746,7 @@ export default function PhrasesPage() {
 
     // Add phrase form state
     const [showAddForm, setShowAddForm] = useState(false);
-    const [newPhrase, setNewPhrase] = useState({ english: '', japanese: '', category: 'daily' });
+    const [newPhrase, setNewPhrase] = useState(() => ({ english: '', japanese: '', category: randomElement() }));
     const [formDate, setFormDate] = useState(() => {
         const today = new Date();
         return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -906,7 +760,7 @@ export default function PhrasesPage() {
     const [quickAddedCount, setQuickAddedCount] = useState(0);
 
     // Daily review counts per month (date -> { count, xp })
-    const [monthlyReviewCounts, setMonthlyReviewCounts] = useState<Record<string, { count: number; xp: number }>>({});
+    const [monthlyReviewCounts, setMonthlyReviewCounts] = useState<Record<string, { count: number; xp: number; sparks?: number }>>({});
 
     // YouGlish state
     const [youglishPhrase, setYouglishPhrase] = useState<Phrase | null>(null);
@@ -961,12 +815,13 @@ export default function PhrasesPage() {
 
     // Fetch player stats on mount
     useEffect(() => {
-        sbGetPlayerStats()
+        fetch('/api/player-stats')
+            .then(r => r.json())
             .then(d => {
-                if (d) {
+                if (d.success) {
                     setPlayerTotalXP(d.total_xp || 0);
                     setPlayerLevel(levelFromXP(d.total_xp || 0));
-                    setPlayerSparks(d.total_sparks || 0);
+                    setPlayerSparks(d.sparks || 0);
                 }
             })
             .catch(() => { });
@@ -976,152 +831,189 @@ export default function PhrasesPage() {
     useEffect(() => {
         if (!currentMonth) return;
         const ym = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
-        sbGetMonthlyReviewCounts(ym)
-            .then(counts => setMonthlyReviewCounts(counts || {}))
+        fetch(`/api/review-count?month=${ym}`)
+            .then(r => r.json())
+            .then(d => { if (d.success) setMonthlyReviewCounts(prev => ({ ...prev, ...(d.counts || {}) })); })
             .catch(() => { });
-        sbGetDateTouchMap()
-            .then(touches => setDateTouchMap(touches || {}))
+        fetch(`/api/date-touches?month=${ym}`)
+            .then(r => r.json())
+            .then(d => { if (d.success) setDateTouchMap(prev => ({ ...prev, ...(d.touches || {}) })); })
             .catch(() => { });
     }, [currentMonth]);
 
-    // Helper: post XP via Supabase gacha + update player level + FEVER transitions
+    // Helper: post XP to review-count + update player level + chain transitions
     const postXP = useCallback((todayKey: string, xpGained: number, slamActive = false, phraseId?: string) => {
-        const sendFever = feverRef.current.active;
-
-        // Record review touch for the phrase date
-        if (phraseId) {
-            sbRecordReviewTouch(phraseId, todayKey).catch(() => { });
-        }
-
-        rollGachaAndUpdate(xpGained, phraseId, sendFever)
+        const currentChain = feverRef.current;
+        const chainTierNum = currentChain.active ? getChainTier(currentChain.streak) : 0;
+        fetch('/api/review-count', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ date: todayKey, xp: xpGained, phrase_id: phraseId, fever: currentChain.active, chain_tier: chainTierNum })
+        })
+            .then(r => r.json())
             .then(d => {
-                // Update monthly review counts (optimistic)
-                setMonthlyReviewCounts(prev => {
-                    const existing = prev[todayKey] || { count: 0, xp: 0 };
-                    return { ...prev, [todayKey]: { count: existing.count + 1, xp: existing.xp + xpGained } };
-                });
+                if (d.success) {
+                    setMonthlyReviewCounts(prev => ({ ...prev, [todayKey]: { count: d.count, xp: d.xp, sparks: d.sparks || prev[todayKey]?.sparks || 0 } }));
+                    if (d.total_xp !== undefined) {
+                        const oldLevel = playerLevel;
+                        const newTotalXP = d.total_xp;
+                        const newLevel = levelFromXP(newTotalXP);
+                        setPlayerTotalXP(newTotalXP);
+                        if (newLevel > oldLevel) {
+                            setPlayerLevel(newLevel);
+                            const info = getTitleForLevel(newLevel);
+                            setLevelUpEffect({ level: newLevel, title: info.title, color: info.color, key: Date.now() });
+                        } else {
+                            setPlayerLevel(newLevel);
+                        }
+                    }
+                    // Gacha result + card points + FEVER logic
+                    if (d.gacha) {
+                        const tier = d.gacha.tier as string;
+                        setPlayerSparks(d.gacha.total_sparks);
+                        if (phraseId && d.gacha.card_total_points !== undefined) {
+                            setCardPoints(prev => ({ ...prev, [phraseId]: d.gacha.card_total_points }));
+                        }
 
-                const oldLevel = playerLevel;
-                const newTotalXP = d.total_xp;
-                const newLevel = levelFromXP(newTotalXP);
-                setPlayerTotalXP(newTotalXP);
-                if (newLevel > oldLevel) {
-                    setPlayerLevel(newLevel);
-                    const info = getTitleForLevel(newLevel);
-                    setLevelUpEffect({ level: newLevel, title: info.title, color: info.color, key: Date.now() });
-                } else {
-                    setPlayerLevel(newLevel);
-                }
+                        // 連荘 Chain state transitions — graduated escalation
+                        if (getSettings().feverEnabled) {
+                        const currentFever = feverRef.current;
+                        const isWin = tier !== 'MISS';
+                        const isMiss = tier === 'MISS';
+                        if (isMiss) {
+                            // Chain breaks — reset to 0
+                            if (currentFever.active) {
+                                const exitStreak = currentFever.streak;
+                                stopFeverBGM(feverDroneRef.current);
+                                feverDroneRef.current = null;
+                                setChainState({ count: 0, mode: 'normal', key: Date.now() });
+                                feverRef.current = { active: false, streak: 0 };
+                                setFeverFlash('exit');
+                                setFeverExitEffect({ streak: exitStreak });
+                                playFeverExitSound();
+                            }
+                        } else if (isWin) {
+                            const newCount = currentFever.streak + 1;
+                            const oldMode = getChainMode(currentFever.streak);
+                            const newMode = getChainMode(newCount);
+                            const wasActive = currentFever.active;
 
-                // Gacha result + card points + FEVER logic
-                const tier = d.tier as string;
-                setPlayerSparks(d.total_sparks);
-                setTodaySparks(prev => prev + (d.sparks_won || 0));
-                if (phraseId && d.card_total_points !== undefined) {
-                    setCardPoints(prev => ({ ...prev, [phraseId]: d.card_total_points }));
-                }
+                            setChainState({ count: newCount, mode: newMode, key: Date.now() });
+                            feverRef.current = { active: newMode !== 'normal', streak: newCount };
 
-                // FEVER state transitions — read LATEST state from ref (not stale closure)
-                if (getSettings().feverEnabled) {
-                const currentFever = feverRef.current;
-                const isGreatOrAbove = tier === 'GREAT' || tier === 'SUPER' || tier === 'MEGA' || tier === 'LEGENDARY';
-                const isMiss = tier === 'MISS';
-                if (!currentFever.active && isGreatOrAbove) {
-                    // Enter FEVER
-                    setFeverMode({ active: true, streak: 1, key: Date.now() });
-                    feverRef.current = { active: true, streak: 1 };
-                    setFeverFlash('enter');
-                    setFeverEntryEffect(true);
-                    playFeverEntrySound();
-                    feverDroneRef.current = startFeverBGM();
-                } else if (currentFever.active && isMiss) {
-                    // Exit FEVER
-                    const exitStreak = currentFever.streak;
-                    stopFeverBGM(feverDroneRef.current);
-                    feverDroneRef.current = null;
-                    setFeverMode({ active: false, streak: 0, key: Date.now() });
-                    feverRef.current = { active: false, streak: 0 };
-                    setFeverFlash('exit');
-                    setFeverExitEffect({ streak: exitStreak });
-                    playFeverExitSound();
-                } else if (currentFever.active && !isMiss) {
-                    // Continue FEVER chain
-                    const newStreak = currentFever.streak + 1;
-                    setFeverMode(prev => ({ ...prev, streak: newStreak, key: Date.now() }));
-                    feverRef.current = { active: true, streak: newStreak };
-                    playFeverChainHit(newStreak);
-                }
-                }
+                            // Mode escalation effects
+                            if (newMode !== oldMode && newMode !== 'normal') {
+                                setChainTransition({ from: oldMode, to: newMode, key: Date.now() });
+                                if (!wasActive) {
+                                    // First entry into chain mode (normal → kakuhen at 3)
+                                    setFeverFlash('enter');
+                                    setFeverEntryEffect(true);
+                                    playFeverEntrySound();
+                                    feverDroneRef.current = startFeverBGM();
+                                } else {
+                                    // Escalation (kakuhen → gekiatsu, gekiatsu → god)
+                                    playFeverEntrySound();
+                                }
+                            } else if (wasActive) {
+                                playFeverChainHit(newCount);
+                            }
+                        }
+                        }
 
-                // Card rank-up detection
-                if (phraseId && d.card_total_points !== undefined) {
-                    const prevPoints = cardPoints[phraseId] || 0;
-                    const prevRank = getCardRank(prevPoints);
-                    const newRank = getCardRank(d.card_total_points);
-                    if (prevRank.rank !== newRank.rank && newRank.rank !== 'NORMAL') {
-                        setTimeout(() => {
-                            playRankUpSound(newRank.rank);
-                            setCardRankUpEffect({
-                                oldRank: prevRank.label || 'NORMAL',
-                                newRank: newRank.label,
-                                newRankColor: newRank.borderColor,
+                        // SP milestone detection
+                        if (d.gacha.total_sparks !== undefined) {
+                            const prevSparks = playerSparks;
+                            const newSparks = d.gacha.total_sparks;
+                            const milestones = [5000, 1000, 500, 100, 50];
+                            for (const m of milestones) {
+                                if (Math.floor(prevSparks / m) < Math.floor(newSparks / m)) {
+                                    setMilestoneEffect({ amount: m, key: Date.now() });
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Update luck multiplier
+                        if (d.gacha.luck_multiplier !== undefined) {
+                            setLuckMultiplier(d.gacha.luck_multiplier);
+                        }
+
+                        // Card rank-up detection
+                        if (phraseId && d.gacha.card_total_points !== undefined) {
+                            const prevPoints = cardPoints[phraseId] || 0;
+                            const prevRank = getCardRank(prevPoints);
+                            const newRank = getCardRank(d.gacha.card_total_points);
+                            if (prevRank.rank !== newRank.rank && newRank.rank !== 'NORMAL') {
+                                setTimeout(() => {
+                                    playRankUpSound(newRank.rank);
+                                    setCardRankUpEffect({
+                                        oldRank: prevRank.label || 'NORMAL',
+                                        newRank: newRank.label,
+                                        newRankColor: newRank.borderColor,
+                                        key: Date.now(),
+                                    });
+                                }, 500);
+                            }
+                        }
+
+                        if (getSettings().slotEnabled) {
+                        if (pendingGachaRef.current) clearTimeout(pendingGachaRef.current);
+                        const delay = slamActive ? 1200 : 0;
+                        pendingGachaRef.current = setTimeout(() => {
+                            setGachaEffect({
+                                phase: 'reel',
+                                tier,
+                                sparksWon: d.gacha.sparks_won,
+                                phraseId: phraseId || null,
+                                cardPointsEarned: d.gacha.card_points_earned || 0,
+                                cardTotalPoints: d.gacha.card_total_points || 0,
                                 key: Date.now(),
                             });
-                        }, 500);
+                            pendingGachaRef.current = null;
+                        }, delay);
+                        } else {
+                            // Slot OFF — show quiet toast with points (no sound)
+                            setQuietToast({
+                                sparks: d.gacha.sparks_won,
+                                cardPts: d.gacha.card_points_earned || 0,
+                                tier,
+                                key: Date.now(),
+                            });
+                        }
                     }
-                }
-
-                if (getSettings().slotEnabled) {
-                if (pendingGachaRef.current) clearTimeout(pendingGachaRef.current);
-                const delay = slamActive ? 1200 : 0;
-                pendingGachaRef.current = setTimeout(() => {
-                    setGachaEffect({
-                        phase: 'reel',
-                        tier,
-                        sparksWon: d.sparks_won,
-                        phraseId: phraseId || null,
-                        cardPointsEarned: d.card_points_earned || 0,
-                        cardTotalPoints: d.card_total_points || 0,
-                        key: Date.now(),
-                    });
-                    pendingGachaRef.current = null;
-                }, delay);
-                } else {
-                    // Slot OFF — show quiet toast with points (no sound)
-                    setQuietToast({
-                        sparks: d.sparks_won,
-                        cardPts: d.card_points_earned || 0,
-                        tier,
-                        key: Date.now(),
-                    });
                 }
             })
             .catch(() => { });
-    }, [playerLevel, cardPoints]);
+    }, [playerLevel, cardPoints, playerSparks]);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [phrasesData, masteryData, recordingsData, linksData] = await Promise.all([
-                    sbGetAllPhrases(),
-                    sbGetAllMastery(),
-                    sbGetVoiceRecordings(),
-                    sbGetPhraseLinks(),
+                const [phrasesRes, masteryRes, recordingsRes, linksRes] = await Promise.all([
+                    fetch('/api/phrases'),
+                    fetch('/api/phrases/mastery'),
+                    fetch('/api/voice-recordings'),
+                    fetch('/api/phrases/links'),
                 ]);
-                setPhrases(phrasesData.map(p => ({
-                    id: p.id,
-                    english: p.english,
-                    japanese: p.japanese,
-                    category: p.category,
-                    date: p.date,
-                })));
-                if (masteryData) {
+                const phrasesData = await phrasesRes.json();
+                const masteryData = await masteryRes.json();
+                const recordingsData = await recordingsRes.json();
+                const linksData = await linksRes.json();
+                if (phrasesData.success) setPhrases(phrasesData.phrases);
+                if (masteryData.success) {
                     setPhraseMastery(masteryData.mastery || {});
                     if (masteryData.lastLeveled) setPhraseLastLeveled(masteryData.lastLeveled);
                     if (masteryData.cardPoints) setCardPoints(masteryData.cardPoints);
                 }
-                setVoiceRecordings(recordingsData || {});
-                setPhraseLinks(linksData || {});
+                if (recordingsData.success) setVoiceRecordings(recordingsData.recordings || {});
+                if (linksData.success) {
+                    const map: Record<string, PhraseLink[]> = {};
+                    for (const l of (linksData.links || [])) {
+                        if (!map[l.phrase_id]) map[l.phrase_id] = [];
+                        map[l.phrase_id].push(l);
+                    }
+                    setPhraseLinks(map);
+                }
             } finally {
                 setLoading(false);
             }
@@ -1279,25 +1171,25 @@ export default function PhrasesPage() {
         setSavingPhrase(true);
         try {
             const fullText = selectedCaptions.map(c => c.text).join(' ');
-            const newPhrase = await sbAddPhrase({
-                english: fullText,
-                japanese: `(${youglishPhrase?.english.slice(0, 30) || 'YouGlish'})`,
-                category: 'YouGlish',
-                date: youglishSaveDate,
+            const res = await fetch('/api/phrases', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    english: fullText,
+                    japanese: `(${youglishPhrase?.english.slice(0, 30) || 'YouGlish'})`,
+                    category: 'YouGlish',
+                    date: youglishSaveDate
+                })
             });
-            if (newPhrase) {
-                setPhrases(prev => {
-                    if (prev.some(p => p.id === newPhrase.id)) return prev;
-                    return [...prev, {
-                        id: newPhrase.id,
-                        english: newPhrase.english,
-                        japanese: newPhrase.japanese,
-                        category: newPhrase.category,
-                        date: newPhrase.date,
-                    }];
-                });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success && data.phrase && !data.duplicate) {
+                    setPhrases(prev => [...prev, data.phrase]);
+                }
                 alert('Saved!');
                 setCaptionHistory([]);
+            } else {
+                alert('Failed to save');
             }
         } catch (err) {
             console.error(err);
@@ -1499,9 +1391,10 @@ export default function PhrasesPage() {
         return () => window.removeEventListener('keydown', handleEsc);
     }, [viewMode]);
 
-    // Today's XP — from DB via monthlyReviewCounts
+    // Today's XP + sparks — from DB via monthlyReviewCounts
     const todayKey = clientToday || new Date().toISOString().split('T')[0];
     const todayXP = monthlyReviewCounts[todayKey]?.xp || 0;
+    const todaySparks = monthlyReviewCounts[todayKey]?.sparks || 0;
 
     // Daily level — derived from today's XP, resets each day
     const dailyLevel = dailyLevelFromXP(todayXP);
@@ -1643,7 +1536,7 @@ export default function PhrasesPage() {
                                             color: celebChakra.color,
                                             textShadow: `0 0 24px ${celebChakra.gradFrom}90, 0 0 48px ${celebChakra.gradFrom}40, 0 2px 8px rgba(0,0,0,0.2)`,
                                         }}>
-                                            LEVEL UP
+                                            レベルアップ
                                         </div>
                                         <div style={{
                                             fontSize: isFullReview ? '36px' : '26px',
@@ -1654,7 +1547,7 @@ export default function PhrasesPage() {
                                             WebkitTextFillColor: 'transparent',
                                             filter: `drop-shadow(0 0 16px ${celebChakra.gradFrom}70)`,
                                         }}>
-                                            {celebChakra.name}
+                                            {celebChakra.ja}
                                         </div>
                                     </div>
                                 </div>
@@ -1674,24 +1567,10 @@ export default function PhrasesPage() {
                             zIndex: 3,
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                {/* Category pill */}
-                                {currentPhrase && (() => {
-                                    const catColor = CATEGORY_COLORS[currentPhrase.category] || { bg: '#f0f0f0', text: '#666', border: '#e5e5e5' };
-                                    return (
-                                        <span style={{
-                                            fontSize: '9px',
-                                            fontWeight: '700',
-                                            padding: '2px 6px',
-                                            borderRadius: '4px',
-                                            backgroundColor: catColor.bg,
-                                            color: catColor.text,
-                                            textTransform: 'uppercase',
-                                            letterSpacing: '0.5px',
-                                        }}>
-                                            {currentPhrase.category}
-                                        </span>
-                                    );
-                                })()}
+                                {/* Element icon */}
+                                {currentPhrase && (
+                                    <ElementBadge element={currentPhrase.category} size={12} />
+                                )}
                                 {/* Rank label */}
                                 {currentCardRank.rank !== 'NORMAL' && (
                                     <span style={{
@@ -1814,7 +1693,7 @@ export default function PhrasesPage() {
                                         letterSpacing: '1px',
                                         marginTop: '4px',
                                     }}>
-                                        CARD
+                                        カード
                                     </div>
                                 </div>
 
@@ -1891,7 +1770,7 @@ export default function PhrasesPage() {
                                         letterSpacing: '3px',
                                         marginTop: '3px',
                                     }}>
-                                        SPARKS
+                                        スロット
                                     </div>
                                 </div>
                             </div>
@@ -2030,70 +1909,125 @@ export default function PhrasesPage() {
                                                 COMPLETE
                                             </div>
                                         ) : (
-                                            <button
-                                                onClick={() => {
-                                                    if (isLockedToday || cardCelebration) return;
-                                                    const currentPhrase = displayedCard;
-                                                    if (!currentPhrase) return;
-                                                    const current = Number(phraseMastery[currentPhrase.id] || 0);
-                                                    if (current === 3) return;
-                                                    const next = current === 6 ? 0 : (current + 1);
-                                                    const isLevelUp = next > 0 && next > current;
+                                            <div style={{ display: 'flex', gap: '8px', width: '100%', alignItems: 'stretch' }}>
+                                                <button
+                                                    onClick={() => {
+                                                        if (isLockedToday || cardCelebration) return;
+                                                        const currentPhrase = displayedCard;
+                                                        if (!currentPhrase) return;
+                                                        const current = Number(phraseMastery[currentPhrase.id] || 0);
+                                                        if (current === 3) return;
+                                                        const next = current === 6 ? 0 : (current + 1);
+                                                        const isLevelUp = next > 0 && next > current;
 
-                                                    if (isLevelUp) {
-                                                        const nl = getChakraLevel(next, hasRec, hasLink);
-                                                        const nc = CHAKRA_CONFIG[nl];
-                                                        const k = Date.now();
-                                                        playLevelSound(nl);
-                                                        setPointEffect({
-                                                            points: nc.lv,
-                                                            color: nc.color,
-                                                            gradFrom: nc.gradFrom,
-                                                            gradTo: nc.gradTo,
-                                                            levelName: nc.name,
-                                                            key: k,
-                                                        });
-                                                        setCalendarPulse({
-                                                            dateKey: currentPhrase.date.split('T')[0],
-                                                            points: nc.lv,
-                                                            gradFrom: nc.gradFrom,
-                                                            color: nc.color,
-                                                            level: nl,
-                                                            key: k,
-                                                        });
-                                                    }
+                                                        if (isLevelUp) {
+                                                            const nl = getChakraLevel(next, hasRec, hasLink);
+                                                            const nc = CHAKRA_CONFIG[nl];
+                                                            const k = Date.now();
+                                                            playLevelSound(nl);
+                                                            setPointEffect({
+                                                                points: nc.lv,
+                                                                color: nc.color,
+                                                                gradFrom: nc.gradFrom,
+                                                                gradTo: nc.gradTo,
+                                                                levelName: nc.name,
+                                                                key: k,
+                                                            });
+                                                            setCalendarPulse({
+                                                                dateKey: currentPhrase.date.split('T')[0],
+                                                                points: nc.lv,
+                                                                gradFrom: nc.gradFrom,
+                                                                color: nc.color,
+                                                                level: nl,
+                                                                key: k,
+                                                            });
+                                                        }
 
-                                                    if (isLevelUp) {
-                                                        setCardCelebration({ phrase: currentPhrase, key: Date.now() });
-                                                    }
-                                                    cycleMastery(currentPhrase.id, isLevelUp);
-                                                }}
-                                                style={{
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-                                                    width: '100%',
-                                                    padding: isFullReview ? '18px 0' : '14px 0',
-                                                    borderRadius: '14px',
-                                                    border: 'none',
-                                                    background: isLockedToday
-                                                        ? '#E7E5E4'
-                                                        : `linear-gradient(135deg, ${chakra.gradFrom}, ${chakra.color})`,
-                                                    color: isLockedToday ? '#A8A29E' : '#fff',
-                                                    fontSize: isFullReview ? '17px' : '15px',
-                                                    fontWeight: '800',
-                                                    cursor: isLockedToday ? 'not-allowed' : 'pointer',
-                                                    letterSpacing: '2px',
-                                                    boxShadow: isLockedToday ? 'none' : `0 4px 16px ${chakra.color}40`,
-                                                    transition: 'transform 0.12s, box-shadow 0.12s',
-                                                }}
-                                                onMouseDown={e => { if (!isLockedToday) e.currentTarget.style.transform = 'scale(0.97)'; }}
-                                                onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-                                                onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-                                            >
-                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                    <polyline points="18 15 12 9 6 15" />
-                                                </svg>
-                                                Lv.{chakra.level + 1} {chakra.ja} {chakra.name}
-                                            </button>
+                                                        if (isLevelUp) {
+                                                            setCardCelebration({ phrase: currentPhrase, key: Date.now() });
+                                                        }
+                                                        cycleMastery(currentPhrase.id, isLevelUp);
+                                                    }}
+                                                    style={{
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                                                        flex: 1,
+                                                        padding: isFullReview ? '14px 0' : '11px 0',
+                                                        borderRadius: '14px',
+                                                        border: 'none',
+                                                        background: isLockedToday
+                                                            ? '#E7E5E4'
+                                                            : `linear-gradient(135deg, ${chakra.gradFrom}, ${chakra.color})`,
+                                                        color: isLockedToday ? '#A8A29E' : '#fff',
+                                                        fontSize: isFullReview ? '17px' : '15px',
+                                                        fontWeight: '800',
+                                                        cursor: isLockedToday ? 'not-allowed' : 'pointer',
+                                                        letterSpacing: '2px',
+                                                        boxShadow: isLockedToday ? 'none' : `0 4px 16px ${chakra.color}40`,
+                                                        transition: 'transform 0.12s, box-shadow 0.12s',
+                                                    }}
+                                                    onMouseDown={e => { if (!isLockedToday) e.currentTarget.style.transform = 'scale(0.97)'; }}
+                                                    onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                                                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                                                >
+                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                        <polyline points="18 15 12 9 6 15" />
+                                                    </svg>
+                                                    Lv.{chakra.level + 1} {chakra.ja} {chakra.name}
+                                                </button>
+                                                {(() => {
+                                                    const isPlaying = playingPhraseId === displayedCard.id;
+                                                    return (
+                                                        <button
+                                                            onClick={() => {
+                                                                if (isPlaying) {
+                                                                    window.speechSynthesis.cancel();
+                                                                    setPlayingPhraseId(null);
+                                                                } else {
+                                                                    playPhrase(displayedCard);
+                                                                }
+                                                            }}
+                                                            style={{
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                width: isFullReview ? '44px' : '38px',
+                                                                height: isFullReview ? '44px' : '38px',
+                                                                borderRadius: '50%',
+                                                                border: isPlaying ? '2px solid #D4AF37' : '1px solid #E7E5E4',
+                                                                background: isPlaying ? '#FFFBEB' : '#FAFAF9',
+                                                                color: isPlaying ? '#B8941E' : '#A8A29E',
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.15s',
+                                                                flexShrink: 0,
+                                                                padding: 0,
+                                                            }}
+                                                            onMouseEnter={e => {
+                                                                if (!isPlaying) {
+                                                                    e.currentTarget.style.borderColor = '#D4AF37';
+                                                                    e.currentTarget.style.background = '#FFFBEB';
+                                                                    e.currentTarget.style.color = '#92400E';
+                                                                }
+                                                            }}
+                                                            onMouseLeave={e => {
+                                                                if (!isPlaying) {
+                                                                    e.currentTarget.style.borderColor = '#E7E5E4';
+                                                                    e.currentTarget.style.background = '#FAFAF9';
+                                                                    e.currentTarget.style.color = '#A8A29E';
+                                                                }
+                                                            }}
+                                                        >
+                                                            {isPlaying ? (
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                                                    <rect x="6" y="4" width="4" height="16" rx="1" />
+                                                                    <rect x="14" y="4" width="4" height="16" rx="1" />
+                                                                </svg>
+                                                            ) : (
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                                                    <path d="M8 5v14l11-7z" />
+                                                                </svg>
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })()}
+                                            </div>
                                         )}
                                     </div>
                                 );
@@ -2128,7 +2062,7 @@ export default function PhrasesPage() {
                                                 fontWeight: '700',
                                                 color: '#bbb',
                                                 letterSpacing: '1.5px',
-                                            }}>TODAY</span>
+                                            }}>本日</span>
                                             <span style={{
                                                 fontSize: isFullReview ? '16px' : '12px',
                                                 fontWeight: '900',
@@ -2182,7 +2116,7 @@ export default function PhrasesPage() {
                                                 pointerEvents: 'none',
                                                 whiteSpace: 'nowrap',
                                             }}>
-                                                LEVEL UP!
+                                                レベルアップ!
                                             </div>
                                         )}
                                     </div>
@@ -2239,6 +2173,30 @@ export default function PhrasesPage() {
                                 );
                             })()}
 
+                            {/* Luck + SP indicator */}
+                            {luckMultiplier > 1 && (
+                                <div style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                                    marginTop: '2px', opacity: 0.4,
+                                }}>
+                                    <span style={{
+                                        fontSize: isFullReview ? '8px' : '6px',
+                                        fontWeight: '700',
+                                        color: '#D4AF37',
+                                        letterSpacing: '0.5px',
+                                    }}>
+                                        LUCK x{luckMultiplier.toFixed(2)}
+                                    </span>
+                                    <span style={{
+                                        fontSize: isFullReview ? '8px' : '6px',
+                                        fontWeight: '600',
+                                        color: '#A8A29E',
+                                    }}>
+                                        {playerSparks.toLocaleString()} SP
+                                    </span>
+                                </div>
+                            )}
+
                             {/* Separator */}
                             <div style={{
                                 height: '1px',
@@ -2247,14 +2205,14 @@ export default function PhrasesPage() {
                             }} />
                         </div>{/* End XP Bars Section */}
 
-                        {/* Actions row: 削除 / 編集 / 研究 / 再生 */}
+                        {/* Actions row: 削除 / 編集 / 研究 / 録音 */}
                         {displayedCard && (
                             <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 gap: isFullReview ? '6px' : '4px',
-                                padding: isFullReview ? '6px 12px 10px' : '4px 8px 6px',
+                                padding: isFullReview ? '2px 12px 10px' : '2px 8px 6px',
                                 position: 'relative',
                                 zIndex: 3,
                             }}>
@@ -2311,28 +2269,6 @@ export default function PhrasesPage() {
                                     }}
                                 >
                                     {showQuickAdd ? 'Close' : '研究'}
-                                </button>
-                                <button
-                                    onClick={() => displayedCard && playPhrase(displayedCard)}
-                                    style={{
-                                        background: playingPhraseId === displayedCard?.id ? '#D4AF37' : '#F5F5F4',
-                                        border: playingPhraseId === displayedCard?.id ? '1px solid #D4AF37' : '1px solid #ddd',
-                                        color: playingPhraseId === displayedCard?.id ? '#fff' : '#888',
-                                        fontSize: isFullReview ? '11px' : '10px',
-                                        fontWeight: '600',
-                                        cursor: 'pointer',
-                                        padding: isFullReview ? '6px 14px' : '5px 10px',
-                                        borderRadius: '5px',
-                                        transition: 'all 0.15s',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '4px',
-                                    }}
-                                >
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M8 5v14l11-7z" />
-                                    </svg>
-                                    再生
                                 </button>
                                 {displayedCard && (
                                     <VoiceRecorder
@@ -2450,17 +2386,37 @@ export default function PhrasesPage() {
                                             color: _chakra.color,
                                             whiteSpace: 'nowrap',
                                         }}>
-                                            {_chakra.name}
+                                            {_chakra.ja}
                                         </span>
                                     </div>
-                                    {/* Center: CARD counter */}
+                                    {/* Center: CARD counter + BST */}
                                     <div style={{
-                                        fontSize: isFullReview ? '11px' : '9px',
-                                        fontWeight: '600',
-                                        color: historyOffset > 0 ? '#D4AF37' : '#A8A29E',
-                                        fontVariantNumeric: 'tabular-nums',
+                                        display: 'flex', alignItems: 'center', gap: '8px',
                                     }}>
-                                        {historyOffset > 0 ? `PREV ${historyOffset}` : `CARD ${reviewIndex + 1}/${reviewList.length}`}
+                                        <span style={{
+                                            fontSize: isFullReview ? '11px' : '9px',
+                                            fontWeight: '600',
+                                            color: historyOffset > 0 ? '#D4AF37' : '#A8A29E',
+                                            fontVariantNumeric: 'tabular-nums',
+                                        }}>
+                                            {historyOffset > 0 ? `戻り ${historyOffset}` : `カード ${reviewIndex + 1}/${reviewList.length}`}
+                                        </span>
+                                        {currentPhrase && (() => {
+                                            const bst = calcBstTotal(currentPhrase.id);
+                                            const bt = getBstTier(bst);
+                                            return (
+                                                <span style={{
+                                                    fontSize: isFullReview ? '10px' : '8px',
+                                                    fontWeight: '800',
+                                                    color: bt.color,
+                                                    padding: '1px 5px',
+                                                    borderRadius: '4px',
+                                                    backgroundColor: bt.color + '15',
+                                                }}>
+                                                    {bt.tier}{bst}
+                                                </span>
+                                            );
+                                        })()}
                                     </div>
                                     {/* Right: Prev / Next */}
                                     <div style={{ display: 'flex', gap: '4px' }}>
@@ -2490,7 +2446,7 @@ export default function PhrasesPage() {
                                                 color: historyOffset < reviewHistory.length ? '#D4AF37' : '#78716C',
                                             }}
                                         >
-                                            Prev{reviewHistory.length > 0 ? ` (${reviewHistory.length})` : ''}
+                                            前{reviewHistory.length > 0 ? ` (${reviewHistory.length})` : ''}
                                         </button>
                                         <button
                                             onClick={() => {
@@ -2518,7 +2474,7 @@ export default function PhrasesPage() {
                                                 cursor: 'pointer',
                                             }}
                                         >
-                                            Next
+                                            次
                                         </button>
                                     </div>
                                 </div>
@@ -2622,7 +2578,11 @@ export default function PhrasesPage() {
             const pDate = phraseDateMap[phraseId];
             if (pDate) {
                 setDateTouchMap(prev => ({ ...prev, [pDate]: (prev[pDate] || 0) + 1 }));
-                sbRecordReviewTouch(phraseId, pDate).catch(() => { });
+                fetch('/api/date-touches', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phrase_date: pDate })
+                }).catch(() => { });
             }
         }
 
@@ -2637,11 +2597,18 @@ export default function PhrasesPage() {
         }
 
         try {
-            await sbSetMastery(phraseId, next, clientToday);
+            const res = await fetch('/api/phrases/mastery', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phraseId, level: next, today: clientToday })
+            });
+            // Rollback on 409 (server rejected same-day level-up)
+            if (res.status === 409) {
+                setPhraseMastery(prev => ({ ...prev, [phraseId]: current }));
+                return false;
+            }
         } catch (err) {
             console.error('Failed to save mastery:', err);
-            setPhraseMastery(prev => ({ ...prev, [phraseId]: current }));
-            return false;
         }
 
         return true;
@@ -2659,21 +2626,32 @@ export default function PhrasesPage() {
         const pDate = phraseDateMap[phraseId];
         if (pDate) {
             setDateTouchMap(prev => ({ ...prev, [pDate]: (prev[pDate] || 0) + 1 }));
-            sbRecordReviewTouch(phraseId, pDate).catch(() => { });
+            fetch('/api/date-touches', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phrase_date: pDate })
+            }).catch(() => { });
         }
         playLevelSound(6);
 
         try {
-            await sbSetMastery(phraseId, 6, clientToday);
+            const res = await fetch('/api/phrases/mastery', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phraseId, level: 6, today: clientToday })
+            });
+            if (res.status === 409) {
+                setPhraseMastery(prev => ({ ...prev, [phraseId]: 5 }));
+                return;
+            }
             // CROWN = lv 7 XP
             postXP(clientToday, CHAKRA_CONFIG[6].lv, false, phraseId);
         } catch (err) {
             console.error('Failed to declare CROWN:', err);
-            setPhraseMastery(prev => ({ ...prev, [phraseId]: 5 }));
         }
     }, [phraseLastLeveled, clientToday, phraseDateMap]);
 
-    // Play phrase audio
+    // Play phrase audio (must be synchronous to preserve user gesture for Chrome)
     const playPhrase = useCallback((phrase: Phrase) => {
         window.speechSynthesis.cancel();
         setPlayingPhraseId(phrase.id);
@@ -2828,26 +2806,35 @@ export default function PhrasesPage() {
         if (!editingPhrase || !editingPhrase.english.trim()) return;
         setEditSaving(true);
         try {
-            await sbUpdatePhrase(editingPhrase.id, {
-                english: editingPhrase.english.trim(),
-                japanese: editingPhrase.japanese.trim(),
+            const res = await fetch(`/api/phrases/${editingPhrase.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    english: editingPhrase.english.trim(),
+                    japanese: editingPhrase.japanese.trim(),
+                }),
             });
-            const updatedEnglish = editingPhrase.english.trim();
-            const updatedJapanese = editingPhrase.japanese.trim();
-            setPhrases(prev => prev.map(p =>
-                p.id === editingPhrase.id
-                    ? { ...p, english: updatedEnglish, japanese: updatedJapanese }
-                    : p
-            ));
-            // Also update cached review list so review card reflects the edit
-            if (reviewListCacheRef.current.list) {
-                reviewListCacheRef.current.list = reviewListCacheRef.current.list.map(p =>
+            const data = await res.json();
+            if (data.success) {
+                const updatedEnglish = editingPhrase.english.trim();
+                const updatedJapanese = editingPhrase.japanese.trim();
+                setPhrases(prev => prev.map(p =>
                     p.id === editingPhrase.id
                         ? { ...p, english: updatedEnglish, japanese: updatedJapanese }
                         : p
-                );
+                ));
+                // Also update cached review list so review card reflects the edit
+                if (reviewListCacheRef.current.list) {
+                    reviewListCacheRef.current.list = reviewListCacheRef.current.list.map(p =>
+                        p.id === editingPhrase.id
+                            ? { ...p, english: updatedEnglish, japanese: updatedJapanese }
+                            : p
+                    );
+                }
+                setEditingPhrase(null);
+            } else {
+                alert(data.error || 'Failed to update');
             }
-            setEditingPhrase(null);
         } catch (error) {
             console.error('Error updating phrase:', error);
             alert('Error updating phrase');
@@ -2859,8 +2846,11 @@ export default function PhrasesPage() {
     const handleDeletePhrase = async (id: string) => {
         if (!confirm('Delete this phrase?')) return;
         try {
-            await sbDeletePhrase(id);
-            setPhrases(prev => prev.filter(p => p.id !== id));
+            const res = await fetch(`/api/phrases/${id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (data.success) {
+                setPhrases(prev => prev.filter(p => p.id !== id));
+            }
         } catch (error) {
             console.error('Error deleting phrase:', error);
         }
@@ -2871,24 +2861,22 @@ export default function PhrasesPage() {
         if (!newPhrase.english.trim() || !newPhrase.japanese.trim()) return;
         setIsSubmitting(true);
         try {
-            const added = await sbAddPhrase({
-                english: newPhrase.english.trim(),
-                japanese: newPhrase.japanese.trim(),
-                category: newPhrase.category,
-                date: formDate,
+            const res = await fetch('/api/phrases', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    english: newPhrase.english.trim(),
+                    japanese: newPhrase.japanese.trim(),
+                    category: newPhrase.category,
+                    date: formDate,
+                }),
             });
-            if (added) {
-                setPhrases(prev => {
-                    if (prev.some(p => p.id === added.id)) return prev;
-                    return [...prev, {
-                        id: added.id,
-                        english: added.english,
-                        japanese: added.japanese,
-                        category: added.category,
-                        date: added.date,
-                    }];
-                });
-                setNewPhrase({ english: '', japanese: '', category: 'daily' });
+            const data = await res.json();
+            if (data.success) {
+                if (!data.duplicate) {
+                    setPhrases(prev => [...prev, data.phrase]);
+                }
+                setNewPhrase({ english: '', japanese: '', category: randomElement() });
                 setShowAddForm(false);
             }
         } finally {
@@ -2903,21 +2891,28 @@ export default function PhrasesPage() {
         try {
             const prevLinks = phraseLinks[phraseId] || [];
             const wasFirst = prevLinks.length === 0;
-            const link = await sbAddPhraseLink(phraseId, quickAddEnglish.trim());
-            setPhraseLinks(prev => ({
-                ...prev,
-                [phraseId]: [...(prev[phraseId] || []), { phrase_id: link.phrase_id, text: link.text, created_at: link.created_at }],
-            }));
-            setQuickAddEnglish('');
-            setQuickAddedCount(c => c + 1);
-            // XP: first link = VISION level-up
-            if (wasFirst) {
-                const baseMastery = Number(phraseMastery[phraseId] || 0);
-                const hasRec = (voiceRecordings[phraseId] || []).length > 0;
-                const levelBefore = getChakraLevel(baseMastery, hasRec, false);
-                const levelAfter = getChakraLevel(baseMastery, hasRec, true);
-                if (levelAfter > levelBefore) {
-                    postXP(new Date().toISOString().split('T')[0], CHAKRA_CONFIG[levelAfter].lv, false, phraseId);
+            const res = await fetch('/api/phrases/links', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phrase_id: phraseId, text: quickAddEnglish.trim() }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                setPhraseLinks(prev => ({
+                    ...prev,
+                    [phraseId]: [...(prev[phraseId] || []), data.link],
+                }));
+                setQuickAddEnglish('');
+                setQuickAddedCount(c => c + 1);
+                // XP: first link = VISION level-up
+                if (wasFirst) {
+                    const baseMastery = Number(phraseMastery[phraseId] || 0);
+                    const hasRec = (voiceRecordings[phraseId] || []).length > 0;
+                    const levelBefore = getChakraLevel(baseMastery, hasRec, false);
+                    const levelAfter = getChakraLevel(baseMastery, hasRec, true);
+                    if (levelAfter > levelBefore) {
+                        postXP(new Date().toISOString().split('T')[0], CHAKRA_CONFIG[levelAfter].lv, false, phraseId);
+                    }
                 }
             }
         } finally {
@@ -2941,314 +2936,20 @@ export default function PhrasesPage() {
             flexDirection: 'column',
             overflow: 'hidden'
         }}>
-            {/* Keyframes */}
-            <style>{`
-                @keyframes cal-pop {
-                    0% { transform: translateY(0) scale(0.4); opacity: 0; }
-                    25% { transform: translateY(-6px) scale(1.1); opacity: 1; }
-                    50% { transform: translateY(-10px) scale(1); opacity: 1; }
-                    100% { transform: translateY(-18px); opacity: 0; }
-                }
-                @keyframes cal-burst {
-                    0% { transform: translate(0,0) scale(1); opacity: 1; }
-                    60% { opacity: 1; }
-                    100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
-                }
-                @keyframes bar-flash {
-                    0% { width: var(--bar-before, 0%); transform: scaleY(1); filter: brightness(1); }
-                    8% { width: 100%; transform: scaleY(5); filter: brightness(3.5); }
-                    20% { width: 100%; transform: scaleY(4.5); filter: brightness(3); }
-                    40% { width: 100%; transform: scaleY(3); filter: brightness(2.2); }
-                    60% { width: 100%; transform: scaleY(2); filter: brightness(1.6); }
-                    80% { transform: scaleY(1.3); filter: brightness(1.15); }
-                    100% { width: var(--bar-target); transform: scaleY(1); filter: brightness(1); }
-                }
-                @keyframes bar-glow {
-                    0% { box-shadow: inset 0 0 30px rgba(255,255,255,1), 0 0 30px var(--glow-color), 0 0 60px var(--glow-color); }
-                    40% { box-shadow: inset 0 0 20px rgba(255,255,255,0.7), 0 0 20px var(--glow-color), 0 0 40px var(--glow-color); }
-                    100% { box-shadow: none; }
-                }
-                @keyframes cell-boom {
-                    0% { transform: scale(1); box-shadow: none; }
-                    8% { transform: scale(1.35); box-shadow: 0 0 40px var(--boom-color), 0 0 80px var(--boom-color); }
-                    20% { transform: scale(1.25); box-shadow: 0 0 30px var(--boom-color), 0 0 60px var(--boom-color); }
-                    40% { transform: scale(1.15); box-shadow: 0 0 20px var(--boom-color), 0 0 40px var(--boom-color); }
-                    60% { transform: scale(1.08); box-shadow: 0 0 10px var(--boom-color); }
-                    100% { transform: scale(1); box-shadow: none; }
-                }
-                @keyframes cell-white-flash {
-                    0% { opacity: 0; }
-                    5% { opacity: 0.9; }
-                    25% { opacity: 0.5; }
-                    60% { opacity: 0.15; }
-                    100% { opacity: 0; }
-                }
-                @keyframes cell-ring {
-                    0% { transform: scale(0.5); opacity: 1; border-width: 4px; }
-                    100% { transform: scale(2.5); opacity: 0; border-width: 1px; }
-                }
-                @keyframes xp-float {
-                    0% { opacity: 0; transform: translateX(-50%) translateY(0) scale(0.7); }
-                    15% { opacity: 1; transform: translateX(-50%) translateY(-18px) scale(1.15); }
-                    35% { opacity: 1; transform: translateX(-50%) translateY(-30px) scale(1); }
-                    100% { opacity: 0; transform: translateX(-50%) translateY(-54px) scale(0.85); }
-                }
-                @keyframes pe-slam {
-                    0% { transform: translateY(-60vh) scale(1.3); opacity: 0; }
-                    5% { opacity: 1; }
-                    14% { transform: translateY(6px) scale(0.96); }
-                    20% { transform: translateY(-3px) scale(1.02); }
-                    26% { transform: translateY(0) scale(1); }
-                    70% { transform: translateY(0) scale(1); opacity: 1; }
-                    100% { transform: translateY(0) scale(0.98); opacity: 0; }
-                }
-                @keyframes pe-shake {
-                    0%, 30%, 100% { transform: translateX(0); }
-                    3% { transform: translateX(-4px) rotate(-0.3deg); }
-                    6% { transform: translateX(4px) rotate(0.25deg); }
-                    9% { transform: translateX(-3px) rotate(-0.2deg); }
-                    12% { transform: translateX(2px); }
-                    15% { transform: translateX(-1px); }
-                    18% { transform: translateX(0); }
-                }
-                @keyframes pe-crack {
-                    0% { transform: scaleX(0); opacity: 0; }
-                    10% { transform: scaleX(1); opacity: 0.6; }
-                    50% { opacity: 0.3; }
-                    100% { transform: scaleX(1); opacity: 0; }
-                }
-                @keyframes pe-name {
-                    0% { opacity: 0; transform: translateY(8px); }
-                    20% { opacity: 1; transform: translateY(0); }
-                    70% { opacity: 0.9; }
-                    100% { opacity: 0; }
-                }
-                @keyframes pe-impact {
-                    0% { transform: scale(0); opacity: 0.5; }
-                    15% { transform: scale(1); opacity: 0.15; }
-                    100% { transform: scale(2.5); opacity: 0; }
-                }
-                @keyframes xp-bar-pulse {
-                    0%, 100% { opacity: 1; filter: brightness(1); }
-                    50% { opacity: 0.8; filter: brightness(1.3); }
-                }
-                @keyframes lvup-burst {
-                    0% { transform: scale(0.3); opacity: 0; }
-                    20% { transform: scale(1.05); opacity: 1; }
-                    80% { transform: scale(1); opacity: 1; }
-                    100% { transform: scale(0.95); opacity: 0; }
-                }
-                @keyframes lvup-ring {
-                    0% { transform: scale(0.5); opacity: 0.6; }
-                    100% { transform: scale(3); opacity: 0; }
-                }
-                @keyframes lvup-shine {
-                    0% { opacity: 0; }
-                    15% { opacity: 0.25; }
-                    100% { opacity: 0; }
-                }
-                @keyframes gacha-reel-box {
-                    0% { transform: scale(0.5); opacity: 0; }
-                    50% { transform: scale(1.08); opacity: 1; }
-                    100% { transform: scale(1); opacity: 1; }
-                }
-                @keyframes gacha-reveal {
-                    0% { transform: scale(0.3); opacity: 0; filter: blur(8px); }
-                    20% { transform: scale(1.25); opacity: 1; filter: blur(0); }
-                    35% { transform: scale(0.95); }
-                    50% { transform: scale(1.05); }
-                    100% { transform: scale(1); opacity: 1; filter: blur(0); }
-                }
-                @keyframes quiet-toast {
-                    0% { opacity: 0; transform: translateY(-8px); }
-                    10% { opacity: 1; transform: translateY(0); }
-                    75% { opacity: 1; transform: translateY(0); }
-                    100% { opacity: 0; transform: translateY(-12px); }
-                }
-                @keyframes gacha-fade-out {
-                    0%, 50% { opacity: 1; }
-                    100% { opacity: 0; transform: translateY(-30px) scale(0.9); }
-                }
-                @keyframes gacha-sparkle {
-                    0% { opacity: 0; transform: scale(0) translateY(0); }
-                    20% { opacity: 1; transform: scale(1.5); }
-                    50% { opacity: 0.8; transform: scale(1) translateY(-10px); }
-                    80% { opacity: 0.3; transform: scale(0.8) translateY(-20px); }
-                    100% { opacity: 0; transform: scale(0) translateY(-30px); }
-                }
-                @keyframes gacha-shake {
-                    0%, 100% { transform: translateX(0) translateY(0); }
-                    8% { transform: translateX(-10px) translateY(-2px) rotate(-1.5deg); }
-                    16% { transform: translateX(10px) translateY(2px) rotate(1.5deg); }
-                    24% { transform: translateX(-8px) rotate(-1deg); }
-                    32% { transform: translateX(8px) rotate(1deg); }
-                    40% { transform: translateX(-5px); }
-                    48% { transform: translateX(5px); }
-                    56% { transform: translateX(0); }
-                }
-                @keyframes gacha-explosion {
-                    0% { transform: scale(0); opacity: 1; border-width: 6px; }
-                    30% { transform: scale(2); opacity: 0.6; }
-                    60% { transform: scale(4); opacity: 0.2; border-width: 1px; }
-                    100% { transform: scale(6); opacity: 0; }
-                }
-                @keyframes gacha-explosion-2 {
-                    0% { transform: scale(0); opacity: 0.8; }
-                    100% { transform: scale(5); opacity: 0; }
-                }
-                @keyframes gacha-rainbow {
-                    0% { filter: hue-rotate(0deg); opacity: 0.15; }
-                    50% { opacity: 0.25; }
-                    100% { filter: hue-rotate(360deg); opacity: 0.15; }
-                }
-                @keyframes gacha-legendary-flash {
-                    0% { opacity: 0; }
-                    3% { opacity: 1; }
-                    6% { opacity: 0; }
-                    9% { opacity: 0.8; }
-                    14% { opacity: 0; }
-                    18% { opacity: 0.5; }
-                    25% { opacity: 0; }
-                }
-                @keyframes gacha-rays {
-                    0% { transform: translate(-50%,-50%) rotate(0deg); opacity: 0.5; }
-                    100% { transform: translate(-50%,-50%) rotate(180deg); opacity: 0.5; }
-                }
-                @keyframes gacha-pulse-ring {
-                    0% { transform: scale(0.8); opacity: 0.6; }
-                    50% { transform: scale(1.2); opacity: 0.2; }
-                    100% { transform: scale(0.8); opacity: 0.6; }
-                }
-                @keyframes card-levelup-celebrate {
-                    0% { transform: scale(1); }
-                    10% { transform: scale(1.08); }
-                    25% { transform: scale(1.05); }
-                    100% { transform: scale(1.05); }
-                }
-                @keyframes celebrate-badge {
-                    0% { opacity: 0; transform: scale(0.3) translateY(16px); }
-                    18% { opacity: 1; transform: scale(1.2) translateY(0); }
-                    35% { transform: scale(1) translateY(0); }
-                    100% { opacity: 1; transform: scale(1) translateY(0); }
-                }
-                @keyframes card-holo-shimmer {
-                    0% { background-position: 0% 50%; }
-                    50% { background-position: 100% 50%; }
-                    100% { background-position: 0% 50%; }
-                }
-                @keyframes card-particle-float {
-                    0%, 100% { transform: translateY(0) scale(1); opacity: 0.5; }
-                    50% { transform: translateY(-8px) scale(1.3); opacity: 1; }
-                }
-                @keyframes card-legendary-particles {
-                    0% { transform: translateY(0) scale(1); opacity: 1; }
-                    100% { transform: translateY(-20px) scale(0); opacity: 0; }
-                }
-                @keyframes card-rank-glow {
-                    0% { box-shadow: 0 0 8px var(--rank-color); }
-                    50% { box-shadow: 0 0 20px var(--rank-color); }
-                    100% { box-shadow: 0 0 8px var(--rank-color); }
-                }
+            {/* Keyframes loaded from training-animations.css */}
 
-                @keyframes fever-pulse {
-                    0%, 100% { opacity: 0.08; }
-                    50% { opacity: 0.18; }
-                }
-                @keyframes fever-badge-pulse {
-                    0%, 100% { transform: scale(1); }
-                    50% { transform: scale(1.15); }
-                }
-                @keyframes fever-flash-enter {
-                    0% { opacity: 0; }
-                    15% { opacity: 0.6; }
-                    40% { opacity: 0.2; }
-                    60% { opacity: 0.4; }
-                    100% { opacity: 0; }
-                }
-                @keyframes fever-flash-exit {
-                    0% { opacity: 0; }
-                    10% { opacity: 0.5; }
-                    100% { opacity: 0; }
-                }
-                @keyframes fever-chain-pop {
-                    0% { transform: scale(0.5); opacity: 0; }
-                    50% { transform: scale(1.3); opacity: 1; }
-                    100% { transform: scale(1); opacity: 1; }
-                }
-                @keyframes fever-entry-slam {
-                    0% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
-                    30% { transform: translate(-50%, -50%) scale(0.9); opacity: 1; }
-                    45% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
-                    60% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-                    80% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-                    100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
-                }
-                @keyframes fever-entry-shake {
-                    0%, 100% { transform: translateX(0); }
-                    10% { transform: translateX(-8px); }
-                    20% { transform: translateX(8px); }
-                    30% { transform: translateX(-6px); }
-                    40% { transform: translateX(6px); }
-                    50% { transform: translateX(-4px); }
-                    60% { transform: translateX(4px); }
-                    70% { transform: translateX(-2px); }
-                    80% { transform: translateX(2px); }
-                    90% { transform: translateX(-1px); }
-                }
-                @keyframes fever-shockwave {
-                    0% { transform: translate(-50%,-50%) scale(0); opacity: 0.8; }
-                    100% { transform: translate(-50%,-50%) scale(4); opacity: 0; }
-                }
-                @keyframes fever-border-glow {
-                    0%, 100% { box-shadow: inset 0 0 60px rgba(220,38,38,0.25), inset 0 0 120px rgba(249,115,22,0.12); }
-                    50% { box-shadow: inset 0 0 80px rgba(220,38,38,0.35), inset 0 0 150px rgba(249,115,22,0.2); }
-                }
-                @keyframes fever-particle-rise {
-                    0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.8; }
-                    25% { transform: translateY(-25vh) translateX(var(--px-drift)) scale(0.9); opacity: 0.7; }
-                    50% { transform: translateY(-50vh) translateX(calc(var(--px-drift) * -0.5)) scale(0.7); opacity: 0.5; }
-                    75% { transform: translateY(-75vh) translateX(var(--px-drift)) scale(0.4); opacity: 0.3; }
-                    100% { transform: translateY(-100vh) translateX(0) scale(0.2); opacity: 0; }
-                }
-                @keyframes fever-exit-text {
-                    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
-                    20% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
-                    35% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-                    80% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-                    100% { transform: translate(-50%, -50%) scale(0.9); opacity: 0; }
-                }
-                @keyframes rankup-banner {
-                    0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-                    25% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
-                    40% { transform: translate(-50%, -50%) scale(0.95); opacity: 1; }
-                    55% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
-                    70% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-                    85% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-                    100% { transform: translate(-50%, -50%) scale(0.9); opacity: 0; }
-                }
-                @keyframes chain-counter-shake {
-                    0%, 100% { transform: translateX(0); }
-                    25% { transform: translateX(-2px); }
-                    50% { transform: translateX(2px); }
-                    75% { transform: translateX(-1px); }
-                }
-                @keyframes review-active-cell {
-                    0%, 100% { box-shadow: 0 0 12px rgba(212,175,55,0.6), 0 0 24px rgba(212,175,55,0.3), inset 0 0 8px rgba(212,175,55,0.2); background-color: #FFF8E1; }
-                    50% { box-shadow: 0 0 24px rgba(212,175,55,0.9), 0 0 48px rgba(212,175,55,0.4), inset 0 0 12px rgba(212,175,55,0.35); background-color: #FFF3CC; }
-                }
-                @keyframes review-active-bar {
-                    0%, 100% { box-shadow: 0 0 6px var(--bar-glow-color, rgba(212,175,55,0.6)), 0 0 12px var(--bar-glow-color, rgba(212,175,55,0.3)); opacity: 1; }
-                    50% { box-shadow: 0 0 12px var(--bar-glow-color, rgba(212,175,55,0.9)), 0 0 24px var(--bar-glow-color, rgba(212,175,55,0.5)); opacity: 0.85; }
-                }
-            `}</style>
 
-            {/* FEVER pulsing background overlay (reduced opacity — edge glow does the work) */}
+            {/* Chain mode pulsing background overlay */}
             {feverMode.active && viewMode === 'review' && (
                 <div style={{
                     position: 'fixed', inset: 0,
-                    background: 'linear-gradient(135deg, #DC2626 0%, #F97316 50%, #DC2626 100%)',
+                    background: chainState.mode === 'god'
+                        ? 'linear-gradient(135deg, #7C3AED 0%, #EC4899 33%, #D4AF37 66%, #7C3AED 100%)'
+                        : chainState.mode === 'gekiatsu'
+                        ? 'linear-gradient(135deg, #DC2626 0%, #F97316 50%, #DC2626 100%)'
+                        : 'linear-gradient(135deg, #D4AF37 0%, #F59E0B 50%, #D4AF37 100%)',
                     backgroundSize: '200% 200%',
-                    animation: 'fever-pulse 1.5s ease-in-out infinite, card-holo-shimmer 3s ease-in-out infinite',
+                    animation: `fever-pulse ${chainState.mode === 'god' ? '0.8' : chainState.mode === 'gekiatsu' ? '1.2' : '1.5'}s ease-in-out infinite, card-holo-shimmer 3s ease-in-out infinite`,
                     pointerEvents: 'none', zIndex: 50,
                 }} />
             )}
@@ -3263,11 +2964,15 @@ export default function PhrasesPage() {
                 }} />
             )}
 
-            {/* FEVER floating fire particles */}
+            {/* Chain mode floating particles */}
             {feverMode.active && viewMode === 'review' && (
                 <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 52, overflow: 'hidden' }}>
-                    {Array.from({ length: 18 }).map((_, i) => {
-                        const colors = ['#DC2626', '#F97316', '#FBBF24', '#EF4444', '#F59E0B'];
+                    {Array.from({ length: chainState.mode === 'god' ? 30 : chainState.mode === 'gekiatsu' ? 24 : 18 }).map((_, i) => {
+                        const colors = chainState.mode === 'god'
+                            ? ['#7C3AED', '#EC4899', '#D4AF37', '#06B6D4', '#A855F7']
+                            : chainState.mode === 'gekiatsu'
+                            ? ['#DC2626', '#F97316', '#FBBF24', '#EF4444', '#F59E0B']
+                            : ['#D4AF37', '#F59E0B', '#FBBF24', '#EAB308', '#D4AF37'];
                         const size = 3 + (i % 4) * 2;
                         const left = 5 + (i * 5.3) % 90;
                         const dur = 3 + (i % 5) * 0.5;
@@ -3294,7 +2999,7 @@ export default function PhrasesPage() {
                 </div>
             )}
 
-            {/* FEVER badge + chain counter (fixed top-center, upgraded) */}
+            {/* Chain mode badge + counter (fixed top-center) */}
             {feverMode.active && viewMode === 'review' && (
                 <div style={{
                     position: 'fixed',
@@ -3307,35 +3012,37 @@ export default function PhrasesPage() {
                     gap: '6px',
                     zIndex: 9998,
                     pointerEvents: 'none',
-                    animation: 'fever-badge-pulse 1.5s ease-in-out infinite',
+                    animation: chainState.mode === 'god' ? 'fever-badge-pulse 0.8s ease-in-out infinite' : 'fever-badge-pulse 1.5s ease-in-out infinite',
                 }}>
                     <div style={{
-                        background: 'linear-gradient(135deg, #DC2626, #F97316)',
+                        background: CHAIN_MODE_CONFIG[chainState.mode].gradient,
                         color: '#fff',
                         padding: isMobile ? '8px 20px' : '10px 32px',
                         borderRadius: '24px',
                         fontWeight: '900',
                         fontSize: isMobile ? '18px' : '24px',
                         letterSpacing: '4px',
-                        boxShadow: '0 0 30px rgba(220,38,38,0.6), 0 0 60px rgba(249,115,22,0.3)',
+                        boxShadow: chainState.mode === 'god'
+                            ? '0 0 30px rgba(124,58,237,0.6), 0 0 60px rgba(236,72,153,0.3), 0 0 90px rgba(212,175,55,0.2)'
+                            : `0 0 30px ${CHAIN_MODE_CONFIG[chainState.mode].color}99, 0 0 60px ${CHAIN_MODE_CONFIG[chainState.mode].color}44`,
                         textShadow: '0 0 10px rgba(255,255,255,0.6)',
                     }}>
-                        FEVER
+                        {CHAIN_MODE_CONFIG[chainState.mode].labelJa}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {feverMode.streak > 0 && (
-                            <div key={feverMode.key} style={{
+                        {chainState.count > 0 && (
+                            <div key={chainState.key} style={{
                                 background: 'rgba(0,0,0,0.8)',
-                                color: feverMode.streak >= 5 ? '#FCD34D' : '#F97316',
+                                color: chainState.mode === 'god' ? '#C084FC' : chainState.mode === 'gekiatsu' ? '#FCD34D' : '#F97316',
                                 padding: isMobile ? '5px 12px' : '7px 16px',
                                 borderRadius: '14px',
                                 fontWeight: '900',
                                 fontSize: isMobile ? '15px' : '20px',
                                 letterSpacing: '1px',
-                                animation: `fever-chain-pop 0.4s cubic-bezier(0.34,1.56,0.64,1)${feverMode.streak >= 8 ? ', chain-counter-shake 0.3s ease-in-out infinite' : ''}`,
-                                textShadow: feverMode.streak >= 5 ? '0 0 8px #FCD34D80' : 'none',
+                                animation: `fever-chain-pop 0.4s cubic-bezier(0.34,1.56,0.64,1)${chainState.count >= 8 ? ', chain-counter-shake 0.3s ease-in-out infinite' : ''}`,
+                                textShadow: chainState.mode === 'god' ? '0 0 8px #C084FC80' : chainState.count >= 5 ? '0 0 8px #FCD34D80' : 'none',
                             }}>
-                                x{feverMode.streak} CHAIN
+                                x{chainState.count} CHAIN
                             </div>
                         )}
                         <div style={{
@@ -3347,9 +3054,66 @@ export default function PhrasesPage() {
                             fontSize: isMobile ? '10px' : '12px',
                             letterSpacing: '0.5px',
                         }}>
-                            SP x1.5
+                            SP {CHAIN_MODE_CONFIG[chainState.mode].spMultiplier}
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* Chain mode transition banner (確変突入! 激熱突入! 神降臨!) */}
+            {chainTransition && (
+                <div key={chainTransition.key} style={{
+                    position: 'fixed', inset: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    zIndex: 10001, pointerEvents: 'none',
+                }}>
+                    <div style={{
+                        background: CHAIN_MODE_CONFIG[chainTransition.to].gradient,
+                        color: '#fff',
+                        padding: isMobile ? '16px 40px' : '24px 64px',
+                        borderRadius: '16px',
+                        fontWeight: '900',
+                        fontSize: isMobile ? '32px' : '48px',
+                        letterSpacing: '8px',
+                        textShadow: '0 0 20px rgba(255,255,255,0.8)',
+                        boxShadow: `0 0 60px ${CHAIN_MODE_CONFIG[chainTransition.to].color}AA`,
+                        animation: 'fever-entry-slam 1s cubic-bezier(0.34,1.56,0.64,1)',
+                    }}>
+                        {chainTransition.to === 'kakuhen' ? '確変突入!' : chainTransition.to === 'gekiatsu' ? '激熱突入!' : '神 降 臨 !'}
+                    </div>
+                </div>
+            )}
+
+            {/* SP Milestone celebration */}
+            {milestoneEffect && (
+                <div key={milestoneEffect.key} style={{
+                    position: 'fixed', inset: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column',
+                    zIndex: 10002, pointerEvents: 'none',
+                    animation: milestoneEffect.amount >= 500 ? 'gacha-legendary-flash 0.5s ease-out' : undefined,
+                }}>
+                    <div style={{
+                        color: '#D4AF37',
+                        fontWeight: '900',
+                        fontSize: milestoneEffect.amount >= 1000 ? (isMobile ? '48px' : '72px') : milestoneEffect.amount >= 100 ? (isMobile ? '36px' : '56px') : (isMobile ? '28px' : '40px'),
+                        textShadow: '0 0 30px #D4AF3780, 0 0 60px #D4AF3740',
+                        animation: 'gacha-reveal 1s cubic-bezier(0.34,1.56,0.64,1)',
+                        letterSpacing: '4px',
+                    }}>
+                        {milestoneEffect.amount >= 1000 ? `${milestoneEffect.amount} SP` : `+${milestoneEffect.amount} SP`}
+                    </div>
+                    {milestoneEffect.amount >= 500 && (
+                        <div style={{
+                            color: '#F59E0B',
+                            fontWeight: '700',
+                            fontSize: isMobile ? '16px' : '22px',
+                            marginTop: '12px',
+                            letterSpacing: '2px',
+                            animation: 'gacha-reveal 1.2s cubic-bezier(0.34,1.56,0.64,1)',
+                        }}>
+                            MILESTONE REACHED
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -3399,12 +3163,12 @@ export default function PhrasesPage() {
                         animation: 'fever-entry-slam 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
                         whiteSpace: 'nowrap',
                     }}>
-                        FEVER
+                        確変
                     </div>
                 </div>
             )}
 
-            {/* FEVER exit — "FEVER END" + chain count */}
+            {/* FEVER exit — "確変終了" + chain count */}
             {feverExitEffect && (
                 <div style={{
                     position: 'fixed', inset: 0,
@@ -3426,7 +3190,7 @@ export default function PhrasesPage() {
                             textShadow: '0 0 20px rgba(59,130,246,0.4), 0 4px 12px rgba(0,0,0,0.4)',
                             whiteSpace: 'nowrap',
                         }}>
-                            FEVER END
+                            確変終了
                         </div>
                         {feverExitEffect.streak > 0 && (
                             <div style={{
@@ -3436,7 +3200,7 @@ export default function PhrasesPage() {
                                 letterSpacing: '2px',
                                 textShadow: '0 0 10px rgba(148,163,184,0.3)',
                             }}>
-                                x{feverExitEffect.streak} CHAIN
+                                x{feverExitEffect.streak} 連鎖
                             </div>
                         )}
                     </div>
@@ -3463,7 +3227,7 @@ export default function PhrasesPage() {
                             textShadow: `0 0 30px ${cardRankUpEffect.newRankColor}80, 0 0 60px ${cardRankUpEffect.newRankColor}40, 0 4px 12px rgba(0,0,0,0.4)`,
                             whiteSpace: 'nowrap',
                         }}>
-                            RANK UP!
+                            ランクアップ!
                         </div>
                         <div style={{
                             fontSize: isMobile ? '16px' : '22px',
@@ -3584,7 +3348,7 @@ export default function PhrasesPage() {
                             textTransform: 'uppercase',
                             marginBottom: '4px',
                         }}>
-                            LEVEL UP
+                            レベルアップ
                         </div>
                         <div style={{
                             fontSize: isMobile ? '56px' : '80px',
@@ -3616,8 +3380,9 @@ export default function PhrasesPage() {
                 const tier = gachaEffect.tier;
                 const particleCount = isMobile ? Math.ceil(cfg.particles * 0.6) : cfg.particles;
                 const fs = isMobile ? cfg.mobileFontSize : cfg.fontSize;
-                const isBig = tier === 'SUPER' || tier === 'MEGA' || tier === 'LEGENDARY';
-                const isEpic = tier === 'MEGA' || tier === 'LEGENDARY';
+                const isUltraRare = tier === 'MYTHIC' || tier === 'SHINY' || tier === 'PHANTOM';
+                const isBig = tier === 'SUPER' || tier === 'MEGA' || tier === 'LEGENDARY' || isUltraRare;
+                const isEpic = tier === 'MEGA' || tier === 'LEGENDARY' || isUltraRare;
 
                 return (
                     <div key={gachaEffect.key} style={{
@@ -3633,18 +3398,54 @@ export default function PhrasesPage() {
                         {isReveal && tier !== 'MISS' && (
                             <div style={{
                                 position: 'absolute', inset: 0,
-                                backgroundColor: tier === 'LEGENDARY' ? '#000' : '#000',
-                                opacity: tier === 'LEGENDARY' ? 0.6 : tier === 'MEGA' ? 0.5 : tier === 'SUPER' ? 0.35 : 0.2,
+                                backgroundColor: tier === 'PHANTOM' ? '#fff' : '#000',
+                                opacity: tier === 'PHANTOM' ? 0.8 : isUltraRare ? 0.7 : tier === 'LEGENDARY' ? 0.6 : tier === 'MEGA' ? 0.5 : tier === 'SUPER' ? 0.35 : 0.2,
                                 transition: 'opacity 0.3s',
                             }} />
                         )}
 
-                        {/* LEGENDARY: white flash x2 */}
-                        {isReveal && tier === 'LEGENDARY' && (
+                        {/* LEGENDARY+: white flash x2 */}
+                        {isReveal && (tier === 'LEGENDARY' || tier === 'MYTHIC') && (
                             <div style={{
                                 position: 'absolute', inset: 0,
-                                backgroundColor: '#fffbe6',
+                                backgroundColor: tier === 'MYTHIC' ? '#EC489940' : '#fffbe6',
                                 animation: 'gacha-legendary-flash 2s ease-out forwards',
+                            }} />
+                        )}
+
+                        {/* MYTHIC: pink hearts rain */}
+                        {isReveal && tier === 'MYTHIC' && (
+                            <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+                                {Array.from({ length: 20 }).map((_, i) => (
+                                    <div key={i} style={{
+                                        position: 'absolute',
+                                        left: `${5 + (i * 4.7) % 90}%`,
+                                        bottom: '-20px',
+                                        fontSize: `${14 + (i % 5) * 4}px`,
+                                        color: ['#EC4899', '#F472B6', '#FB7185', '#FDA4AF'][i % 4],
+                                        animation: `gacha-mythic-hearts ${2 + (i % 3) * 0.5}s ease-out infinite`,
+                                        animationDelay: `${(i * 0.3) % 2}s`,
+                                        textShadow: '0 0 8px #EC489960',
+                                    }}>*</div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* SHINY: prismatic color-shifting screen */}
+                        {isReveal && tier === 'SHINY' && (
+                            <div style={{
+                                position: 'absolute', inset: 0,
+                                background: 'linear-gradient(135deg, #ff000020, #ff880020, #ffff0020, #00ff0020, #0088ff20, #8800ff20, #ff00ff20)',
+                                animation: 'gacha-shiny-prismatic 2s linear infinite',
+                            }} />
+                        )}
+
+                        {/* PHANTOM: whiteout + reverse colors effect */}
+                        {isReveal && tier === 'PHANTOM' && (
+                            <div style={{
+                                position: 'absolute', inset: 0,
+                                backgroundColor: '#fff',
+                                animation: 'gacha-phantom-whiteout 3s ease-out forwards',
                             }} />
                         )}
 
@@ -3722,81 +3523,243 @@ export default function PhrasesPage() {
                             }} />
                         )}
 
-                        {/* Reel phase: rapid burst slot machine */}
-                        {!isReveal && (
-                            <div style={{
-                                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                                gap: '12px',
-                                animation: 'gacha-reel-box 0.15s ease-out forwards',
-                            }}>
-                                {/* Outer glow ring — bigger, more intense */}
-                                <div style={{
-                                    position: 'absolute',
-                                    width: isMobile ? '280px' : '420px',
-                                    height: isMobile ? '280px' : '420px',
-                                    borderRadius: '50%',
-                                    background: `radial-gradient(circle, ${reelColor}25 0%, ${reelColor}08 50%, transparent 70%)`,
-                                    animation: 'gacha-pulse-ring 0.4s ease-in-out infinite',
-                                }} />
-                                {/* Screen darken */}
-                                <div style={{
-                                    position: 'fixed', inset: 0,
-                                    backgroundColor: '#000',
-                                    opacity: 0.35,
-                                }} />
-                                {/* Slot window — bigger, more glow */}
-                                <div style={{
-                                    padding: isMobile ? '24px 52px' : '40px 88px',
-                                    backgroundColor: '#0C0A09',
-                                    borderRadius: isMobile ? '18px' : '24px',
-                                    boxShadow: `0 0 80px ${reelColor}60, 0 0 160px ${reelColor}25, inset 0 0 50px rgba(0,0,0,0.7)`,
-                                    border: `3px solid ${reelColor}70`,
-                                    position: 'relative',
-                                    overflow: 'hidden',
-                                }}>
-                                    {/* Scan lines */}
+                        {/* Reel phase: 3-reel slot machine */}
+                        {!isReveal && slotReels && (() => {
+                            const cellW = isMobile ? 68 : 96;
+                            const cellH = isMobile ? 60 : 82;
+                            const reelGap = isMobile ? 4 : 6;
+                            const allStopped = slotReels.stopped[0] && slotReels.stopped[1] && slotReels.stopped[2];
+                            const matchColor = allStopped && tier !== 'MISS' ? cfg.color : '#D4AF37';
+                            const isUltraTier = tier === 'MYTHIC' || tier === 'SHINY' || tier === 'PHANTOM';
+                            // Ultra-rare frame color override when stopped
+                            const frameGlow = allStopped && isUltraTier
+                                ? tier === 'PHANTOM' ? '#E2E8F0' : tier === 'SHINY' ? '#06B6D4' : '#EC4899'
+                                : matchColor;
+
+                            const renderSymbol = (symId: SlotSymbolId, row: 'above' | 'center' | 'below', reelIdx: number) => {
+                                const sym = SLOT_SYMBOL_MAP[symId];
+                                if (!sym) return null;
+                                const isCenter = row === 'center';
+                                const isStopped = slotReels.stopped[reelIdx];
+                                const is7 = sym.label === '7';
+                                const isKanji = ['鈴', '星', '桜', '神', '虹', '幻'].includes(sym.label);
+                                const isUltraSym = !!sym.ultra;
+                                return (
                                     <div style={{
-                                        position: 'absolute', inset: 0,
-                                        background: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.02) 3px, rgba(255,255,255,0.02) 6px)',
+                                        width: cellW,
+                                        height: cellH,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: `${cellH * sym.scale * (isCenter ? 0.7 : 0.48)}px`,
+                                        fontWeight: '900',
+                                        fontStyle: is7 ? 'italic' : 'normal',
+                                        color: !isCenter ? `${sym.color}40` : sym.color,
+                                        textShadow: isCenter && isStopped
+                                            ? isUltraSym
+                                                ? `0 0 20px ${sym.glow}, 0 0 40px ${sym.glow}, 0 0 60px ${sym.glow}, 0 2px 0 ${sym.stroke || sym.color}`
+                                                : is7
+                                                    ? `0 2px 0 ${sym.stroke || sym.color}, 0 0 20px ${sym.glow}, 0 0 40px ${sym.glow}`
+                                                    : `0 1px 0 ${sym.stroke || sym.color}, 0 0 12px ${sym.glow}`
+                                            : !isCenter ? 'none' : `0 1px 0 ${(sym.stroke || sym.color)}40`,
+                                        letterSpacing: sym.label === 'BAR' ? '3px' : is7 ? '-2px' : '0',
+                                        transition: isStopped ? 'all 0.15s ease-out' : 'none',
+                                        animation: isCenter && isStopped
+                                            ? isUltraSym
+                                                ? 'reel-symbol-flash 0.2s ease-out, ultra-symbol-pulse 1s ease-in-out infinite 0.2s'
+                                                : 'reel-symbol-flash 0.2s ease-out'
+                                            : undefined,
+                                        fontFamily: is7 ? 'Georgia, "Times New Roman", serif'
+                                            : isKanji ? '"Hiragino Kaku Gothic Pro", "Yu Gothic", "Meiryo", sans-serif'
+                                            : '"Arial Black", "Helvetica Neue", sans-serif',
+                                        userSelect: 'none' as const,
+                                        WebkitTextStroke: isCenter && is7 ? `1px ${sym.stroke || sym.color}` : undefined,
+                                    }}>
+                                        {sym.label}
+                                    </div>
+                                );
+                            };
+
+                            return (
+                                <div style={{
+                                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                    gap: '10px',
+                                    animation: 'slot-machine-enter 0.3s ease-out forwards',
+                                }}>
+                                    {/* Light vignette — no dark overlay */}
+                                    <div style={{
+                                        position: 'fixed', inset: 0,
+                                        background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.15) 100%)',
                                         pointerEvents: 'none',
                                     }} />
-                                    {/* Top/bottom fade */}
+
+                                    {/* SLOT label */}
                                     <div style={{
-                                        position: 'absolute', top: 0, left: 0, right: 0, height: '30%',
-                                        background: 'linear-gradient(180deg, #0C0A09, transparent)',
-                                        pointerEvents: 'none', zIndex: 1,
-                                    }} />
-                                    <div style={{
-                                        position: 'absolute', bottom: 0, left: 0, right: 0, height: '30%',
-                                        background: 'linear-gradient(0deg, #0C0A09, transparent)',
-                                        pointerEvents: 'none', zIndex: 1,
-                                    }} />
-                                    {/* Tier text — bigger */}
-                                    <div style={{
-                                        fontSize: isMobile ? '52px' : '80px',
-                                        fontWeight: '900',
-                                        color: reelColor,
-                                        letterSpacing: '4px',
-                                        textAlign: 'center',
-                                        minWidth: isMobile ? '140px' : '240px',
-                                        textShadow: `0 0 40px ${reelColor}, 0 0 80px ${reelColor}80, 0 0 120px ${reelColor}40`,
                                         position: 'relative', zIndex: 2,
-                                        transition: 'color 0.05s, text-shadow 0.05s',
+                                        fontSize: isMobile ? '12px' : '14px',
+                                        fontWeight: '900',
+                                        background: 'linear-gradient(180deg, #FFF2A8 0%, #D4AF37 50%, #B8941E 100%)',
+                                        WebkitBackgroundClip: 'text',
+                                        WebkitTextFillColor: 'transparent',
+                                        letterSpacing: '8px',
+                                        marginBottom: '-2px',
+                                        textShadow: 'none',
+                                        filter: 'drop-shadow(0 1px 2px rgba(184,148,30,0.5))',
                                     }}>
-                                        {reelText || '?'}
+                                        SLOT
                                     </div>
+
+                                    {/* Slot machine body — pachinko gold frame */}
+                                    <div style={{
+                                        position: 'relative',
+                                        background: 'linear-gradient(160deg, #F6E27A 0%, #D4AF37 20%, #B8941E 40%, #D4AF37 60%, #F6E27A 80%, #D4AF37 100%)',
+                                        borderRadius: isMobile ? '18px' : '24px',
+                                        border: slotReels.reach
+                                            ? '3px solid #EF4444'
+                                            : '2px solid #8B6914',
+                                        boxShadow: slotReels.reach
+                                            ? '0 0 40px #EF444450, 0 0 80px #EF444425, inset 0 2px 4px rgba(255,255,255,0.4)'
+                                            : allStopped && isUltraTier
+                                                ? `0 8px 32px rgba(0,0,0,0.3), 0 0 50px ${frameGlow}60, 0 0 100px ${frameGlow}30, inset 0 2px 4px rgba(255,242,168,0.6)`
+                                                : `0 8px 32px rgba(0,0,0,0.3), 0 0 40px ${matchColor}30, inset 0 2px 4px rgba(255,242,168,0.6)`,
+                                        padding: isMobile ? '14px 12px' : '18px 16px',
+                                        animation: slotReels.reach ? 'reach-border-pulse 0.6s ease-in-out infinite' : undefined,
+                                        overflow: 'hidden',
+                                    }}>
+                                        {/* Metallic sheen overlay */}
+                                        <div style={{
+                                            position: 'absolute', inset: 0,
+                                            background: 'linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.1) 100%)',
+                                            pointerEvents: 'none',
+                                            borderRadius: 'inherit',
+                                        }} />
+
+                                        {/* Reel window — inner recessed panel */}
+                                        <div style={{
+                                            background: 'linear-gradient(180deg, #8B6914 0%, #A07A1E 2%, #F5EDD6 4%, #FFFEF8 10%, #FFFEF8 90%, #F5EDD6 96%, #A07A1E 98%, #8B6914 100%)',
+                                            borderRadius: isMobile ? '10px' : '14px',
+                                            padding: isMobile ? '4px' : '6px',
+                                            boxShadow: 'inset 0 3px 8px rgba(0,0,0,0.15), inset 0 -2px 6px rgba(0,0,0,0.1)',
+                                            position: 'relative',
+                                            zIndex: 1,
+                                        }}>
+                                        {/* 3 reels side by side */}
+                                        <div style={{
+                                            display: 'flex',
+                                            gap: `${reelGap}px`,
+                                            position: 'relative',
+                                        }}>
+                                            {[0, 1, 2].map(reelIdx => {
+                                                const isStopped = slotReels.stopped[reelIdx];
+                                                return (
+                                                    <div key={reelIdx} style={{
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        background: 'linear-gradient(180deg, #FFFEF5 0%, #FFFFFF 20%, #FFFFFF 80%, #F5F0E0 100%)',
+                                                        borderRadius: isMobile ? '8px' : '10px',
+                                                        overflow: 'hidden',
+                                                        border: '1px solid #C9A93E',
+                                                        boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.08), inset 0 -2px 8px rgba(0,0,0,0.05)',
+                                                        animation: isStopped ? 'reel-bounce 0.25s ease-out' : undefined,
+                                                    }}>
+                                                        {/* Above row */}
+                                                        <div style={{ borderBottom: '1px solid #E8DFC0', opacity: 0.5 }}>
+                                                            {renderSymbol(slotReels.above[reelIdx], 'above', reelIdx)}
+                                                        </div>
+                                                        {/* Center row (payline) */}
+                                                        <div style={{
+                                                            background: isStopped
+                                                                ? 'linear-gradient(180deg, transparent, #FFF8E108, transparent)'
+                                                                : 'transparent',
+                                                        }}>
+                                                            {renderSymbol(slotReels.symbols[reelIdx], 'center', reelIdx)}
+                                                        </div>
+                                                        {/* Below row */}
+                                                        <div style={{ borderTop: '1px solid #E8DFC0', opacity: 0.5 }}>
+                                                            {renderSymbol(slotReels.below[reelIdx], 'below', reelIdx)}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+
+                                            {/* Payline indicator — left/right arrows + horizontal line */}
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: `${cellH + cellH / 2 - 1}px`,
+                                                left: '-6px',
+                                                right: '-6px',
+                                                height: '3px',
+                                                background: allStopped && tier !== 'MISS'
+                                                    ? `linear-gradient(90deg, ${matchColor}, ${matchColor}CC, ${matchColor})`
+                                                    : slotReels.reach
+                                                        ? 'linear-gradient(90deg, #EF4444, #EF444480, #EF4444)'
+                                                        : 'linear-gradient(90deg, #D4AF37, #D4AF3750, #D4AF37)',
+                                                borderRadius: '2px',
+                                                pointerEvents: 'none',
+                                                boxShadow: allStopped && tier !== 'MISS'
+                                                    ? `0 0 8px ${matchColor}80`
+                                                    : slotReels.reach ? '0 0 8px #EF444460' : '0 0 4px #D4AF3740',
+                                                animation: allStopped && tier !== 'MISS' ? 'payline-flash 0.8s ease-in-out infinite' : undefined,
+                                            }} />
+                                            {/* Left payline arrow */}
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: `${cellH + cellH / 2 - 6}px`,
+                                                left: '-10px',
+                                                width: 0, height: 0,
+                                                borderTop: '6px solid transparent',
+                                                borderBottom: '6px solid transparent',
+                                                borderLeft: `8px solid ${slotReels.reach ? '#EF4444' : '#D4AF37'}`,
+                                                pointerEvents: 'none',
+                                            }} />
+                                            {/* Right payline arrow */}
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: `${cellH + cellH / 2 - 6}px`,
+                                                right: '-10px',
+                                                width: 0, height: 0,
+                                                borderTop: '6px solid transparent',
+                                                borderBottom: '6px solid transparent',
+                                                borderRight: `8px solid ${slotReels.reach ? '#EF4444' : '#D4AF37'}`,
+                                                pointerEvents: 'none',
+                                            }} />
+                                        </div>
+                                        </div>{/* close reel window */}
+                                    </div>
+
+                                    {/* REACH label */}
+                                    {slotReels.reach && !allStopped && (
+                                        <div style={{
+                                            position: 'relative', zIndex: 2,
+                                            fontSize: isMobile ? '22px' : '30px',
+                                            fontWeight: '900',
+                                            color: '#FFFFFF',
+                                            letterSpacing: '10px',
+                                            textShadow: '0 0 20px #EF4444, 0 0 40px #EF4444, 0 0 80px #EF444480, 0 2px 0 #DC2626',
+                                            animation: 'reach-text-flash 0.5s ease-out forwards',
+                                            fontFamily: '"Arial Black", sans-serif',
+                                        }}>
+                                            REACH
+                                        </div>
+                                    )}
+
+                                    {/* Bottom glow bar */}
+                                    <div style={{
+                                        position: 'relative', zIndex: 2,
+                                        width: isMobile ? '140px' : '200px',
+                                        height: '4px',
+                                        borderRadius: '999px',
+                                        background: slotReels.reach
+                                            ? 'linear-gradient(90deg, transparent, #EF4444, #FF6B6B, #EF4444, transparent)'
+                                            : `linear-gradient(90deg, transparent, #F6E27A, ${matchColor}, #F6E27A, transparent)`,
+                                        boxShadow: slotReels.reach
+                                            ? '0 0 12px #EF444460'
+                                            : `0 0 12px ${matchColor}40`,
+                                        animation: 'xp-bar-pulse 0.5s ease-in-out infinite',
+                                    }} />
                                 </div>
-                                {/* Bottom glow bar */}
-                                <div style={{
-                                    width: isMobile ? '140px' : '220px',
-                                    height: '4px',
-                                    borderRadius: '999px',
-                                    background: `linear-gradient(90deg, transparent, ${reelColor}, transparent)`,
-                                    animation: 'xp-bar-pulse 0.4s ease-in-out infinite',
-                                    boxShadow: `0 0 12px ${reelColor}60`,
-                                }} />
-                            </div>
-                        )}
+                            );
+                        })()}
 
                         {/* Reveal phase: tier result */}
                         {isReveal && (
@@ -3828,30 +3791,58 @@ export default function PhrasesPage() {
                                         fontWeight: '800',
                                         marginLeft: '6px',
                                         letterSpacing: '3px',
-                                    }}>SP</span>
+                                    }}>pt</span>
                                 </div>
                                 {/* Tier name */}
                                 {tier !== 'MISS' && (
                                     <div style={{
-                                        fontSize: tier === 'LEGENDARY' ? (isMobile ? '28px' : '42px') : tier === 'MEGA' ? (isMobile ? '20px' : '30px') : (isMobile ? '14px' : '18px'),
+                                        fontSize: isUltraRare ? (isMobile ? '36px' : '52px') : tier === 'LEGENDARY' ? (isMobile ? '28px' : '42px') : tier === 'MEGA' ? (isMobile ? '20px' : '30px') : (isMobile ? '14px' : '18px'),
                                         fontWeight: '900',
-                                        letterSpacing: tier === 'LEGENDARY' ? '16px' : tier === 'MEGA' ? '10px' : '4px',
-                                        color: cfg.color,
-                                        marginTop: tier === 'LEGENDARY' ? '16px' : '10px',
-                                        textShadow: isEpic ? `0 0 40px ${cfg.color}90, 0 0 80px ${cfg.color}40` : `0 0 20px ${cfg.color}60`,
+                                        letterSpacing: isUltraRare ? '20px' : tier === 'LEGENDARY' ? '16px' : tier === 'MEGA' ? '10px' : '4px',
+                                        color: tier === 'PHANTOM' ? '#fff' : cfg.color,
+                                        marginTop: isUltraRare ? '20px' : tier === 'LEGENDARY' ? '16px' : '10px',
+                                        textShadow: tier === 'PHANTOM'
+                                            ? '0 0 40px #ffffffCC, 0 0 80px #ffffff80, 0 0 120px #ffffff40'
+                                            : tier === 'SHINY'
+                                            ? `0 0 40px #06B6D4CC, 0 0 80px #EC4899CC, 0 0 120px #D4AF37CC`
+                                            : isEpic ? `0 0 40px ${cfg.color}90, 0 0 80px ${cfg.color}40` : `0 0 20px ${cfg.color}60`,
+                                        ...(tier === 'SHINY' ? { animation: 'gacha-shiny-prismatic 2s linear infinite' } : {}),
+                                        ...(tier === 'PHANTOM' ? { animation: 'gacha-phantom-pulse 1.5s ease-in-out infinite' } : {}),
                                     }}>
-                                        {tier}
+                                        {TIER_JA[tier] || tier}
+                                        <span style={{
+                                            display: 'block',
+                                            fontSize: isUltraRare ? (isMobile ? '11px' : '14px') : tier === 'LEGENDARY' ? (isMobile ? '10px' : '13px') : tier === 'MEGA' ? (isMobile ? '9px' : '11px') : (isMobile ? '8px' : '10px'),
+                                            fontWeight: '600',
+                                            letterSpacing: isUltraRare ? '6px' : '3px',
+                                            opacity: 0.7,
+                                            marginTop: '4px',
+                                            fontFamily: 'system-ui, -apple-system, sans-serif',
+                                        }}>
+                                            {tier}
+                                        </span>
                                     </div>
                                 )}
                                 {tier === 'MISS' && (
                                     <div style={{
-                                        fontSize: '13px',
-                                        fontWeight: '600',
+                                        fontSize: isMobile ? '16px' : '20px',
+                                        fontWeight: '800',
                                         color: '#A8A29E',
                                         marginTop: '6px',
-                                        letterSpacing: '2px',
+                                        letterSpacing: '6px',
                                     }}>
-                                        ハズレ
+                                        凡
+                                        <span style={{
+                                            display: 'block',
+                                            fontSize: isMobile ? '8px' : '9px',
+                                            fontWeight: '600',
+                                            letterSpacing: '3px',
+                                            opacity: 0.6,
+                                            marginTop: '2px',
+                                            fontFamily: 'system-ui, -apple-system, sans-serif',
+                                        }}>
+                                            MISS
+                                        </span>
                                     </div>
                                 )}
                                 {/* Card points earned + rank badge */}
@@ -3940,7 +3931,7 @@ export default function PhrasesPage() {
                         color: quietToast.tier === 'MISS' ? '#A8A29E' : '#F6C85F',
                         letterSpacing: '-0.5px',
                     }}>
-                        +{quietToast.sparks} SP
+                        +{quietToast.sparks} pt
                     </span>
                     {quietToast.cardPts > 0 && (
                         <span style={{
@@ -3962,7 +3953,8 @@ export default function PhrasesPage() {
                                 : '#F59E0B',
                             letterSpacing: '1px',
                         }}>
-                            {quietToast.tier}
+                            {TIER_JA[quietToast.tier] || quietToast.tier}
+                            <span style={{ opacity: 0.6, marginLeft: '4px', fontSize: '9px' }}>{quietToast.tier}</span>
                         </span>
                     )}
                 </div>
@@ -5099,7 +5091,6 @@ export default function PhrasesPage() {
                                         const masteryInfo = getChakraInfo(baseMastery, hasRec, hasLink);
                                         const isPlaying = playingPhraseId === phrase.id;
                                         const isLockedToday = baseMastery === 3 || (baseMastery !== 6 && baseMastery < 3 && phraseLastLeveled[phrase.id] === clientToday);
-                                        const catColor = CATEGORY_COLORS[phrase.category] || { bg: '#f0f0f0', text: '#666', border: '#e5e5e5' };
                                         const cPts = cardPoints[phrase.id] || 0;
                                         const cRank = getCardRank(cPts);
                                         const cFrame = getCardFrame(cRank.rank);
@@ -5143,14 +5134,19 @@ export default function PhrasesPage() {
                                                                 <path d="M8 5v14l11-7z" />
                                                             </svg>
                                                         </button>
-                                                        <span style={{
-                                                            fontSize: '8px', fontWeight: '700',
-                                                            padding: '1px 5px', borderRadius: '3px',
-                                                            backgroundColor: catColor.bg, color: catColor.text,
-                                                            textTransform: 'uppercase', letterSpacing: '0.3px',
-                                                        }}>
-                                                            {phrase.category}
-                                                        </span>
+                                                        <ElementBadge element={phrase.category} size={10} />
+                                                        {(() => {
+                                                            const bst = calcBstTotal(phrase.id);
+                                                            const bt = getBstTier(bst);
+                                                            return (
+                                                                <span style={{
+                                                                    fontSize: '8px', fontWeight: '800',
+                                                                    color: bt.color, letterSpacing: '0.5px',
+                                                                }}>
+                                                                    {bt.tier}{bst}
+                                                                </span>
+                                                            );
+                                                        })()}
                                                     </div>
                                                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
                                                         <span style={{
@@ -5160,7 +5156,7 @@ export default function PhrasesPage() {
                                                         }}>
                                                             {cPts}
                                                         </span>
-                                                        <span style={{ fontSize: '7px', fontWeight: '700', color: '#A8A29E' }}>SP</span>
+                                                        <span style={{ fontSize: '7px', fontWeight: '700', color: '#A8A29E' }}>pt</span>
                                                         {cRank.rank !== 'NORMAL' && (
                                                             <span style={{
                                                                 fontSize: '7px', fontWeight: '800',
@@ -5368,9 +5364,9 @@ export default function PhrasesPage() {
                                                 overflow: 'hidden',
                                             }}>
                                                 <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', background: '#10B981' }} />
-                                                <div style={{ fontSize: '9px', fontWeight: '600', color: '#047857', letterSpacing: '0.5px', marginBottom: '4px' }}>TODAY</div>
+                                                <div style={{ fontSize: '9px', fontWeight: '600', color: '#047857', letterSpacing: '0.5px', marginBottom: '4px' }}>本日</div>
                                                 <div style={{ fontSize: '26px', fontWeight: '800', color: '#10B981', lineHeight: 1 }}>{chakraAnalytics.todayTouches}</div>
-                                                <div style={{ fontSize: '9px', color: '#047857', marginTop: '2px' }}>touches</div>
+                                                <div style={{ fontSize: '9px', color: '#047857', marginTop: '2px' }}>タッチ</div>
                                             </div>
                                             {/* Streak */}
                                             <div style={{
@@ -5600,7 +5596,7 @@ export default function PhrasesPage() {
 
                         <div style={{ marginBottom: '24px' }}>
                             <label style={{ fontSize: '12px', color: '#888', fontWeight: '500', display: 'block', marginBottom: '6px' }}>
-                                Category
+                                Element
                             </label>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                 {Object.keys(CATEGORY_COLORS).map(cat => (
@@ -5609,17 +5605,17 @@ export default function PhrasesPage() {
                                         type="button"
                                         onClick={() => setNewPhrase(prev => ({ ...prev, category: cat }))}
                                         style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: '6px',
                                             padding: '8px 14px',
                                             borderRadius: '8px',
                                             border: newPhrase.category === cat ? `2px solid ${CATEGORY_COLORS[cat].text}` : `1px solid ${CATEGORY_COLORS[cat].border}`,
                                             backgroundColor: CATEGORY_COLORS[cat].bg,
-                                            color: CATEGORY_COLORS[cat].text,
-                                            fontSize: '13px',
-                                            fontWeight: newPhrase.category === cat ? '600' : '400',
-                                            cursor: 'pointer'
+                                            cursor: 'pointer',
+                                            opacity: newPhrase.category === cat ? 1 : 0.6,
+                                            transition: 'opacity 0.15s',
                                         }}
                                     >
-                                        {cat}
+                                        <ElementBadge element={cat} size={14} />
                                     </button>
                                 ))}
                             </div>

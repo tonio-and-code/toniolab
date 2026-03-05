@@ -7,8 +7,11 @@ export interface JournalEntry {
     summary: string // 一言でわかる概要
     conversation: string // 会話内容（ Markdown形式）
 
-    // Auto-generated English Conversation
+    // Auto-generated English Conversation (same topic as journal)
     conversationData?: ConversationData
+
+    // Tangent: completely different topic conversation
+    tangentData?: ConversationData
 
     // Auto-generated English Summary
     englishSummary?: EnglishSummary
@@ -52,6 +55,7 @@ export interface EnglishSummary {
 
 export interface SummarySection {
     heading: string            // セクション見出し
-    paragraphs: string[]       // 段落のリスト
+    paragraphs: string[]       // 段落のリスト（英語、TTS再生用）
+    japaneseParagraphs?: string[] // 段落の日本語訳（表示用）
     image?: string             // セクションの画像（オプション）
 }

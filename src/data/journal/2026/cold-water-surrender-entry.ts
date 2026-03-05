@@ -184,7 +184,7 @@ export const coldWaterSurrenderEntry: JournalEntry = {
             { speaker: 'male', text: "何かが残る。あるいは何も残らない。同じことの言い換え。" }
         ]
     },
-    conversation: `
+    content: `
 ## 四諦、言い直し
 
 この世は苦しみである。苦しみには理由がある。苦しみは滅することができる。その方法は瞑想的な日常である。

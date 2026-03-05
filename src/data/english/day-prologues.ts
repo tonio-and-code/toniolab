@@ -132,6 +132,20 @@ export const DAY_PROLOGUES: Record<string, DayPrologue> = {
             { name: 'Uncle Danny (30M)', desc: "Dad's brother, conspiracy theorist, accidentally makes everything scarier" },
         ],
     },
+    '2026-02-25': {
+        title: 'Game Night Gone Wrong',
+        titleJa: 'ゲームナイト崩壊（20代後半、男女混合）',
+        setting: "Saturday night at Marcus's apartment. Six college friends, now scattered across their late 20s, reunited for a board game night that Jess organized because she noticed the group drifting apart. What starts as a chill Monopoly session becomes a mirror for everything unspoken -- Trent still owes Marcus money, Nina just quit her job and won't say why, Devon won't stop correcting the rules, and Priya keeps trying to make everyone do burpees. The banchan is excellent. The emotional damage is worse.",
+        settingJa: 'マーカスのアパート、土曜の夜。大学時代の友達6人、全員20代後半。ジェスがグループの疎遠化を心配して企画したゲームナイト。気軽なモノポリーのはずが、言えてなかったことが全部出てくる鏡になる。トレントはまだマーカスに金を返してない、ニーナは会社を辞めたけど理由を言わない、デヴォンはルールの指摘が止まらない、プリヤは全員にバーピーをさせようとする。バンチャンは最高。精神的ダメージの方がひどい。',
+        characters: [
+            { name: 'Marcus (29M)', desc: 'host, HR guy, Dad bod and owns it, peacekeeper who is tired of peacekeeping' },
+            { name: 'Jess (28F)', desc: "Marcus's girlfriend, Korean-American, brought her mom's banchan, sweet until Monopoly starts" },
+            { name: 'Trent (28M)', desc: 'disaster friend, just had appendix out, owes Marcus money, says bruh unironically, accidentally profound' },
+            { name: 'Nina (27F)', desc: 'the quiet one, just quit her corporate job, nobody asks why, dry humor, sharpest person in the room' },
+            { name: 'Devon (30M)', desc: 'the Keith/rules lawyer, finance, urbane on the surface, insecure underneath, brought craft beer nobody wanted' },
+            { name: 'Priya (27F)', desc: 'marathon runner, health nut, 150% energy, carb loading, jump rope warm-ups, takes photos of everything' },
+        ],
+    },
     '2026-02-20': {
         title: 'First Movie Without Parents',
         titleJa: '親なしで初めて映画館（12歳、グループ）',

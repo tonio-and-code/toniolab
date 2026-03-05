@@ -1,5 +1,5 @@
 import { JournalEntry } from '../types';
-import { ConversationData } from '@/types/memoria';
+import { ConversationData } from '../../types/memoria';
 
 export const noteLaunchEntry: JournalEntry = {
     id: '118',

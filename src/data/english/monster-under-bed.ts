@@ -4,8 +4,6 @@
  * Feb 10-14, 2026
  */
 
-import type { ConversationTone } from '@/types/memoria';
-
 export interface MonsterEntry {
     id: string;
     date: string;
@@ -18,9 +16,9 @@ export interface MonsterEntry {
         english: Array<{ speaker: 'male' | 'female'; text: string }>;
         japanese: Array<{ speaker: 'male' | 'female'; text: string }>;
         generatedAt: Date;
-        tone: ConversationTone;
+        tone: string;
     };
-    tone: ConversationTone;
+    tone: string;
     tags: string[];
     createdAt: Date;
     updatedAt: Date;

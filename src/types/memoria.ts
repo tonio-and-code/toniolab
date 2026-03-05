@@ -10,7 +10,7 @@ export interface MemoriaEntry {
     tags?: string[];
     mood?: 'neutral' | 'happy' | 'sad' | 'excited' | 'calm';
     conversation?: ConversationData;
-    tone?: string;
+    tone?: ConversationTone;
     series?: string; // シリーズID (e.g., "ego-trap")
     seriesTitle?: string; // シリーズ名 (e.g., "エゴの罠シリーズ")
     heroImage?: string; // Hero image URL
@@ -22,8 +22,8 @@ export interface ConversationData {
     english: DialogueLine[];
     japanese: DialogueLine[];
     audioUrl?: string;
-    generatedAt?: Date;
-    tone?: string;
+    generatedAt: Date;
+    tone: ConversationTone;
     duration?: number; // 秒
     vocabulary?: VocabularyItem[]; // 自動抽出された語彙
 }

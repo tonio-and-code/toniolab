@@ -8,8 +8,6 @@
  * Speech patterns: kid slang, "like"/"literally", g-dropping, fillers, interruptions
  */
 
-import type { ConversationTone } from '@/types/memoria';
-
 export interface MovieNightEntry {
     id: string;
     date: string;
@@ -22,9 +20,9 @@ export interface MovieNightEntry {
         english: Array<{ speaker: 'male' | 'female'; text: string }>;
         japanese: Array<{ speaker: 'male' | 'female'; text: string }>;
         generatedAt: Date;
-        tone: ConversationTone;
+        tone: string;
     };
-    tone: ConversationTone;
+    tone: string;
     tags: string[];
     createdAt: Date;
     updatedAt: Date;

@@ -16,11 +16,10 @@ import { JournalEntry } from './types';
 // 2026年のエントリ
 import { january2026Entries } from './2026/01-january';
 import { february2026Entries } from './2026/02-february';
-
-console.log('DEBUG: In index.ts, february entries:', february2026Entries?.length);
-
+import { march2026Entries } from './2026/03-march';
 // 全エントリを統合（新しい順）
 export const journalEntries: JournalEntry[] = [
+    ...march2026Entries,
     ...february2026Entries,
     ...january2026Entries,
     // 他の月は元のjournal.tsから読み込む（一時的）

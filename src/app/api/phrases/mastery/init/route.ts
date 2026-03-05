@@ -35,6 +35,63 @@ export async function POST() {
             return NextResponse.json({ error: data.errors, success: false }, { status: 500 });
         }
 
+        // Add last_leveled_at column if missing (migration for spaced-repetition gate)
+        try {
+            await fetch(
+                `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database/${DATABASE_ID}/query`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        sql: `ALTER TABLE phrase_mastery ADD COLUMN last_leveled_at TEXT DEFAULT NULL`,
+                    }),
+                }
+            );
+        } catch {
+            // column already exists
+        }
+
+        // Add card_points column if missing (migration for card rank system)
+        try {
+            await fetch(
+                `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database/${DATABASE_ID}/query`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        sql: `ALTER TABLE phrase_mastery ADD COLUMN card_points INTEGER DEFAULT 0`,
+                    }),
+                }
+            );
+        } catch {
+            // column already exists
+        }
+
+        // Add card_name column if missing (migration for card nicknames)
+        try {
+            await fetch(
+                `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database/${DATABASE_ID}/query`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        sql: `ALTER TABLE phrase_mastery ADD COLUMN card_name TEXT DEFAULT NULL`,
+                    }),
+                }
+            );
+        } catch {
+            // column already exists
+        }
+
         return NextResponse.json({ message: 'Table created successfully', success: true });
     } catch (error) {
         console.error('Error creating table:', error);

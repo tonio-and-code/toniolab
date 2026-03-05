@@ -34,14 +34,23 @@ import {
     findMovieExpressionLineIndex,
     MovieExpression,
 } from '@/data/english/movie-expressions';
+import {
+    GAME_NIGHT_EXPRESSIONS,
+    TOTAL_GAME_NIGHT_EXPRESSIONS,
+    GAME_NIGHT_EXPRESSIONS_PER_DAY,
+    GAME_NIGHT_DAY_IDS,
+    findGameNightExpressionLineIndex,
+    GameNightExpression,
+} from '@/data/english/game-night-expressions';
 import { collegePartyRecapEntries } from '@/data/english/college-party-recap';
 import { monsterUnderBedEntries } from '@/data/english/monster-under-bed';
 import { marinersTradeEntries } from '@/data/english/mariners-trade-talk';
 import { movieNightEntries } from '@/data/english/movie-night';
+import { gameNightEntries } from '@/data/english/game-night-chaos';
 
-type SeriesKey = 'party' | 'monster' | 'mariners' | 'movie';
+type SeriesKey = 'party' | 'monster' | 'mariners' | 'movie' | 'gamenight';
 
-type AnyExpression = PartyExpression | MonsterExpression | MarinersExpression | MovieExpression;
+type AnyExpression = PartyExpression | MonsterExpression | MarinersExpression | MovieExpression | GameNightExpression;
 
 const SERIES_CONFIG: Record<SeriesKey, {
     label: string;
@@ -158,6 +167,31 @@ const SERIES_CONFIG: Record<SeriesKey, {
         source: 'First Movie Without Parents',
         findLineIndex: findMovieExpressionLineIndex,
         getEntries: () => movieNightEntries,
+    },
+    gamenight: {
+        label: 'Game Night',
+        expressions: GAME_NIGHT_EXPRESSIONS,
+        total: TOTAL_GAME_NIGHT_EXPRESSIONS,
+        perDay: GAME_NIGHT_EXPRESSIONS_PER_DAY,
+        dayIds: GAME_NIGHT_DAY_IDS,
+        dayLabels: {
+            1: 'The Setup',
+            2: 'The Game Begins',
+            3: 'The Unraveling',
+            4: 'The Fight & Fix',
+            5: 'Morning After',
+        },
+        speakerColors: {
+            Marcus: '#DC2626',
+            Jess: '#EC4899',
+            Trent: '#F59E0B',
+            Nina: '#6366F1',
+            Devon: '#10B981',
+            Priya: '#F97316',
+        },
+        source: 'Game Night Gone Wrong',
+        findLineIndex: findGameNightExpressionLineIndex,
+        getEntries: () => gameNightEntries,
     },
 };
 

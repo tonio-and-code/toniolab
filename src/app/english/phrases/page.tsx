@@ -37,6 +37,12 @@ interface Phrase {
     date: string;
 }
 
+interface PhraseLink {
+    phrase_id: string;
+    text: string;
+    created_at: string;
+}
+
 type MasteryLevel = 0 | 1 | 2 | 3; // 0: new, 1: 1回復習, 2: 2回復習, 3: クリア
 
 // Puzzle background image (beautiful landscape for motivation)
@@ -48,15 +54,16 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string
     'casual': { bg: '#FEF3C7', text: '#D97706', border: '#FDE68A' },
     'idiom': { bg: '#FDF2F8', text: '#DB2777', border: '#FBCFE8' },
     'slang': { bg: '#F5F3FF', text: '#7C3AED', border: '#DDD6FE' },
+    'ore-log': { bg: '#FFFBEB', text: '#D4AF37', border: '#F6C85F' },
 };
 
 // Mastery level display: 0=未, 1=①, 2=②, 3=済
 const getMasteryLabel = (level: MasteryLevel) => {
     switch (level) {
-        case 0: return { label: '未', color: '#888', bg: '#f0f0f0', border: '#ddd' };
+        case 0: return { label: 'NEW', color: '#888', bg: '#f0f0f0', border: '#ddd' };
         case 1: return { label: '①', color: '#D97706', bg: '#FEF3C7', border: '#F59E0B' };
         case 2: return { label: '②', color: '#2563EB', bg: '#DBEAFE', border: '#3B82F6' };
-        case 3: return { label: '済', color: '#059669', bg: '#D1FAE5', border: '#10B981' };
+        case 3: return { label: 'CLEAR', color: '#059669', bg: '#D1FAE5', border: '#10B981' };
     }
 };
 
@@ -67,16 +74,15 @@ export default function PhrasesPage() {
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [isMobile, setIsMobile] = useState(false);
-    const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+    const [viewMode, setViewMode] = useState<'calendar' | 'list' | 'review'>('calendar');
     const [searchQuery, setSearchQuery] = useState('');
-    const [hoveredDate, setHoveredDate] = useState<string | null>(null);
-    const [randomPhraseIndex, setRandomPhraseIndex] = useState<Record<string, number>>({});
     const [playingPhraseId, setPlayingPhraseId] = useState<string | null>(null);
     const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-    const [reviewFilter, setReviewFilter] = useState<0 | 1 | 2 | 'all'>('all');
+    const [reviewFilter, setReviewFilter] = useState<0 | 1 | 2 | 3 | 'all' | 'random' | 'recorded' | 'linked'>('random');
     const [reviewIndex, setReviewIndex] = useState(0);
-    const [calendarFilter, setCalendarFilter] = useState<0 | 1 | 2 | 3 | 'all'>('all');
+    const [shuffleKey, setShuffleKey] = useState(0);
     const [voiceRecordings, setVoiceRecordings] = useState<Record<string, VoiceRecording[]>>({});
+    const [phraseLinks, setPhraseLinks] = useState<Record<string, PhraseLink[]>>({});
 
     // Add phrase form state
     const [showAddForm, setShowAddForm] = useState(false);
@@ -87,13 +93,21 @@ export default function PhrasesPage() {
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Quick-add in review mode
+    const [showQuickAdd, setShowQuickAdd] = useState(false);
+    const [quickAddEnglish, setQuickAddEnglish] = useState('');
+    const [quickAddSubmitting, setQuickAddSubmitting] = useState(false);
+    const [quickAddedCount, setQuickAddedCount] = useState(0);
+
+    // Daily review counts per month (date -> { count, xp })
+    const [monthlyReviewCounts, setMonthlyReviewCounts] = useState<Record<string, { count: number; xp: number }>>({});
+
     // YouGlish state
     const [youglishPhrase, setYouglishPhrase] = useState<Phrase | null>(null);
     const [youglishQuery, setYouglishQuery] = useState('');
     const [youglishSearched, setYouglishSearched] = useState(false);
     const youglishLoaded = useRef(false);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const widgetRef = useRef<any>(null);
+    const widgetRef = useRef<ReturnType<typeof window.YG.Widget> | null>(null);
     const currentVideoRef = useRef({ videoId: '', timestamp: 0 });
     const [captionHistory, setCaptionHistory] = useState<{text: string; selected: boolean}[]>([]);
     const [savingPhrase, setSavingPhrase] = useState(false);
@@ -132,23 +146,43 @@ export default function PhrasesPage() {
         const checkMobile = () => setIsMobile(window.innerWidth < 768);
         checkMobile();
         window.addEventListener('resize', checkMobile);
+
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
+
+    // Fetch monthly review counts when month changes
+    useEffect(() => {
+        const ym = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
+        fetch(`/api/review-count?month=${ym}`)
+            .then(r => r.json())
+            .then(d => { if (d.success) setMonthlyReviewCounts(d.counts || {}); })
+            .catch(() => {});
+    }, [currentMonth]);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [phrasesRes, masteryRes, recordingsRes] = await Promise.all([
+                const [phrasesRes, masteryRes, recordingsRes, linksRes] = await Promise.all([
                     fetch('/api/phrases'),
                     fetch('/api/phrases/mastery'),
-                    fetch('/api/voice-recordings')
+                    fetch('/api/voice-recordings'),
+                    fetch('/api/phrases/links'),
                 ]);
                 const phrasesData = await phrasesRes.json();
                 const masteryData = await masteryRes.json();
                 const recordingsData = await recordingsRes.json();
+                const linksData = await linksRes.json();
                 if (phrasesData.success) setPhrases(phrasesData.phrases);
                 if (masteryData.success) setPhraseMastery(masteryData.mastery || {});
                 if (recordingsData.success) setVoiceRecordings(recordingsData.recordings || {});
+                if (linksData.success) {
+                    const map: Record<string, PhraseLink[]> = {};
+                    for (const l of (linksData.links || [])) {
+                        if (!map[l.phrase_id]) map[l.phrase_id] = [];
+                        map[l.phrase_id].push(l);
+                    }
+                    setPhraseLinks(map);
+                }
             } finally {
                 setLoading(false);
             }
@@ -263,7 +297,7 @@ export default function PhrasesPage() {
             const container = document.getElementById('yg-widget-phrases');
             if (container) container.innerHTML = '';
 
-            widgetRef.current = new window.YG!.Widget('yg-widget-phrases', {
+            widgetRef.current = new window.YG.Widget('yg-widget-phrases', {
                 width: 400,
                 components: 255,
                 events: {
@@ -356,7 +390,9 @@ export default function PhrasesPage() {
     }, [phrases, searchQuery]);
 
     // This month's phrases for review, grouped by mastery level
+    // shuffleKey forces re-shuffle on tab switch / mastery change
     const thisMonthReviewPhrases = useMemo(() => {
+        void shuffleKey; // dependency trigger
         const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
         const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
 
@@ -365,28 +401,415 @@ export default function PhrasesPage() {
             return d >= monthStart && d <= monthEnd;
         });
 
-        // Shuffle using date-based seed for stability
-        const seed = currentMonth.getFullYear() * 100 + currentMonth.getMonth();
-        const shuffled = [...monthPhrases].sort((a, b) => {
-            const hashA = (a.id.charCodeAt(0) + seed) % 100;
-            const hashB = (b.id.charCodeAt(0) + seed) % 100;
-            return hashA - hashB;
-        });
+        // True random Fisher-Yates shuffle (re-shuffles on every trigger)
+        const shuffled = [...monthPhrases];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
 
         return {
-            level0: shuffled.filter(p => Number(phraseMastery[p.id] || 0) === 0),  // 未：ちょうど0回
-            level1: shuffled.filter(p => Number(phraseMastery[p.id] || 0) === 1),  // 1回：ちょうど1回
-            level2: shuffled.filter(p => Number(phraseMastery[p.id] || 0) === 2),  // 2回：ちょうど2回
-            all: shuffled.filter(p => Number(phraseMastery[p.id] || 0) < 3),  // 全部（未完了）
-            total: shuffled  // 済も含む全部
+            level0: shuffled.filter(p => Number(phraseMastery[p.id] || 0) === 0),
+            level1: shuffled.filter(p => Number(phraseMastery[p.id] || 0) === 1),
+            level2: shuffled.filter(p => Number(phraseMastery[p.id] || 0) === 2),
+            level3: shuffled.filter(p => Number(phraseMastery[p.id] || 0) >= 3),
+            all: shuffled.filter(p => Number(phraseMastery[p.id] || 0) < 3),
+            total: shuffled
         };
-    }, [phrases, currentMonth, phraseMastery]);
+    }, [phrases, currentMonth, phraseMastery, shuffleKey]);
+
+    // Separate memo for recorded filter — voiceRecordings changes must NOT reshuffle the list
+    const recordedReviewPhrases = useMemo(() => {
+        return thisMonthReviewPhrases.total.filter(p => (voiceRecordings[p.id] || []).length > 0);
+    }, [thisMonthReviewPhrases.total, voiceRecordings]);
+
+    // Phrases that have linked notes
+    const linkedReviewPhrases = useMemo(() => {
+        return thisMonthReviewPhrases.total.filter(p => (phraseLinks[p.id] || []).length > 0);
+    }, [thisMonthReviewPhrases.total, phraseLinks]);
 
     // Get current review list based on filter
     const reviewList = useMemo(() => {
-        if (reviewFilter === 'all') return thisMonthReviewPhrases.all;
+        if (reviewFilter === 'all') return thisMonthReviewPhrases.total;
+        if (reviewFilter === 'random') return thisMonthReviewPhrases.all;
+        if (reviewFilter === 'recorded') return recordedReviewPhrases;
+        if (reviewFilter === 'linked') return linkedReviewPhrases;
         return thisMonthReviewPhrases[`level${reviewFilter}` as keyof typeof thisMonthReviewPhrases] as Phrase[];
-    }, [thisMonthReviewPhrases, reviewFilter]);
+    }, [thisMonthReviewPhrases, reviewFilter, recordedReviewPhrases, linkedReviewPhrases]);
+
+    // Clamp reviewIndex when reviewList shrinks (e.g. after deletion)
+    useEffect(() => {
+        if (reviewList.length > 0 && reviewIndex >= reviewList.length) {
+            setReviewIndex(reviewList.length - 1);
+        }
+    }, [reviewList.length, reviewIndex]);
+
+    // Exit review mode on Escape
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && viewMode === 'review') setViewMode('calendar');
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [viewMode]);
+
+    // Review content: large version for PC fullscreen, compact for mobile inline
+    const isFullReview = viewMode === 'review' && !isMobile;
+
+    const renderReviewContent = () => (
+        <>
+            {/* Filter Tabs */}
+            <div style={{
+                backgroundColor: '#fff',
+                borderRadius: '12px',
+                padding: isFullReview ? '20px' : '14px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div style={{ fontSize: isFullReview ? '15px' : '12px', fontWeight: '600', color: '#333' }}>
+                        今月の復習
+                    </div>
+                    {(() => {
+                        const todayKey = new Date().toISOString().split('T')[0];
+                        const todayCount = monthlyReviewCounts[todayKey]?.count || 0;
+                        return todayCount > 0 ? (
+                            <div style={{
+                                fontSize: isFullReview ? '13px' : '11px',
+                                fontWeight: '600',
+                                color: '#D4AF37',
+                                backgroundColor: '#FFFBEB',
+                                padding: '4px 10px',
+                                borderRadius: '12px',
+                                border: '1px solid #F6C85F',
+                            }}>
+                                Today +{todayCount}
+                            </div>
+                        ) : null;
+                    })()}
+                </div>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {[
+                        { key: 'all' as const, label: 'ALL', count: thisMonthReviewPhrases.total.length, color: '#666', bg: '#f0f0f0' },
+                        { key: 'random' as const, label: 'SHUFFLE', count: thisMonthReviewPhrases.all.length, color: '#D4AF37', bg: '#FFFBEB' },
+                        { key: 'recorded' as const, label: 'REC', count: recordedReviewPhrases.length, color: '#DC2626', bg: '#FEF2F2' },
+                        { key: 0 as const, label: 'NEW', count: thisMonthReviewPhrases.level0.length, color: '#888', bg: '#f0f0f0' },
+                        { key: 1 as const, label: 'x1', count: thisMonthReviewPhrases.level1.length, color: '#D97706', bg: '#FEF3C7' },
+                        { key: 2 as const, label: 'x2', count: thisMonthReviewPhrases.level2.length, color: '#2563EB', bg: '#DBEAFE' },
+                        { key: 3 as const, label: 'CLEAR', count: thisMonthReviewPhrases.level3.length, color: '#059669', bg: '#D1FAE5' },
+                        { key: 'linked' as const, label: 'ADD', count: linkedReviewPhrases.length, color: '#8B5CF6', bg: '#F5F3FF' },
+                    ].map(tab => (
+                        <button
+                            key={tab.key}
+                            onClick={() => { setReviewFilter(tab.key); setReviewIndex(0); setShuffleKey(k => k + 1); }}
+                            style={{
+                                padding: isFullReview ? '8px 16px' : '6px 12px',
+                                borderRadius: '6px',
+                                border: reviewFilter === tab.key ? '2px solid #D4AF37' : '1px solid #ddd',
+                                fontSize: isFullReview ? '14px' : '12px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                backgroundColor: reviewFilter === tab.key ? '#FFFBEB' : tab.bg,
+                                color: tab.color,
+                            }}
+                        >
+                            {tab.label} {tab.count}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Review Card */}
+            {reviewList.length > 0 ? (
+                <div style={{
+                    backgroundColor: '#fff',
+                    borderRadius: '20px',
+                    padding: isFullReview ? '48px 40px' : '20px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                }}>
+                    {/* Progress */}
+                    <div style={{ fontSize: isFullReview ? '14px' : '10px', color: '#888', marginBottom: isFullReview ? '28px' : '12px', textAlign: 'center' }}>
+                        {reviewIndex + 1} / {reviewList.length}
+                    </div>
+
+                    {/* English */}
+                    <div style={{
+                        fontSize: isFullReview ? '32px' : '16px',
+                        fontWeight: '600',
+                        color: '#1a1a1a',
+                        marginBottom: isFullReview ? '16px' : '10px',
+                        lineHeight: 1.5,
+                        textAlign: 'center',
+                    }}>
+                        {reviewList[reviewIndex]?.english}
+                    </div>
+
+                    {/* Japanese */}
+                    <div style={{
+                        fontSize: isFullReview ? '20px' : '13px',
+                        color: '#666',
+                        marginBottom: reviewList[reviewIndex]?.source_id ? (isFullReview ? '16px' : '8px') : (isFullReview ? '40px' : '16px'),
+                        textAlign: 'center',
+                    }}>
+                        {reviewList[reviewIndex]?.japanese}
+                    </div>
+
+                    {/* Linked notes on this card */}
+                    {reviewList[reviewIndex] && (phraseLinks[reviewList[reviewIndex].id] || []).length > 0 && (
+                        <div style={{
+                            padding: isFullReview ? '16px' : '10px',
+                            backgroundColor: '#F5F3FF',
+                            borderRadius: '10px',
+                            border: '1px solid #E9E5FF',
+                            marginBottom: isFullReview ? '24px' : '12px',
+                        }}>
+                            <div style={{ fontSize: '10px', fontWeight: '600', color: '#8B5CF6', marginBottom: '8px', letterSpacing: '0.5px' }}>
+                                ADD ({phraseLinks[reviewList[reviewIndex].id].length})
+                            </div>
+                            {phraseLinks[reviewList[reviewIndex].id].map((link, i) => (
+                                <div key={i} style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '6px 0',
+                                    borderBottom: '1px solid #EDE9FE',
+                                    fontSize: isFullReview ? '14px' : '12px',
+                                    color: '#5B21B6',
+                                }}>
+                                    <span>{link.text}</span>
+                                    <button
+                                        onClick={() => {
+                                            window.speechSynthesis.cancel();
+                                            const u = new SpeechSynthesisUtterance(link.text);
+                                            u.lang = 'en-US';
+                                            u.rate = 0.9;
+                                            const v = voices.find(v => v.name.includes('Google US English')) || voices[0];
+                                            if (v) u.voice = v;
+                                            window.speechSynthesis.speak(u);
+                                        }}
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            padding: '4px',
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#8B5CF6">
+                                            <path d="M8 5v14l11-7z" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Play + Voice Recorder */}
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: isFullReview ? '20px' : '12px', marginBottom: isFullReview ? '32px' : '16px' }}>
+                        <button
+                            onClick={() => reviewList[reviewIndex] && playPhrase(reviewList[reviewIndex])}
+                            style={{
+                                width: isFullReview ? '72px' : '50px',
+                                height: isFullReview ? '72px' : '50px',
+                                borderRadius: '50%',
+                                backgroundColor: playingPhraseId === reviewList[reviewIndex]?.id ? '#D4AF37' : '#f5f5f5',
+                                border: 'none',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <svg width={isFullReview ? '28' : '20'} height={isFullReview ? '28' : '20'} viewBox="0 0 24 24" fill={playingPhraseId === reviewList[reviewIndex]?.id ? '#fff' : '#666'}>
+                                <path d="M8 5v14l11-7z" />
+                            </svg>
+                        </button>
+                        {reviewList[reviewIndex] && (
+                            <VoiceRecorder
+                                phraseId={reviewList[reviewIndex].id}
+                                recordings={voiceRecordings[reviewList[reviewIndex].id] || []}
+                                onRecordingComplete={(recording) => {
+                                    setVoiceRecordings(prev => ({
+                                        ...prev,
+                                        [reviewList[reviewIndex].id]: [recording, ...(prev[reviewList[reviewIndex].id] || [])],
+                                    }));
+                                }}
+                                onRecordingDelete={(id) => {
+                                    setVoiceRecordings(prev => ({
+                                        ...prev,
+                                        [reviewList[reviewIndex].id]: (prev[reviewList[reviewIndex].id] || []).filter(r => r.id !== id),
+                                    }));
+                                }}
+                            />
+                        )}
+                    </div>
+
+                    {/* Mastery */}
+                    {reviewList[reviewIndex] && (() => {
+                        const mastery = phraseMastery[reviewList[reviewIndex].id] || 0;
+                        const masteryInfo = getMasteryLabel(mastery);
+                        return (
+                            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: isFullReview ? '28px' : '16px' }}>
+                                <button
+                                    onClick={() => cycleMastery(reviewList[reviewIndex].id)}
+                                    style={{
+                                        padding: isFullReview ? '12px 32px' : '8px 20px',
+                                        borderRadius: '8px',
+                                        border: 'none',
+                                        backgroundColor: masteryInfo.bg,
+                                        color: masteryInfo.color,
+                                        fontSize: isFullReview ? '16px' : '13px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    {masteryInfo.label}
+                                </button>
+                            </div>
+                        );
+                    })()}
+
+                    {/* Delete */}
+                    {reviewList[reviewIndex] && (
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: isFullReview ? '24px' : '12px' }}>
+                            <button
+                                onClick={() => handleDeletePhrase(reviewList[reviewIndex].id)}
+                                style={{
+                                    background: '#FEF2F2',
+                                    border: '1px solid #FECACA',
+                                    color: '#EF4444',
+                                    fontSize: '10px',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    padding: '4px 10px',
+                                    borderRadius: '4px',
+                                    transition: 'all 0.15s',
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = '#FEE2E2'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = '#FEF2F2'; }}
+                            >
+                                Del
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Quick Add */}
+                    {reviewList[reviewIndex] && (
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: isFullReview ? '16px' : '8px' }}>
+                            <button
+                                onClick={() => setShowQuickAdd(!showQuickAdd)}
+                                style={{
+                                    padding: isFullReview ? '8px 20px' : '6px 14px',
+                                    borderRadius: '8px',
+                                    border: showQuickAdd ? '2px solid #D4AF37' : '1px solid #ddd',
+                                    backgroundColor: showQuickAdd ? '#FFFBEB' : '#fff',
+                                    color: showQuickAdd ? '#D4AF37' : '#888',
+                                    fontSize: isFullReview ? '13px' : '11px',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                {showQuickAdd ? 'Close' : '+ Add'}
+                                {quickAddedCount > 0 && !showQuickAdd && (
+                                    <span style={{ marginLeft: '6px', color: '#D4AF37' }}>({quickAddedCount})</span>
+                                )}
+                            </button>
+                        </div>
+                    )}
+                    {showQuickAdd && reviewList[reviewIndex] && (
+                        <div style={{
+                            display: 'flex',
+                            gap: '8px',
+                            maxWidth: isFullReview ? '400px' : 'none',
+                            margin: '0 auto',
+                            width: '100%',
+                            marginBottom: isFullReview ? '24px' : '12px',
+                        }}>
+                            <input
+                                type="text"
+                                value={quickAddEnglish}
+                                onChange={e => setQuickAddEnglish(e.target.value)}
+                                placeholder="new phrase..."
+                                autoFocus
+                                onKeyDown={e => { if (e.key === 'Enter') handleQuickAdd(); }}
+                                style={{
+                                    flex: 1,
+                                    padding: isFullReview ? '10px 14px' : '8px 10px',
+                                    borderRadius: '8px',
+                                    border: '1px solid #ddd',
+                                    fontSize: isFullReview ? '14px' : '13px',
+                                    outline: 'none',
+                                }}
+                            />
+                            <button
+                                onClick={handleQuickAdd}
+                                disabled={quickAddSubmitting || !quickAddEnglish.trim()}
+                                style={{
+                                    padding: isFullReview ? '10px 20px' : '8px 14px',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    backgroundColor: quickAddSubmitting || !quickAddEnglish.trim() ? '#ddd' : '#D4AF37',
+                                    color: quickAddSubmitting || !quickAddEnglish.trim() ? '#999' : '#000',
+                                    fontSize: isFullReview ? '13px' : '12px',
+                                    fontWeight: '600',
+                                    cursor: quickAddSubmitting || !quickAddEnglish.trim() ? 'not-allowed' : 'pointer',
+                                    whiteSpace: 'nowrap',
+                                }}
+                            >
+                                {quickAddSubmitting ? '...' : 'Save'}
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Navigation */}
+                    <div style={{ display: 'flex', gap: '10px', maxWidth: isFullReview ? '400px' : 'none', margin: '0 auto', width: '100%' }}>
+                        <button
+                            onClick={() => setReviewIndex(i => (i - 1 + reviewList.length) % reviewList.length)}
+                            style={{
+                                flex: 1,
+                                padding: isFullReview ? '16px' : '10px',
+                                borderRadius: '10px',
+                                border: '1px solid #e5e5e5',
+                                backgroundColor: '#fff',
+                                fontSize: isFullReview ? '15px' : '12px',
+                                cursor: 'pointer',
+                                color: '#666',
+                            }}
+                        >
+                            Prev
+                        </button>
+                        <button
+                            onClick={() => setReviewIndex(i => (i + 1) % reviewList.length)}
+                            style={{
+                                flex: 1,
+                                padding: isFullReview ? '16px' : '10px',
+                                borderRadius: '10px',
+                                border: 'none',
+                                backgroundColor: '#D4AF37',
+                                color: '#fff',
+                                fontSize: isFullReview ? '15px' : '12px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <div style={{
+                    backgroundColor: '#fff',
+                    borderRadius: '12px',
+                    padding: '30px',
+                    textAlign: 'center',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                }}>
+                    <div style={{ fontSize: '14px', color: '#888' }}>
+                        復習するフレーズがありません
+                    </div>
+                </div>
+            )}
+        </>
+    );
 
     // Calendar
     const year = currentMonth.getFullYear();
@@ -433,6 +856,24 @@ export default function PhrasesPage() {
         const next = ((current + 1) % 4) as MasteryLevel;
 
         setPhraseMastery(prev => ({ ...prev, [phraseId]: next }));
+        setShuffleKey(k => k + 1);
+
+        // Count level-ups (0->1, 1->2, 2->3) but not resets (3->0)
+        if (next > 0) {
+            const todayKey = new Date().toISOString().split('T')[0];
+            fetch('/api/review-count', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date: todayKey, xp: 0 })
+            })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) {
+                        setMonthlyReviewCounts(prev => ({ ...prev, [todayKey]: { count: d.count, xp: d.xp } }));
+                    }
+                })
+                .catch(() => {});
+        }
 
         try {
             await fetch('/api/phrases/mastery', {
@@ -467,52 +908,10 @@ export default function PhrasesPage() {
     const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
 
     const selectedPhrasesAll = selectedDate ? (phrasesByDate[selectedDate] || []) : [];
-    // フィルターに応じて右バーに表示するフレーズを絞る
-    // 右バーには「まだその回数に達していないフレーズ」を表示（やるべきフレーズ）
-    const selectedPhrases = (() => {
-        if (calendarFilter === 'all') return selectedPhrasesAll;
-        // 未フィルター: レベル0のフレーズ（まだ始めてない）
-        if (calendarFilter === 0) {
-            return selectedPhrasesAll.filter(p => Number(phraseMastery[p.id] || 0) === 0);
-        }
-        // 1回フィルター: レベル0と1（まだ2回に達してない）
-        if (calendarFilter === 1) {
-            return selectedPhrasesAll.filter(p => Number(phraseMastery[p.id] || 0) <= 1);
-        }
-        // 2回フィルター: レベル0,1,2（まだ済に達してない）
-        if (calendarFilter === 2) {
-            return selectedPhrasesAll.filter(p => Number(phraseMastery[p.id] || 0) <= 2);
-        }
-        // 済フィルター: レベル0,1,2（まだ済に達してない）
-        return selectedPhrasesAll.filter(p => Number(phraseMastery[p.id] || 0) < 3);
-    })();
+    const selectedPhrases = selectedPhrasesAll;
 
-    // Get random phrase for a date (uses date hash for stable "random" selection)
-    const getRandomPhrase = useCallback((dateKey: string, dayPhrases: Phrase[]) => {
-        if (dayPhrases.length === 0) return null;
-        // Use stored index if cycled, otherwise use date-based hash for stable selection
-        if (randomPhraseIndex[dateKey] !== undefined) {
-            return dayPhrases[randomPhraseIndex[dateKey] % dayPhrases.length];
-        }
-        // Date-based hash for stable "random" selection
-        const hash = dateKey.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        return dayPhrases[hash % dayPhrases.length];
-    }, [randomPhraseIndex]);
 
-    // Cycle to next phrase on hover
-    const cyclePhrase = useCallback((dateKey: string, dayPhrases: Phrase[]) => {
-        if (dayPhrases.length <= 1) return;
-        setRandomPhraseIndex(prev => ({
-            ...prev,
-            [dateKey]: ((prev[dateKey] ?? 0) + 1) % dayPhrases.length
-        }));
-    }, []);
 
-    // Check if all phrases for a day are cleared (puzzle piece complete)
-    const isDayMastered = useCallback((dayPhrases: Phrase[]) => {
-        if (dayPhrases.length === 0) return false;
-        return dayPhrases.every(p => Number(phraseMastery[p.id] || 0) >= 3);
-    }, [phraseMastery]);
 
     // Calculate puzzle stats (all phrases cleared = puzzle piece complete)
     const puzzleStats = useMemo(() => {
@@ -634,6 +1033,30 @@ export default function PhrasesPage() {
         }
     };
 
+    const handleQuickAdd = async () => {
+        const phraseId = reviewList[reviewIndex]?.id;
+        if (!quickAddEnglish.trim() || !phraseId) return;
+        setQuickAddSubmitting(true);
+        try {
+            const res = await fetch('/api/phrases/links', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phrase_id: phraseId, text: quickAddEnglish.trim() }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                setPhraseLinks(prev => ({
+                    ...prev,
+                    [phraseId]: [...(prev[phraseId] || []), data.link],
+                }));
+                setQuickAddEnglish('');
+                setQuickAddedCount(c => c + 1);
+            }
+        } finally {
+            setQuickAddSubmitting(false);
+        }
+    };
+
     if (loading) {
         return (
             <div style={{ height: '100%', backgroundColor: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>
@@ -717,21 +1140,40 @@ export default function PhrasesPage() {
 
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     {viewMode === 'calendar' && (
-                        <button
-                            onClick={() => setViewMode('list')}
-                            style={{
-                                background: '#f0f0f0',
-                                border: 'none',
-                                borderRadius: '8px',
-                                padding: '8px 14px',
-                                cursor: 'pointer',
-                                fontSize: '13px',
-                                fontWeight: '500',
-                                color: '#666'
-                            }}
-                        >
-                            List
-                        </button>
+                        <>
+                            {!isMobile && (
+                                <button
+                                    onClick={() => { setViewMode('review'); setShuffleKey(k => k + 1); }}
+                                    style={{
+                                        background: '#FFFBEB',
+                                        border: '2px solid #D4AF37',
+                                        borderRadius: '8px',
+                                        padding: '7px 14px',
+                                        cursor: 'pointer',
+                                        fontSize: '13px',
+                                        fontWeight: '600',
+                                        color: '#92400E',
+                                    }}
+                                >
+                                    復習
+                                </button>
+                            )}
+                            <button
+                                onClick={() => setViewMode('list')}
+                                style={{
+                                    background: '#f0f0f0',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    padding: '8px 14px',
+                                    cursor: 'pointer',
+                                    fontSize: '13px',
+                                    fontWeight: '500',
+                                    color: '#666'
+                                }}
+                            >
+                                List
+                            </button>
+                        </>
                     )}
                     <button
                         onClick={() => setShowAddForm(true)}
@@ -768,7 +1210,27 @@ export default function PhrasesPage() {
             </div>
 
             {/* Main Content */}
-            {viewMode === 'list' ? (
+            {viewMode === 'review' ? (
+                /* Full-screen Review View */
+                <div style={{
+                    flex: 1,
+                    overflow: 'auto',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'flex-start',
+                    padding: isMobile ? '16px' : '48px 24px',
+                }}>
+                    <div style={{
+                        width: '100%',
+                        maxWidth: '780px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '16px',
+                    }}>
+                        {renderReviewContent()}
+                    </div>
+                </div>
+            ) : viewMode === 'list' ? (
                 /* List View */
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                     {/* Search */}
@@ -951,42 +1413,7 @@ export default function PhrasesPage() {
                         minHeight: isMobile ? '400px' : 'auto',
                         transition: 'right 0.25s ease'
                     }}>
-                        {/* Calendar Filter Tabs */}
-                        <div style={{
-                            display: 'flex',
-                            gap: '4px',
-                            padding: '8px 12px',
-                            borderBottom: '1px solid #eee',
-                            flexShrink: 0,
-                            overflowX: 'auto'
-                        }}>
-                            {[
-                                { key: 'all' as const, label: '全部' },
-                                { key: 0 as const, label: '未' },
-                                { key: 1 as const, label: '1回' },
-                                { key: 2 as const, label: '2回' },
-                                { key: 3 as const, label: '済' }
-                            ].map(tab => (
-                                <button
-                                    key={tab.key}
-                                    onClick={() => setCalendarFilter(tab.key)}
-                                    style={{
-                                        padding: '4px 12px',
-                                        borderRadius: '4px',
-                                        border: 'none',
-                                        fontSize: '12px',
-                                        fontWeight: '600',
-                                        cursor: 'pointer',
-                                        backgroundColor: calendarFilter === tab.key ? '#D4AF37' : '#f5f5f5',
-                                        color: calendarFilter === tab.key ? '#fff' : '#666',
-                                        whiteSpace: 'nowrap'
-                                    }}
-                                >
-                                    {tab.label}
-                                </button>
-                            ))}
-                        </div>
-
+                        {/* View Toggle + Filter Tabs */}
                         {/* Day Headers */}
                         <div style={{
                             display: 'grid',
@@ -1015,8 +1442,8 @@ export default function PhrasesPage() {
                             display: 'grid',
                             gridTemplateColumns: 'repeat(7, 1fr)',
                             gridTemplateRows: `repeat(${rows}, 1fr)`,
-                            gap: '3px',
-                            padding: '6px',
+                            gap: '0px',
+                            padding: '0px',
                             flex: 1,
                             minHeight: 0
                         }}>
@@ -1037,57 +1464,25 @@ export default function PhrasesPage() {
                                         level1Plus: allDayPhrases.filter(p => Number(phraseMastery[p.id] || 0) >= 1).length,
                                         level2Plus: allDayPhrases.filter(p => Number(phraseMastery[p.id] || 0) >= 2).length,
                                         level3: allDayPhrases.filter(p => Number(phraseMastery[p.id] || 0) >= 3).length,
+                                        recorded: allDayPhrases.filter(p => (voiceRecordings[p.id] || []).length > 0).length,
                                     };
 
-                                    // Filter by mastery level - cumulative for calendar fill (N回以上)
-                                    const dayPhrases = calendarFilter === 'all'
-                                        ? allDayPhrases
-                                        : calendarFilter === 0
-                                            ? allDayPhrases.filter(p => Number(phraseMastery[p.id] || 0) === 0)
-                                            : calendarFilter === 1
-                                                ? allDayPhrases.filter(p => Number(phraseMastery[p.id] || 0) >= 1)
-                                                : calendarFilter === 2
-                                                    ? allDayPhrases.filter(p => Number(phraseMastery[p.id] || 0) >= 2)
-                                                    : allDayPhrases.filter(p => Number(phraseMastery[p.id] || 0) >= 3);
-                                    const hasPhrases = dayPhrases.length > 0;
+                                    const total = allDayPhrases.length;
+                                    const barNew = total > 0 ? countByLevel.level1Plus / total : 0;
+                                    const barX1 = total > 0 ? countByLevel.level2Plus / total : 0;
+                                    const barX2 = total > 0 ? countByLevel.level3 / total : 0;
+                                    const barRec = total > 0 ? countByLevel.recorded / total : 0;
+                                    const allCleared = total > 0 && countByLevel.level3 === total;
 
-                                    // Progress calculation - 「その回数を終えた」割合で埋める
-                                    // 未: 1回以上に進んだ割合（未を終えた）
-                                    // 1回: 2回以上に進んだ割合（1回を終えた）
-                                    // 2回: 済に進んだ割合（2回を終えた）
-                                    // 済: 済の割合
-                                    let reviewProgress = 0;
-                                    if (allDayPhrases.length > 0) {
-                                        if (calendarFilter === 'all') {
-                                            reviewProgress = countByLevel.level3 / allDayPhrases.length;
-                                        } else if (calendarFilter === 0) {
-                                            // 未フィルター: 1回以上に進んだ割合
-                                            reviewProgress = countByLevel.level1Plus / allDayPhrases.length;
-                                        } else if (calendarFilter === 1) {
-                                            // 1回フィルター: 2回以上に進んだ割合（1回を終えた）
-                                            reviewProgress = countByLevel.level2Plus / allDayPhrases.length;
-                                        } else if (calendarFilter === 2) {
-                                            // 2回フィルター: 済に進んだ割合（2回を終えた）
-                                            reviewProgress = countByLevel.level3 / allDayPhrases.length;
-                                        } else {
-                                            // 済フィルター: 済の割合
-                                            reviewProgress = countByLevel.level3 / allDayPhrases.length;
-                                        }
-                                    }
-
-                                    const isMastered = calendarFilter === 'all'
-                                        ? isDayMastered(allDayPhrases)
-                                        : calendarFilter === 0
-                                            ? countByLevel.level0 === 0
-                                            : calendarFilter === 1
-                                                ? countByLevel.level2Plus === allDayPhrases.length
-                                                : calendarFilter === 2
-                                                    ? countByLevel.level3 === allDayPhrases.length
-                                                    : countByLevel.level3 === allDayPhrases.length;
-                                    const clearedInDay = countByLevel.level3;
-
-                                    // Get random phrase to display (always from all phrases for the day)
-                                    const randomPhrase = hasAnyPhrases ? getRandomPhrase(dateKey, allDayPhrases) : null;
+                                    // Color system: "learning temperature" metaphor
+                                    // met(blue/cold) → rep(amber/warming) → own(green/go!) + rec(red/REC light)
+                                    // Normal: soft pastel  →  Complete: medium-saturated (not harsh)
+                                    const barData = [
+                                        { fill: barNew, label: 'met', color: barNew >= 1 ? '#B8D8F0' : '#E8F0F8' },
+                                        { fill: barX1, label: 'rep', color: barX1 >= 1 ? '#F0DEB8' : '#F8F0E0' },
+                                        { fill: barX2, label: 'own', color: barX2 >= 1 ? '#B0E0C4' : '#E0F4E8' },
+                                        { fill: barRec, label: 'rec', color: barRec >= 1 ? '#F0BABA' : '#F8E4E4' },
+                                    ];
 
                                     return (
                                         <div
@@ -1096,7 +1491,7 @@ export default function PhrasesPage() {
                                             onMouseEnter={(e) => {
                                                 if (hasAnyPhrases) {
                                                     e.currentTarget.style.transform = 'scale(1.02)';
-                                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
                                                 }
                                             }}
                                             onMouseLeave={(e) => {
@@ -1107,10 +1502,9 @@ export default function PhrasesPage() {
                                                 borderRadius: '4px',
                                                 cursor: hasAnyPhrases ? 'pointer' : 'default',
                                                 overflow: 'hidden',
-                                                padding: '6px',
+                                                padding: '4px',
                                                 display: 'flex',
                                                 flexDirection: 'column',
-                                                position: 'relative',
                                                 backgroundColor: '#fafafa',
                                                 border: isTodayDate
                                                     ? '2px solid #D4AF37'
@@ -1118,103 +1512,96 @@ export default function PhrasesPage() {
                                                 transition: 'transform 0.15s, box-shadow 0.15s'
                                             }}
                                         >
-                                                {/* Fill effect - rises from bottom as progress increases */}
-                                                {hasAnyPhrases && calendarFilter !== 'all' && reviewProgress > 0 && (
-                                                    <div style={{
-                                                        position: 'absolute',
-                                                        bottom: 0,
-                                                        left: 0,
-                                                        right: 0,
-                                                        height: `${reviewProgress * 100}%`,
-                                                        backgroundColor: calendarFilter === 0 ? 'rgba(156, 163, 175, 0.4)'
-                                                            : calendarFilter === 1 ? 'rgba(245, 158, 11, 0.4)'
-                                                            : calendarFilter === 2 ? 'rgba(59, 130, 246, 0.4)'
-                                                            : 'rgba(16, 185, 129, 0.4)',
-                                                        transition: 'height 0.3s ease-out',
-                                                        pointerEvents: 'none',
-                                                        zIndex: 0
-                                                    }} />
-                                                )}
-                                                {/* Fill effect for 'all' view */}
-                                                {hasAnyPhrases && calendarFilter === 'all' && !isMastered && reviewProgress > 0 && (
-                                                    <div style={{
-                                                        position: 'absolute',
-                                                        bottom: 0,
-                                                        left: 0,
-                                                        right: 0,
-                                                        height: `${(clearedInDay / allDayPhrases.length) * 100}%`,
-                                                        backgroundColor: 'rgba(16, 185, 129, 0.25)',
-                                                        transition: 'height 0.3s ease-out',
-                                                        pointerEvents: 'none',
-                                                        zIndex: 0
-                                                    }} />
-                                                )}
-
-                                                {/* Day number + mastery indicator */}
-                                                <div style={{
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'center',
-                                                    marginBottom: '2px',
-                                                    position: 'relative',
-                                                    zIndex: 1
-                                                }}>
+                                                {/* Day number */}
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                                                     <span style={{
-                                                        fontSize: '11px',
-                                                        fontWeight: '700',
-                                                        color: dayOfWeek === 0 ? '#ef4444' : dayOfWeek === 6 ? '#3b82f6' : '#666'
+                                                        fontSize: '10px',
+                                                        fontWeight: '600',
+                                                        color: dayOfWeek === 0 ? '#ef4444' : dayOfWeek === 6 ? '#3b82f6' : '#aaa',
+                                                        lineHeight: 1
                                                     }}>
                                                         {day}
                                                     </span>
-                                                    {hasAnyPhrases && (
-                                                        <span style={{
-                                                            fontSize: '10px',
-                                                            color: calendarFilter === 'all' ? (isMastered ? '#059669' : '#888')
-                                                                : calendarFilter === 0 ? (dayPhrases.length === 0 ? '#059669' : '#666')
-                                                                : calendarFilter === 1 ? '#D97706'
-                                                                : calendarFilter === 2 ? '#2563EB'
-                                                                : calendarFilter === 3 ? '#059669'
-                                                                : '#888',
-                                                            fontWeight: '600'
-                                                        }}>
-                                                            {calendarFilter === 'all'
-                                                                ? (isMastered ? '済' : `${clearedInDay}/${allDayPhrases.length}`)
-                                                                : calendarFilter === 0
-                                                                    ? (countByLevel.level0 === 0 ? '済' : `残${countByLevel.level0}`)
-                                                                    : calendarFilter === 1
-                                                                        ? (countByLevel.level2Plus === allDayPhrases.length ? '済' : `${countByLevel.level2Plus}/${allDayPhrases.length}`)
-                                                                        : calendarFilter === 2
-                                                                            ? (countByLevel.level3 === allDayPhrases.length ? '済' : `${countByLevel.level3}/${allDayPhrases.length}`)
-                                                                            : (isMastered ? '済' : `${countByLevel.level3}/${allDayPhrases.length}`)
-                                                            }
-                                                        </span>
-                                                    )}
                                                 </div>
 
-                                                {/* Random phrase preview */}
-                                                {hasAnyPhrases && randomPhrase && (
+                                                {/* Bars + background number */}
+                                                {hasAnyPhrases && (
                                                     <div style={{
                                                         flex: 1,
                                                         display: 'flex',
-                                                        flexDirection: 'column',
-                                                        justifyContent: 'center',
-                                                        overflow: 'hidden',
-                                                        position: 'relative',
-                                                        zIndex: 1
+                                                        gap: '0px',
+                                                        marginTop: '3px',
+                                                        minHeight: '28px',
+                                                        position: 'relative'
                                                     }}>
+                                                        {/* Background: phrase count + review count */}
                                                         <div style={{
-                                                            fontSize: '10px',
-                                                            fontWeight: '600',
-                                                            color: '#333',
-                                                            lineHeight: 1.3,
-                                                            overflow: 'hidden',
-                                                            textOverflow: 'ellipsis',
-                                                            display: '-webkit-box',
-                                                            WebkitLineClamp: 2,
-                                                            WebkitBoxOrient: 'vertical'
+                                                            position: 'absolute',
+                                                            inset: 0,
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            pointerEvents: 'none',
+                                                            gap: '0px',
                                                         }}>
-                                                            {randomPhrase.english}
+                                                            <span style={{
+                                                                fontSize: '28px',
+                                                                fontWeight: '900',
+                                                                color: 'rgba(0,0,0,0.07)',
+                                                                lineHeight: 1,
+                                                            }}>
+                                                                {total}
+                                                            </span>
+                                                            {(monthlyReviewCounts[dateKey]?.count || 0) > 0 && (
+                                                                <span style={{
+                                                                    fontSize: '14px',
+                                                                    fontWeight: '800',
+                                                                    color: '#D4AF37',
+                                                                    lineHeight: 1,
+                                                                    marginTop: '2px',
+                                                                    opacity: 0.85,
+                                                                }}>
+                                                                    +{monthlyReviewCounts[dateKey]?.count}
+                                                                </span>
+                                                            )}
                                                         </div>
+                                                        {barData.map((bar, i) => (
+                                                            <div key={i} style={{
+                                                                flex: 1,
+                                                                display: 'flex',
+                                                                flexDirection: 'column',
+                                                                gap: '1px'
+                                                            }}>
+                                                                <div style={{
+                                                                    flex: 1,
+                                                                    display: 'flex',
+                                                                    flexDirection: 'column',
+                                                                    justifyContent: 'flex-end',
+                                                                    borderRadius: '2px',
+                                                                    backgroundColor: '#F0EFEC',
+                                                                    overflow: 'hidden'
+                                                                }}>
+                                                                    <div style={{
+                                                                        height: `${bar.fill * 100}%`,
+                                                                        backgroundColor: bar.color,
+                                                                        borderRadius: '2px',
+                                                                        transition: 'height 0.3s ease-out',
+                                                                        minHeight: bar.fill > 0 ? '2px' : '0px'
+                                                                    }} />
+                                                                </div>
+                                                                <span style={{
+                                                                    fontSize: '7px',
+                                                                    fontWeight: '700',
+                                                                    color: bar.color,
+                                                                    textAlign: 'center',
+                                                                    lineHeight: 1,
+                                                                    textTransform: 'uppercase'
+                                                                }}>
+                                                                    {bar.label}
+                                                                </span>
+                                                            </div>
+                                                        ))}
                                                     </div>
                                                 )}
 
@@ -1224,9 +1611,7 @@ export default function PhrasesPage() {
                                                         flex: 1,
                                                         display: 'flex',
                                                         alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        position: 'relative',
-                                                        zIndex: 1
+                                                        justifyContent: 'center'
                                                     }}>
                                                         <button
                                                             onClick={(e) => {
@@ -1243,12 +1628,12 @@ export default function PhrasesPage() {
                                                                 e.currentTarget.style.color = '#B8960C';
                                                             }}
                                                             style={{
-                                                                width: '28px',
-                                                                height: '28px',
+                                                                width: '22px',
+                                                                height: '22px',
                                                                 borderRadius: '50%',
                                                                 background: 'rgba(212,175,55,0.2)',
                                                                 border: 'none',
-                                                                fontSize: '16px',
+                                                                fontSize: '14px',
                                                                 fontWeight: '400',
                                                                 color: '#B8960C',
                                                                 cursor: 'pointer',
@@ -1303,24 +1688,6 @@ export default function PhrasesPage() {
                                     <div>
                                         <div style={{ fontSize: '14px', fontWeight: '600', color: '#333' }}>
                                             {new Date(selectedDate).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' })}
-                                            {calendarFilter !== 'all' && (
-                                                <span style={{
-                                                    marginLeft: '8px',
-                                                    fontSize: '11px',
-                                                    padding: '2px 6px',
-                                                    borderRadius: '4px',
-                                                    backgroundColor: calendarFilter === 0 ? '#f0f0f0'
-                                                        : calendarFilter === 1 ? '#FEF3C7'
-                                                        : calendarFilter === 2 ? '#DBEAFE'
-                                                        : '#D1FAE5',
-                                                    color: calendarFilter === 0 ? '#666'
-                                                        : calendarFilter === 1 ? '#D97706'
-                                                        : calendarFilter === 2 ? '#2563EB'
-                                                        : '#059669'
-                                                }}>
-                                                    {calendarFilter === 0 ? '未' : calendarFilter === 1 ? '1回' : calendarFilter === 2 ? '2回' : '済'}
-                                                </span>
-                                            )}
                                         </div>
                                         <div style={{ fontSize: '11px', color: '#888' }}>
                                             {selectedPhrases.length} / {selectedPhrasesAll.length} phrases
@@ -1387,22 +1754,6 @@ export default function PhrasesPage() {
 
                                 {/* Phrase List */}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    {selectedPhrases.length === 0 && calendarFilter !== 'all' && (
-                                        <div style={{
-                                            backgroundColor: '#fff',
-                                            borderRadius: '12px',
-                                            padding: '20px',
-                                            textAlign: 'center',
-                                            color: '#888',
-                                            fontSize: '13px'
-                                        }}>
-                                            {calendarFilter === 0 ? '未復習のフレーズはありません' :
-                                             calendarFilter === 1 ? '全て2回以上です' :
-                                             calendarFilter === 2 ? '全て済です' :
-                                             calendarFilter === 3 ? '全て済です' :
-                                             'フレーズはありません'}
-                                        </div>
-                                    )}
                                     {selectedPhrases.map(phrase => {
                                         const mastery = phraseMastery[phrase.id] || 0;
                                         const masteryInfo = getMasteryLabel(mastery);
@@ -1604,224 +1955,100 @@ export default function PhrasesPage() {
                                 </div>
                             </>
                         ) : (
-                            <>
-                                {/* Review Header */}
-                                <div style={{
-                                    backgroundColor: '#fff',
-                                    borderRadius: '12px',
-                                    padding: '14px',
-                                    boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
-                                }}>
-                                    <div style={{ fontSize: '12px', fontWeight: '600', color: '#333', marginBottom: '10px' }}>
-                                        今月の復習
-                                    </div>
-                                    {/* Filter Tabs */}
-                                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                        {[
-                                            { key: 'all' as const, label: '全部', count: thisMonthReviewPhrases.all.length, color: '#666', bg: '#f0f0f0' },
-                                            { key: 0 as const, label: '未', count: thisMonthReviewPhrases.level0.length, color: '#888', bg: '#f0f0f0' },
-                                            { key: 1 as const, label: '1回', count: thisMonthReviewPhrases.level1.length, color: '#D97706', bg: '#FEF3C7' },
-                                            { key: 2 as const, label: '2回', count: thisMonthReviewPhrases.level2.length, color: '#2563EB', bg: '#DBEAFE' }
-                                        ].map(tab => (
-                                            <button
-                                                key={tab.key}
-                                                onClick={() => { setReviewFilter(tab.key); setReviewIndex(0); }}
-                                                style={{
-                                                    padding: '6px 12px',
-                                                    borderRadius: '6px',
-                                                    border: reviewFilter === tab.key ? '2px solid #D4AF37' : '1px solid #ddd',
-                                                    fontSize: '12px',
-                                                    fontWeight: '600',
-                                                    cursor: 'pointer',
-                                                    backgroundColor: reviewFilter === tab.key ? '#FFFBEB' : tab.bg,
-                                                    color: tab.color
-                                                }}
-                                            >
-                                                {tab.label} {tab.count}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Current Review Card */}
-                                {reviewList.length > 0 ? (
-                                    <>
-                                        <div style={{
-                                            backgroundColor: '#fff',
-                                            borderRadius: '16px',
-                                            padding: '20px',
-                                            boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-                                        }}>
-                                            {/* Progress */}
-                                            <div style={{ fontSize: '10px', color: '#888', marginBottom: '12px', textAlign: 'center' }}>
-                                                {reviewIndex + 1} / {reviewList.length}
-                                            </div>
-
-                                            {/* English */}
-                                            <div style={{
-                                                fontSize: '16px',
-                                                fontWeight: '600',
-                                                color: '#1a1a1a',
-                                                marginBottom: '10px',
-                                                lineHeight: 1.4,
-                                                textAlign: 'center'
-                                            }}>
-                                                {reviewList[reviewIndex]?.english}
-                                            </div>
-
-                                            {/* Japanese */}
-                                            <div style={{
-                                                fontSize: '13px',
-                                                color: '#666',
-                                                marginBottom: '16px',
-                                                textAlign: 'center'
-                                            }}>
-                                                {reviewList[reviewIndex]?.japanese}
-                                            </div>
-
-                                            {/* Play Button + Voice Recorder */}
-                                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                                                <button
-                                                    onClick={() => reviewList[reviewIndex] && playPhrase(reviewList[reviewIndex])}
-                                                    style={{
-                                                        width: '50px',
-                                                        height: '50px',
-                                                        borderRadius: '50%',
-                                                        backgroundColor: playingPhraseId === reviewList[reviewIndex]?.id ? '#D4AF37' : '#f5f5f5',
-                                                        border: 'none',
-                                                        cursor: 'pointer',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center'
-                                                    }}
-                                                >
-                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill={playingPhraseId === reviewList[reviewIndex]?.id ? '#fff' : '#666'}>
-                                                        <path d="M8 5v14l11-7z" />
-                                                    </svg>
-                                                </button>
-                                                {reviewList[reviewIndex] && (
-                                                    <VoiceRecorder
-                                                        phraseId={reviewList[reviewIndex].id}
-                                                        recordings={voiceRecordings[reviewList[reviewIndex].id] || []}
-                                                        onRecordingComplete={(recording) => {
-                                                            setVoiceRecordings(prev => ({
-                                                                ...prev,
-                                                                [reviewList[reviewIndex].id]: [recording, ...(prev[reviewList[reviewIndex].id] || [])]
-                                                            }));
-                                                        }}
-                                                        onRecordingDelete={(id) => {
-                                                            setVoiceRecordings(prev => ({
-                                                                ...prev,
-                                                                [reviewList[reviewIndex].id]: (prev[reviewList[reviewIndex].id] || []).filter(r => r.id !== id)
-                                                            }));
-                                                        }}
-                                                    />
-                                                )}
-                                            </div>
-
-                                            {/* Mastery Button */}
-                                            {reviewList[reviewIndex] && (() => {
-                                                const mastery = phraseMastery[reviewList[reviewIndex].id] || 0;
-                                                const masteryInfo = getMasteryLabel(mastery);
-                                                return (
-                                                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-                                                        <button
-                                                            onClick={() => cycleMastery(reviewList[reviewIndex].id)}
-                                                            style={{
-                                                                padding: '8px 20px',
-                                                                borderRadius: '8px',
-                                                                border: 'none',
-                                                                backgroundColor: masteryInfo.bg,
-                                                                color: masteryInfo.color,
-                                                                fontSize: '13px',
-                                                                fontWeight: '600',
-                                                                cursor: 'pointer'
-                                                            }}
-                                                        >
-                                                            {masteryInfo.label}
-                                                        </button>
-                                                    </div>
-                                                );
-                                            })()}
-
-                                            {/* Navigation */}
-                                            <div style={{ display: 'flex', gap: '8px' }}>
-                                                <button
-                                                    onClick={() => setReviewIndex(i => (i - 1 + reviewList.length) % reviewList.length)}
-                                                    style={{
-                                                        flex: 1,
-                                                        padding: '10px',
-                                                        borderRadius: '8px',
-                                                        border: '1px solid #e5e5e5',
-                                                        backgroundColor: '#fff',
-                                                        fontSize: '12px',
-                                                        cursor: 'pointer',
-                                                        color: '#666'
-                                                    }}
-                                                >
-                                                    Prev
-                                                </button>
-                                                <button
-                                                    onClick={() => setReviewIndex(i => (i + 1) % reviewList.length)}
-                                                    style={{
-                                                        flex: 1,
-                                                        padding: '10px',
-                                                        borderRadius: '8px',
-                                                        border: 'none',
-                                                        backgroundColor: '#D4AF37',
-                                                        color: '#fff',
-                                                        fontSize: '12px',
-                                                        fontWeight: '600',
-                                                        cursor: 'pointer'
-                                                    }}
-                                                >
-                                                    Next
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        {/* Stats */}
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                                            <div style={{
-                                                backgroundColor: '#fff',
-                                                borderRadius: '12px',
-                                                padding: '12px',
-                                                textAlign: 'center',
-                                                boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
-                                            }}>
-                                                <div style={{ fontSize: '20px', fontWeight: '700', color: '#D4AF37' }}>
-                                                    {thisMonthReviewPhrases.all.length}
-                                                </div>
-                                                <div style={{ fontSize: '9px', color: '#888' }}>今月</div>
-                                            </div>
-                                            <div style={{
-                                                backgroundColor: '#fff',
-                                                borderRadius: '12px',
-                                                padding: '12px',
-                                                textAlign: 'center',
-                                                boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
-                                            }}>
-                                                <div style={{ fontSize: '20px', fontWeight: '700', color: '#10B981' }}>
-                                                    {clearedCount}
-                                                </div>
-                                                <div style={{ fontSize: '9px', color: '#888' }}>Clear</div>
-                                            </div>
-                                        </div>
-                                    </>
-                                ) : (
+                            /* No date selected: summary + review */
+                            isMobile ? (
+                                <>{renderReviewContent()}</>
+                            ) : (
+                                <>
+                                    {/* Monthly Summary */}
                                     <div style={{
                                         backgroundColor: '#fff',
                                         borderRadius: '12px',
-                                        padding: '30px',
-                                        textAlign: 'center',
-                                        boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
+                                        padding: '16px',
+                                        boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
                                     }}>
-                                        <div style={{ fontSize: '14px', color: '#888' }}>
-                                            復習するフレーズがありません
+                                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#333', marginBottom: '12px' }}>
+                                            {year}年{monthNames[month]} サマリー
+                                        </div>
+                                        {/* Total + today */}
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px' }}>
+                                            <div style={{ textAlign: 'center' }}>
+                                                <div style={{ fontSize: '24px', fontWeight: '700', color: '#D4AF37' }}>
+                                                    {thisMonthReviewPhrases.total.length}
+                                                </div>
+                                                <div style={{ fontSize: '10px', color: '#888' }}>Total</div>
+                                            </div>
+                                            <div style={{ textAlign: 'center' }}>
+                                                <div style={{ fontSize: '24px', fontWeight: '700', color: '#059669' }}>
+                                                    {thisMonthReviewPhrases.level3.length}
+                                                </div>
+                                                <div style={{ fontSize: '10px', color: '#888' }}>CLEAR</div>
+                                            </div>
+                                            <div style={{ textAlign: 'center' }}>
+                                                <div style={{ fontSize: '24px', fontWeight: '700', color: '#3B82F6' }}>
+                                                    {(() => {
+                                                        const todayKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                                                        return (phrasesByDate[todayKey] || []).length;
+                                                    })()}
+                                                </div>
+                                                <div style={{ fontSize: '10px', color: '#888' }}>Today</div>
+                                            </div>
+                                            <div style={{ textAlign: 'center' }}>
+                                                <div style={{ fontSize: '24px', fontWeight: '700', color: '#D97706' }}>
+                                                    {recordedReviewPhrases.length}
+                                                </div>
+                                                <div style={{ fontSize: '10px', color: '#888' }}>REC</div>
+                                            </div>
+                                        </div>
+                                        {/* Mastery progress bar */}
+                                        {thisMonthReviewPhrases.total.length > 0 && (
+                                            <div style={{
+                                                display: 'flex',
+                                                height: '8px',
+                                                borderRadius: '4px',
+                                                overflow: 'hidden',
+                                                backgroundColor: '#f0f0f0',
+                                            }}>
+                                                {thisMonthReviewPhrases.level3.length > 0 && (
+                                                    <div style={{
+                                                        width: `${(thisMonthReviewPhrases.level3.length / thisMonthReviewPhrases.total.length) * 100}%`,
+                                                        backgroundColor: '#10B981',
+                                                    }} />
+                                                )}
+                                                {thisMonthReviewPhrases.level2.length > 0 && (
+                                                    <div style={{
+                                                        width: `${(thisMonthReviewPhrases.level2.length / thisMonthReviewPhrases.total.length) * 100}%`,
+                                                        backgroundColor: '#3B82F6',
+                                                    }} />
+                                                )}
+                                                {thisMonthReviewPhrases.level1.length > 0 && (
+                                                    <div style={{
+                                                        width: `${(thisMonthReviewPhrases.level1.length / thisMonthReviewPhrases.total.length) * 100}%`,
+                                                        backgroundColor: '#F59E0B',
+                                                    }} />
+                                                )}
+                                            </div>
+                                        )}
+                                        {/* Legend */}
+                                        <div style={{ display: 'flex', gap: '10px', marginTop: '8px', flexWrap: 'wrap' }}>
+                                            {[
+                                                { label: 'NEW', count: thisMonthReviewPhrases.level0.length, color: '#888' },
+                                                { label: 'x1', count: thisMonthReviewPhrases.level1.length, color: '#D97706' },
+                                                { label: 'x2', count: thisMonthReviewPhrases.level2.length, color: '#2563EB' },
+                                                { label: 'CLEAR', count: thisMonthReviewPhrases.level3.length, color: '#059669' },
+                                            ].map(item => (
+                                                <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}>
+                                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: item.color }} />
+                                                    <span style={{ color: '#666' }}>{item.label}</span>
+                                                    <span style={{ fontWeight: '600', color: item.color }}>{item.count}</span>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
-                                )}
-                            </>
+                                    {/* Review Cards */}
+                                    {renderReviewContent()}
+                                </>
+                            )
                         )}
                     </div>
                 </div>

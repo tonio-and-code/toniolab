@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAllPhrases, addPhrase } from '@/lib/d1';
 import { nanoid } from 'nanoid';
+import { ELEMENTS, randomElement } from '@/data/english/elements';
 
 export async function GET() {
     try {
@@ -18,7 +19,8 @@ export async function GET() {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { english, japanese, category, date } = body;
+        const { english, japanese, date } = body;
+        const category = ELEMENTS.includes(body.category) ? body.category : randomElement();
 
         if (!english || !category || !date) {
             return NextResponse.json(
@@ -35,6 +37,9 @@ export async function POST(request: Request) {
             date,
         });
 
+        if ('duplicate' in phrase && phrase.duplicate) {
+            return NextResponse.json({ phrase, success: true, duplicate: true }, { status: 200 });
+        }
         return NextResponse.json({ phrase, success: true }, { status: 201 });
     } catch (error) {
         console.error('Error adding phrase:', error);

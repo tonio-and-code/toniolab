@@ -510,7 +510,7 @@ export default function PhraseDatePage() {
                 </button>
                 {savedPhrases.size > 0 && (
                     <button
-                        onClick={() => router.push('/english/saved')}
+                        onClick={() => router.push('/english/bookmarks')}
                         style={{
                             background: 'none',
                             border: '1px solid #B8960C',

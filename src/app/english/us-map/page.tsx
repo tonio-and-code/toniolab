@@ -121,12 +121,12 @@ export default function USMapPage() {
 
     const handleZoom = (factor: number) => {
         if (!svgRef.current) return;
-        (d3Selection.select(svgRef.current) as any).transition().duration(500).call((d3Zoom.zoom() as any).scaleBy, factor);
+        d3Selection.select(svgRef.current).transition().duration(500).call((d3Zoom.zoom() as any).scaleBy, factor);
     };
 
     const handleReset = () => {
         if (!svgRef.current) return;
-        (d3Selection.select(svgRef.current) as any).transition().duration(750).call((d3Zoom.zoom() as any).transform, d3Zoom.zoomIdentity);
+        d3Selection.select(svgRef.current).transition().duration(750).call((d3Zoom.zoom() as any).transform, d3Zoom.zoomIdentity);
     };
 
     // State color based on progress
@@ -282,7 +282,7 @@ export default function USMapPage() {
             const scale = Math.max(1, Math.min(5, 0.8 / Math.max(dx / dimensions.width, dy / dimensions.height)));
             const translate = [dimensions.width / 2 - scale * x, dimensions.height / 2 - scale * y];
 
-            (d3Selection.select(svgRef.current) as any).transition().duration(1200)
+            d3Selection.select(svgRef.current).transition().duration(1200)
                 .call(
                     (d3Zoom.zoom() as any).transform,
                     d3Zoom.zoomIdentity.translate(translate[0], translate[1]).scale(scale)

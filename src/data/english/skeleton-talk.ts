@@ -9,8 +9,6 @@
  *   unfinished invitation, English question bomb
  */
 
-import type { ConversationTone } from '@/types/memoria';
-
 export interface SkeletonTalkEntry {
     id: string;
     date: string;
@@ -25,7 +23,7 @@ export interface SkeletonTalkEntry {
         generatedAt: Date;
         tone: string;
     };
-    tone: ConversationTone;
+    tone: string;
     tags: string[];
     createdAt: Date;
     updatedAt: Date;

@@ -32,8 +32,34 @@ import { voiceSkeletonEntry } from './voice-skeleton-entry';
 import { adyashantiEmptyNicheEntry } from './adyashanti-empty-niche-entry';
 import { awarenessOfAwarenessEntry } from './awareness-of-awareness-entry';
 import { noteLaunchEntry } from './note-launch-entry';
+import { migrationAndHammerEntry } from './migration-and-hammer-entry';
+import { cloudflareDeploymentGuideEntry } from './cloudflare-deployment-guide-entry';
+import { aiEnglishPracticeEntry } from './ai-english-practice-entry';
+import { sobaNeuroscienceEntry } from './soba-neuroscience-entry';
+import { aiCoaching94PercentEntry } from './ai-coaching-94percent-entry';
+import { surrenderGameEntry } from './surrender-game-entry';
+import { egoDeadEndEntry } from './ego-dead-end-entry';
+import { vrttiAndLanguageSpeedEntry } from './vrtti-and-language-speed-entry';
+import { criticalPeriodEgoEntry } from './critical-period-ego-entry';
+import { dashboardHellEntry } from './dashboard-hell-entry';
+import { fishermanNowhereEntry } from './fisherman-nowhere-entry';
+import { pachinkoLearningEntry } from './pachinko-learning-entry';
+import { productiveDespairEntry } from './productive-despair-entry';
 
 export const february2026Entries: JournalEntry[] = [
+    productiveDespairEntry,
+    pachinkoLearningEntry,
+    fishermanNowhereEntry,
+    dashboardHellEntry,
+    vrttiAndLanguageSpeedEntry,
+    criticalPeriodEgoEntry,
+    surrenderGameEntry,
+    egoDeadEndEntry,
+    aiCoaching94PercentEntry,
+    sobaNeuroscienceEntry,
+    aiEnglishPracticeEntry,
+    cloudflareDeploymentGuideEntry,
+    migrationAndHammerEntry,
     noteLaunchEntry,
     awarenessOfAwarenessEntry,
     adyashantiEmptyNicheEntry,

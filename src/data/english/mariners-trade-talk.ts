@@ -6,8 +6,6 @@
  * Speech patterns: g-dropping, fillers, clause adhesives, right-branching, chunk-based
  */
 
-import type { ConversationTone } from '@/types/memoria';
-
 export interface MarinersTradeEntry {
     id: string;
     date: string;
@@ -20,9 +18,9 @@ export interface MarinersTradeEntry {
         english: Array<{ speaker: 'male' | 'female'; text: string }>;
         japanese: Array<{ speaker: 'male' | 'female'; text: string }>;
         generatedAt: Date;
-        tone: ConversationTone;
+        tone: string;
     };
-    tone: ConversationTone;
+    tone: string;
     tags: string[];
     createdAt: Date;
     updatedAt: Date;

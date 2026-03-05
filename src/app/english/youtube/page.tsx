@@ -1,1041 +1,1103 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { SavedPhrasesStorage } from '@/lib/saved-phrases';
+import { useState, useEffect, useMemo, useCallback } from "react";
+import Link from "next/link";
+import { ArrowLeft, Play, Loader2, X, Trash2 } from "lucide-react";
+import { listeningContents, ExpressionPick, ListeningContent } from "@/data/english-listening";
 
-declare global {
-    interface Window {
-        YT?: {
-            Player: new (
-                elementId: string,
-                config: {
-                    videoId: string;
-                    playerVars?: Record<string, number | string>;
-                    events?: {
-                        onReady?: (event: { target: YTPlayer }) => void;
-                        onStateChange?: (event: { data: number }) => void;
-                    };
-                }
-            ) => YTPlayer;
-            PlayerState: {
-                PLAYING: number;
-                PAUSED: number;
-                ENDED: number;
-            };
-        };
-        onYouTubeIframeAPIReady?: () => void;
-    }
-}
+const DYNAMIC_STORAGE_KEY = 'yt-dynamic-contents';
 
-interface YTPlayer {
-    getCurrentTime: () => number;
-    seekTo: (seconds: number, allowSeekAhead?: boolean) => void;
-    getPlayerState: () => number;
-    destroy: () => void;
-}
-
-interface TranscriptSegment {
-    id: number;
-    text: string;
-    offset: number;   // ms
-    duration: number;  // ms
-}
-
-function parseVideoId(input: string): { videoId: string | null; startTime: number } {
-    const trimmed = input.trim();
-    let startTime = 0;
-
-    // Bare video ID (11 chars)
-    if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
-        return { videoId: trimmed, startTime: 0 };
-    }
-
+function loadDynamicContents(): ListeningContent[] {
+    if (typeof window === 'undefined') return [];
     try {
-        // Try parsing as URL
-        let urlStr = trimmed;
-        if (!urlStr.startsWith('http')) urlStr = 'https://' + urlStr;
-        const url = new URL(urlStr);
-
-        // Extract ?t= or ?start= parameter
-        const tParam = url.searchParams.get('t') || url.searchParams.get('start');
-        if (tParam) {
-            startTime = parseInt(tParam, 10) || 0;
-        }
-
-        // youtu.be/VIDEO_ID
-        if (url.hostname === 'youtu.be') {
-            const id = url.pathname.slice(1).split('/')[0];
-            if (/^[a-zA-Z0-9_-]{11}$/.test(id)) return { videoId: id, startTime };
-        }
-
-        // youtube.com/watch?v=VIDEO_ID
-        const vParam = url.searchParams.get('v');
-        if (vParam && /^[a-zA-Z0-9_-]{11}$/.test(vParam)) {
-            return { videoId: vParam, startTime };
-        }
-
-        // youtube.com/embed/VIDEO_ID
-        const embedMatch = url.pathname.match(/\/embed\/([a-zA-Z0-9_-]{11})/);
-        if (embedMatch) return { videoId: embedMatch[1], startTime };
-
-        // youtube.com/v/VIDEO_ID
-        const vMatch = url.pathname.match(/\/v\/([a-zA-Z0-9_-]{11})/);
-        if (vMatch) return { videoId: vMatch[1], startTime };
-
-    } catch {
-        // Not a valid URL
-    }
-
-    return { videoId: null, startTime: 0 };
+        const raw = localStorage.getItem(DYNAMIC_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
 }
 
-function formatTime(ms: number): string {
-    const totalSec = Math.floor(ms / 1000);
-    const min = Math.floor(totalSec / 60);
-    const sec = totalSec % 60;
-    return `${min}:${sec.toString().padStart(2, '0')}`;
+function saveDynamicContents(contents: ListeningContent[]) {
+    localStorage.setItem(DYNAMIC_STORAGE_KEY, JSON.stringify(contents));
 }
 
-const WORD_TYPES = ['word', 'phrasal verb', 'idiom', 'slang', 'collocation', 'expression'] as const;
-
-export default function YouTubeSubtitlePage() {
-    const [urlInput, setUrlInput] = useState('');
-    const [videoId, setVideoId] = useState<string | null>(null);
-    const [startTime, setStartTime] = useState(0);
-    const [transcript, setTranscript] = useState<TranscriptSegment[]>([]);
-    const [transcriptLoading, setTranscriptLoading] = useState(false);
-    const [transcriptError, setTranscriptError] = useState<string | null>(null);
-    const [currentTime, setCurrentTime] = useState(0); // ms
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [selectedSegments, setSelectedSegments] = useState<Set<number>>(new Set());
-    const [phraseText, setPhraseText] = useState('');
-    const [saveDate, setSaveDate] = useState(() => {
-        const today = new Date();
-        return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    });
-    const [savingPhrase, setSavingPhrase] = useState(false);
-    const [saveSuccess, setSaveSuccess] = useState(false);
+export default function ListeningPage() {
+    const [currentDate, setCurrentDate] = useState(new Date());
+    const [selectedDay, setSelectedDay] = useState<string | null>(null);
     const [isMobile, setIsMobile] = useState(false);
-    const [ytApiReady, setYtApiReady] = useState(false);
+    const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+    const [registeredPhrases, setRegisteredPhrases] = useState<Set<string>>(new Set());
+    const [registeringKey, setRegisteringKey] = useState<string | null>(null);
 
-    // Word registration state
-    const [wordForm, setWordForm] = useState<{
-        phrase: string;
-        type: string;
-        meaning: string;
-        note: string;
-        example: string;
-        segmentText: string;
-        segmentOffset: number;
-    } | null>(null);
-    const [savingWord, setSavingWord] = useState(false);
-    const [wordSaveSuccess, setWordSaveSuccess] = useState(false);
-    const [wordSaveError, setWordSaveError] = useState<string | null>(null);
+    // YouTube URL input state
+    const [ytUrl, setYtUrl] = useState('');
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [processError, setProcessError] = useState<string | null>(null);
+    const [processSuccess, setProcessSuccess] = useState<string | null>(null);
+    const [dynamicContents, setDynamicContents] = useState<ListeningContent[]>([]);
 
-    const playerRef = useRef<YTPlayer | null>(null);
-    const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const activeSegmentRef = useRef<HTMLDivElement | null>(null);
-    const transcriptContainerRef = useRef<HTMLDivElement | null>(null);
-
-    // Detect mobile
+    // Load dynamic contents from localStorage
     useEffect(() => {
-        const check = () => setIsMobile(window.innerWidth < 768);
-        check();
-        window.addEventListener('resize', check);
-        return () => window.removeEventListener('resize', check);
+        setDynamicContents(loadDynamicContents());
     }, []);
 
-    // Load YouTube IFrame API
-    useEffect(() => {
-        if (window.YT) {
-            setYtApiReady(true);
-            return;
-        }
+    // Merge static + dynamic contents
+    const allContents = useMemo(() => {
+        return [...listeningContents, ...dynamicContents];
+    }, [dynamicContents]);
 
-        const existingScript = document.querySelector('script[src*="youtube.com/iframe_api"]');
-        if (existingScript) {
-            // Script already loading, wait for it
-            window.onYouTubeIframeAPIReady = () => setYtApiReady(true);
-            return;
-        }
+    // Create a map of date -> contents for calendar view
+    const contentsByDate = useMemo(() => {
+        const map = new Map<string, ListeningContent[]>();
+        allContents.forEach(content => {
+            const existing = map.get(content.date) || [];
+            map.set(content.date, [...existing, content]);
+        });
+        return map;
+    }, [allContents]);
 
-        window.onYouTubeIframeAPIReady = () => setYtApiReady(true);
-        const script = document.createElement('script');
-        script.src = 'https://www.youtube.com/iframe_api';
-        document.head.appendChild(script);
-    }, []);
-
-    // Initialize player when videoId changes
-    useEffect(() => {
-        if (!videoId || !ytApiReady) return;
-
-        // Destroy existing player
-        if (playerRef.current) {
-            try { playerRef.current.destroy(); } catch { /* ignore */ }
-            playerRef.current = null;
-        }
-
-        // Small delay to ensure DOM element exists
-        const timer = setTimeout(() => {
-            if (!window.YT) return;
-
-            playerRef.current = new window.YT.Player('yt-player', {
-                videoId,
-                playerVars: {
-                    autoplay: 0,
-                    start: startTime,
-                    rel: 0,
-                    modestbranding: 1,
-                },
-                events: {
-                    onStateChange: (event) => {
-                        const playing = event.data === 1; // YT.PlayerState.PLAYING
-                        setIsPlaying(playing);
-                    },
-                },
-            });
-        }, 100);
-
-        return () => clearTimeout(timer);
-    }, [videoId, ytApiReady, startTime]);
-
-    // Polling for current time
-    useEffect(() => {
-        if (pollingRef.current) {
-            clearInterval(pollingRef.current);
-            pollingRef.current = null;
-        }
-
-        if (isPlaying && playerRef.current) {
-            pollingRef.current = setInterval(() => {
-                if (playerRef.current) {
-                    try {
-                        const timeSec = playerRef.current.getCurrentTime();
-                        setCurrentTime(timeSec * 1000);
-                    } catch { /* player not ready */ }
-                }
-            }, 250);
-        }
-
-        return () => {
-            if (pollingRef.current) clearInterval(pollingRef.current);
-        };
-    }, [isPlaying]);
-
-    // Auto-scroll to active segment
-    useEffect(() => {
-        if (activeSegmentRef.current && transcriptContainerRef.current) {
-            const container = transcriptContainerRef.current;
-            const el = activeSegmentRef.current;
-            const containerRect = container.getBoundingClientRect();
-            const elRect = el.getBoundingClientRect();
-
-            // Only scroll if element is outside visible area
-            if (elRect.top < containerRect.top || elRect.bottom > containerRect.bottom) {
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }
-    }, [currentTime, transcript]);
-
-    // Fetch transcript
-    const fetchTranscript = useCallback(async (vid: string) => {
-        setTranscriptLoading(true);
-        setTranscriptError(null);
-        setTranscript([]);
-        setSelectedSegments(new Set());
+    // Process YouTube URL
+    const processYouTubeUrl = useCallback(async () => {
+        if (!ytUrl.trim() || isProcessing) return;
+        setIsProcessing(true);
+        setProcessError(null);
+        setProcessSuccess(null);
 
         try {
-            const res = await fetch(`/api/youtube-transcript?videoId=${vid}`);
+            const res = await fetch('/api/youtube-process', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: ytUrl.trim() }),
+            });
+
             const data = await res.json();
 
             if (!res.ok) {
-                setTranscriptError(data.error || 'Failed to fetch transcript');
+                setProcessError(data.error || 'Processing failed');
                 return;
             }
 
-            if (data.segments.length === 0) {
-                setTranscriptError('This video has no subtitles available.');
-                return;
-            }
+            const newContent = data.content as ListeningContent;
 
-            setTranscript(data.segments);
-        } catch {
-            setTranscriptError('Network error. Please try again.');
-        } finally {
-            setTranscriptLoading(false);
-        }
-    }, []);
-
-    // Handle URL submit
-    const handleSubmit = useCallback(() => {
-        const { videoId: vid, startTime: st } = parseVideoId(urlInput);
-        if (!vid) return;
-
-        setVideoId(vid);
-        setStartTime(st);
-        setCurrentTime(0);
-        setIsPlaying(false);
-        fetchTranscript(vid);
-    }, [urlInput, fetchTranscript]);
-
-    // Toggle segment selection
-    const toggleSegment = useCallback((segId: number) => {
-        setSelectedSegments(prev => {
-            const next = new Set(prev);
-            if (next.has(segId)) {
-                next.delete(segId);
-            } else {
-                next.add(segId);
-            }
-            // Update editable phrase text
-            const text = transcript
-                .filter(s => next.has(s.id))
-                .sort((a, b) => a.offset - b.offset)
-                .map(s => s.text)
-                .join(' ');
-            setPhraseText(text);
-            return next;
-        });
-    }, [transcript]);
-
-    // Seek to segment
-    const seekToSegment = useCallback((offsetMs: number) => {
-        if (playerRef.current) {
-            playerRef.current.seekTo(offsetMs / 1000, true);
-        }
-    }, []);
-
-    // Handle segment click
-    const handleSegmentClick = useCallback((seg: TranscriptSegment) => {
-        toggleSegment(seg.id);
-        seekToSegment(seg.offset);
-    }, [toggleSegment, seekToSegment]);
-
-    // Save selected phrases
-    const handleSave = useCallback(async () => {
-        if (!phraseText.trim() || !videoId) return;
-
-        setSavingPhrase(true);
-        setSaveSuccess(false);
-
-        const textToSave = phraseText.trim();
-
-        try {
-            // Save to DB
-            await fetch('/api/phrases', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    english: textToSave,
-                    japanese: `(YouTube: ${videoId})`,
-                    category: 'YouTube',
-                    date: saveDate,
-                }),
+            // Check if already exists
+            setDynamicContents(prev => {
+                const filtered = prev.filter(c => c.id !== newContent.id);
+                const updated = [...filtered, newContent];
+                saveDynamicContents(updated);
+                return updated;
             });
 
-            // Save to localStorage bookmarks
-            SavedPhrasesStorage.save({
-                english: textToSave,
-                source: `YouTube: ${videoId}`,
-            });
-
-            setSaveSuccess(true);
-            setSelectedSegments(new Set());
-            setPhraseText('');
-
-            setTimeout(() => setSaveSuccess(false), 3000);
+            setProcessSuccess(`"${newContent.title}" -- ${newContent.segments.length} segments, ${newContent.expressions?.length || 0} expressions`);
+            setYtUrl('');
         } catch (err) {
-            console.error('Save error:', err);
+            setProcessError(err instanceof Error ? err.message : 'Network error');
         } finally {
-            setSavingPhrase(false);
+            setIsProcessing(false);
         }
-    }, [phraseText, videoId, saveDate]);
+    }, [ytUrl, isProcessing]);
 
-    // Open word registration form
-    const handleWordClick = useCallback((word: string, seg: TranscriptSegment, e: React.MouseEvent) => {
-        e.stopPropagation(); // Don't trigger segment selection
-        const cleaned = word.replace(/[^a-zA-Z'-]/g, '');
-        if (!cleaned) return;
-        seekToSegment(seg.offset);
-        setWordForm({
-            phrase: cleaned.toLowerCase(),
-            type: 'word',
-            meaning: '',
-            note: '',
-            example: seg.text,
-            segmentText: seg.text,
-            segmentOffset: seg.offset,
+    // Delete dynamic content
+    const deleteDynamicContent = useCallback((id: string) => {
+        setDynamicContents(prev => {
+            const updated = prev.filter(c => c.id !== id);
+            saveDynamicContents(updated);
+            return updated;
         });
-        setWordSaveSuccess(false);
-        setWordSaveError(null);
-    }, [seekToSegment]);
+    }, []);
 
-    // Save word to vocabulary
-    const handleWordSave = useCallback(async () => {
-        if (!wordForm || !wordForm.phrase || !wordForm.meaning || !videoId) return;
+    // Fetch registered phrases from DB (same pattern as expressions page)
+    useEffect(() => {
+        const fetchPhrases = async () => {
+            try {
+                const res = await fetch('/api/user-phrases');
+                if (res.ok) {
+                    const data = await res.json();
+                    const phrases: { phrase: string }[] = data.phrases || [];
+                    setRegisteredPhrases(new Set(phrases.map(p => p.phrase.toLowerCase())));
+                }
+            } catch { /* ignore */ }
+        };
+        fetchPhrases();
+    }, []);
 
-        setSavingWord(true);
-        setWordSaveError(null);
+    const isExprRegistered = (english: string) => registeredPhrases.has(english.toLowerCase());
 
+    const registerExpression = async (expr: ExpressionPick, contentTitle: string, contentDate: string) => {
+        const key = expr.english;
+        if (isExprRegistered(key) || registeringKey === key) return;
+        setRegisteringKey(key);
         try {
             const res = await fetch('/api/user-phrases', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    phrase: wordForm.phrase,
-                    type: wordForm.type,
-                    meaning: wordForm.meaning,
-                    note: wordForm.note || undefined,
-                    example: wordForm.example || undefined,
-                    source: `YouTube: ${videoId}`,
-                    video_id: videoId,
-                    video_timestamp: Math.floor(wordForm.segmentOffset / 1000),
-                    video_text: wordForm.segmentText,
+                    phrase: expr.english,
+                    type: 'expression',
+                    meaning: expr.japanese,
+                    example: expr.context || '',
+                    source: `Listening: ${contentTitle}`,
+                    date: contentDate,
                 }),
             });
-
-            const data = await res.json();
-
-            if (res.status === 409) {
-                setWordSaveError('Already registered');
-                return;
+            if (res.ok || res.status === 409) {
+                setRegisteredPhrases(prev => new Set([...prev, key.toLowerCase()]));
             }
-            if (!res.ok) {
-                setWordSaveError(data.error || 'Save failed');
-                return;
-            }
+        } catch { /* ignore */ }
+        setRegisteringKey(null);
+    };
 
-            setWordSaveSuccess(true);
-            setTimeout(() => {
-                setWordForm(null);
-                setWordSaveSuccess(false);
-            }, 1500);
-        } catch {
-            setWordSaveError('Network error');
-        } finally {
-            setSavingWord(false);
+    const registerAllExpressions = async (expressions: ExpressionPick[], contentTitle: string, contentDate: string) => {
+        const unregistered = expressions.filter(e => !isExprRegistered(e.english));
+        if (unregistered.length === 0) return;
+        setRegisteringKey('batch');
+        for (const expr of unregistered) {
+            try {
+                const res = await fetch('/api/user-phrases', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        phrase: expr.english,
+                        type: 'expression',
+                        meaning: expr.japanese,
+                        example: expr.context || '',
+                        source: `Listening: ${contentTitle}`,
+                        date: contentDate,
+                    }),
+                });
+                if (res.ok || res.status === 409) {
+                    setRegisteredPhrases(prev => new Set([...prev, expr.english.toLowerCase()]));
+                }
+            } catch { /* ignore */ }
         }
-    }, [wordForm, videoId]);
-
-    // Find active segment
-    const activeSegmentId = transcript.length > 0
-        ? transcript.reduce((closest, seg) => {
-            if (currentTime >= seg.offset && currentTime < seg.offset + seg.duration) {
-                return seg.id;
-            }
-            // If between segments, find the last one that started
-            if (currentTime >= seg.offset && (closest === -1 || seg.offset > (transcript.find(s => s.id === closest)?.offset || 0))) {
-                return seg.id;
-            }
-            return closest;
-        }, -1)
-        : -1;
-
-    // Select all / clear all
-    const selectAll = () => {
-        setSelectedSegments(new Set(transcript.map(s => s.id)));
-        setPhraseText(transcript.sort((a, b) => a.offset - b.offset).map(s => s.text).join(' '));
+        setRegisteringKey(null);
     };
-    const clearSelection = () => {
-        setSelectedSegments(new Set());
-        setPhraseText('');
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    // Calendar helper functions
+    const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
+    const getFirstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
+
+    const navigateMonth = (direction: 'prev' | 'next') => {
+        setCurrentDate(prev => {
+            const newDate = new Date(prev);
+            newDate.setMonth(newDate.getMonth() + (direction === 'prev' ? -1 : 1));
+            return newDate;
+        });
+        setSelectedDay(null);
     };
+
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const daysInMonth = getDaysInMonth(year, month);
+    const firstDayOfMonth = getFirstDayOfMonth(year, month);
+
+    const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+    const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+
+    const calendarDays: (number | null)[] = [];
+    for (let i = 0; i < firstDayOfMonth; i++) calendarDays.push(null);
+    for (let day = 1; day <= daysInMonth; day++) calendarDays.push(day);
+
+    const today = new Date();
+    const isToday = (day: number) => day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+
+    const getContentsForDay = (day: number) => {
+        const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        return contentsByDate.get(dateKey) || [];
+    };
+
+    const selectedDayContents = selectedDay ? contentsByDate.get(selectedDay) || [] : [];
+
+    // List view items sorted by date (newest first)
+    const sortedContents = useMemo(() => {
+        return [...allContents].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }, [allContents]);
 
     return (
-        <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
-            {/* Header */}
+        <div style={{
+            backgroundColor: '#f5f5f5',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+        }}>
+            {/* YouTube URL Input */}
             <div style={{
+                padding: '10px 16px',
                 backgroundColor: '#fff',
-                borderBottom: '1px solid #e5e5e5',
-                padding: '16px 24px',
-            }}>
-                <h1 style={{
-                    fontSize: '20px',
-                    fontWeight: '700',
-                    color: '#1c1917',
-                    margin: 0,
-                    letterSpacing: '-0.3px',
-                }}>
-                    YouTube Subtitle Capture
-                </h1>
-                <p style={{
-                    fontSize: '13px',
-                    color: '#78716c',
-                    margin: '4px 0 0',
-                }}>
-                    YouTube動画の字幕を表示し、フレーズを保存
-                </p>
-            </div>
-
-            {/* URL Input */}
-            <div style={{
-                padding: '16px 24px',
-                backgroundColor: '#fff',
-                borderBottom: '1px solid #e5e5e5',
+                borderBottom: '1px solid #f0f0f0',
+                flexShrink: 0
             }}>
                 <div style={{
                     display: 'flex',
                     gap: '8px',
+                    alignItems: 'center',
                     maxWidth: '800px',
+                    margin: '0 auto'
                 }}>
-                    <input
-                        type="text"
-                        value={urlInput}
-                        onChange={e => setUrlInput(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') handleSubmit(); }}
-                        placeholder="YouTube URL or Video ID (e.g., https://youtu.be/xxx)"
-                        style={{
-                            flex: 1,
-                            padding: '10px 14px',
-                            border: '1px solid #d6d3d1',
-                            borderRadius: '8px',
-                            fontSize: '14px',
-                            outline: 'none',
-                            backgroundColor: '#fafaf9',
-                        }}
-                    />
+                    <div style={{
+                        flex: 1,
+                        position: 'relative',
+                    }}>
+                        <input
+                            type="text"
+                            value={ytUrl}
+                            onChange={(e) => { setYtUrl(e.target.value); setProcessError(null); }}
+                            onKeyDown={(e) => { if (e.key === 'Enter') processYouTubeUrl(); }}
+                            placeholder="YouTube URL を貼り付け"
+                            disabled={isProcessing}
+                            style={{
+                                width: '100%',
+                                padding: '10px 14px',
+                                paddingRight: ytUrl ? '36px' : '14px',
+                                border: processError ? '1.5px solid #ef4444' : '1.5px solid #e0e0e0',
+                                borderRadius: '10px',
+                                fontSize: '14px',
+                                outline: 'none',
+                                backgroundColor: isProcessing ? '#fafafa' : '#fff',
+                                color: '#1a1a1a',
+                                transition: 'border-color 0.15s ease',
+                            }}
+                            onFocus={(e) => { if (!processError) e.target.style.borderColor = '#D4AF37'; }}
+                            onBlur={(e) => { if (!processError) e.target.style.borderColor = '#e0e0e0'; }}
+                        />
+                        {ytUrl && !isProcessing && (
+                            <button
+                                onClick={() => { setYtUrl(''); setProcessError(null); }}
+                                style={{
+                                    position: 'absolute',
+                                    right: '10px',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: '#aaa',
+                                    padding: '2px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                }}
+                            >
+                                <X size={16} />
+                            </button>
+                        )}
+                    </div>
                     <button
-                        onClick={handleSubmit}
-                        disabled={!urlInput.trim()}
+                        onClick={processYouTubeUrl}
+                        disabled={isProcessing || !ytUrl.trim()}
                         style={{
                             padding: '10px 20px',
-                            backgroundColor: urlInput.trim() ? '#164038' : '#d6d3d1',
-                            color: '#fff',
+                            background: isProcessing ? '#e5e5e5' : (!ytUrl.trim() ? '#e5e5e5' : 'linear-gradient(135deg, #D4AF37, #B8941F)'),
+                            color: isProcessing || !ytUrl.trim() ? '#999' : '#fff',
                             border: 'none',
-                            borderRadius: '8px',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            cursor: urlInput.trim() ? 'pointer' : 'default',
+                            borderRadius: '10px',
+                            fontSize: '13px',
+                            fontWeight: '700',
+                            cursor: isProcessing || !ytUrl.trim() ? 'default' : 'pointer',
                             whiteSpace: 'nowrap',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            transition: 'all 0.15s ease',
+                            minWidth: '90px',
+                            justifyContent: 'center',
                         }}
                     >
-                        Load
+                        {isProcessing ? (
+                            <>
+                                <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                                処理中...
+                            </>
+                        ) : '生成'}
                     </button>
                 </div>
-                {urlInput.trim() && !parseVideoId(urlInput).videoId && (
-                    <p style={{ fontSize: '12px', color: '#dc2626', margin: '6px 0 0' }}>
-                        Valid YouTube URL or 11-character Video ID required
-                    </p>
+                {processError && (
+                    <div style={{
+                        maxWidth: '800px',
+                        margin: '6px auto 0',
+                        fontSize: '12px',
+                        color: '#ef4444',
+                        paddingLeft: '2px',
+                    }}>
+                        {processError}
+                    </div>
+                )}
+                {processSuccess && (
+                    <div style={{
+                        maxWidth: '800px',
+                        margin: '6px auto 0',
+                        fontSize: '12px',
+                        color: '#16a34a',
+                        paddingLeft: '2px',
+                    }}>
+                        {processSuccess}
+                    </div>
                 )}
             </div>
 
+            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+
+            {/* Header */}
+            <div style={{
+                padding: '12px 16px',
+                backgroundColor: '#fff',
+                borderBottom: '1px solid #e5e5e5',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexShrink: 0
+            }}>
+                {/* Left: View Toggle */}
+                <div style={{ display: 'flex', gap: '4px', backgroundColor: '#f0f0f0', borderRadius: '8px', padding: '3px' }}>
+                    <button
+                        onClick={() => setViewMode('calendar')}
+                        style={{
+                            background: viewMode === 'calendar' ? '#fff' : 'transparent',
+                            border: 'none',
+                            borderRadius: '6px',
+                            padding: '6px 12px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: viewMode === 'calendar' ? '#1a1a1a' : '#888',
+                            boxShadow: viewMode === 'calendar' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                            transition: 'all 0.15s ease'
+                        }}
+                    >
+                        カレンダー
+                    </button>
+                    <button
+                        onClick={() => setViewMode('list')}
+                        style={{
+                            background: viewMode === 'list' ? '#fff' : 'transparent',
+                            border: 'none',
+                            borderRadius: '6px',
+                            padding: '6px 12px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: viewMode === 'list' ? '#1a1a1a' : '#888',
+                            boxShadow: viewMode === 'list' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                            transition: 'all 0.15s ease'
+                        }}
+                    >
+                        リスト
+                    </button>
+                </div>
+
+                {/* Center: Month Navigation or Count */}
+                {viewMode === 'calendar' ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <button
+                            onClick={() => navigateMonth('prev')}
+                            style={{
+                                background: 'none',
+                                border: '1px solid #ddd',
+                                borderRadius: '6px',
+                                padding: '4px 10px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                color: '#666'
+                            }}
+                        >
+                            &#8249;
+                        </button>
+                        <span style={{ fontSize: '16px', fontWeight: '700', color: '#1a1a1a', minWidth: '100px', textAlign: 'center' }}>
+                            {year}年 {monthNames[month]}
+                        </span>
+                        <button
+                            onClick={() => navigateMonth('next')}
+                            style={{
+                                background: 'none',
+                                border: '1px solid #ddd',
+                                borderRadius: '6px',
+                                padding: '4px 10px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                color: '#666'
+                            }}
+                        >
+                            &#8250;
+                        </button>
+                    </div>
+                ) : (
+                    <div style={{ fontSize: '14px', color: '#888' }}>
+                        {allContents.length} videos
+                    </div>
+                )}
+
+                {/* Right: Today button */}
+                <button
+                    onClick={() => { setCurrentDate(new Date()); setSelectedDay(null); }}
+                    style={{
+                        background: '#ef4444',
+                        border: 'none',
+                        color: '#fff',
+                        padding: '6px 14px',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        opacity: viewMode === 'calendar' ? 1 : 0.5
+                    }}
+                    disabled={viewMode === 'list'}
+                >
+                    今日
+                </button>
+            </div>
+
             {/* Main Content */}
-            {videoId && (
-                <div style={{
-                    display: 'flex',
-                    flexDirection: isMobile ? 'column' : 'row',
-                    gap: '0',
-                    maxWidth: '1400px',
-                    margin: '0 auto',
-                }}>
-                    {/* Left: Player */}
+            <div style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: isMobile ? 'column' : 'row',
+                overflow: 'hidden',
+                minHeight: 0
+            }}>
+                {/* List View */}
+                {viewMode === 'list' && (
                     <div style={{
-                        flex: isMobile ? 'none' : '1 1 55%',
-                        padding: '16px 16px 16px 24px',
+                        flex: 1,
+                        overflowY: 'auto',
+                        backgroundColor: '#f5f5f5',
+                        padding: '16px'
                     }}>
                         <div style={{
-                            position: 'relative',
-                            width: '100%',
-                            paddingBottom: '56.25%', // 16:9
-                            backgroundColor: '#000',
-                            borderRadius: '12px',
-                            overflow: 'hidden',
+                            display: 'grid',
+                            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))',
+                            gap: '16px',
+                            maxWidth: '1200px',
+                            margin: '0 auto'
                         }}>
-                            <div
-                                id="yt-player"
-                                style={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    width: '100%',
-                                    height: '100%',
-                                }}
-                            />
+                            {sortedContents.map((content) => {
+                                const isDynamic = content.id.startsWith('yt-');
+                                return (
+                                <div key={content.id} style={{ position: 'relative' }}>
+                                    <Link href={`/english/youtube/${content.id}`} style={{ textDecoration: 'none' }}>
+                                        <div style={{
+                                            backgroundColor: '#fff',
+                                            borderRadius: '12px',
+                                            overflow: 'hidden',
+                                            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                                            transition: 'all 0.15s ease',
+                                            border: isDynamic ? '2px solid #D4AF37' : 'none',
+                                        }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.12)';
+                                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
+                                                e.currentTarget.style.transform = 'translateY(0)';
+                                            }}
+                                        >
+                                            {/* Thumbnail */}
+                                            <div style={{
+                                                position: 'relative',
+                                                aspectRatio: '16/9',
+                                                backgroundImage: `url(https://img.youtube.com/vi/${content.youtubeId}/mqdefault.jpg)`,
+                                                backgroundSize: 'cover',
+                                                backgroundPosition: 'center'
+                                            }}>
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    inset: 0,
+                                                    background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%)'
+                                                }} />
+                                                {isDynamic && (
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        top: '8px',
+                                                        left: '8px',
+                                                        backgroundColor: '#D4AF37',
+                                                        color: '#fff',
+                                                        padding: '2px 8px',
+                                                        borderRadius: '4px',
+                                                        fontSize: '10px',
+                                                        fontWeight: '700',
+                                                        letterSpacing: '0.5px'
+                                                    }}>
+                                                        AUTO
+                                                    </div>
+                                                )}
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: '8px',
+                                                    right: '8px',
+                                                    backgroundColor: 'rgba(0,0,0,0.7)',
+                                                    color: '#fff',
+                                                    padding: '2px 8px',
+                                                    borderRadius: '4px',
+                                                    fontSize: '11px'
+                                                }}>
+                                                    {content.segments.length} segments
+                                                </div>
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    bottom: '8px',
+                                                    left: '8px',
+                                                    color: 'rgba(255,255,255,0.8)',
+                                                    fontSize: '11px'
+                                                }}>
+                                                    {content.date}
+                                                </div>
+                                            </div>
+                                            {/* Content */}
+                                            <div style={{ padding: '12px' }}>
+                                                <div style={{
+                                                    fontSize: '14px',
+                                                    fontWeight: '600',
+                                                    color: '#1a1a1a',
+                                                    lineHeight: '1.4',
+                                                    marginBottom: '4px',
+                                                    display: '-webkit-box',
+                                                    WebkitLineClamp: 2,
+                                                    WebkitBoxOrient: 'vertical',
+                                                    overflow: 'hidden'
+                                                }}>
+                                                    {content.title}
+                                                </div>
+                                                <div style={{
+                                                    fontSize: '12px',
+                                                    color: '#888',
+                                                    lineHeight: '1.4',
+                                                    display: '-webkit-box',
+                                                    WebkitLineClamp: 2,
+                                                    WebkitBoxOrient: 'vertical',
+                                                    overflow: 'hidden'
+                                                }}>
+                                                    {content.description}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                    {isDynamic && (
+                                        <button
+                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteDynamicContent(content.id); }}
+                                            style={{
+                                                position: 'absolute',
+                                                bottom: '12px',
+                                                right: '12px',
+                                                background: 'none',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                color: '#ccc',
+                                                padding: '4px',
+                                                borderRadius: '4px',
+                                                transition: 'color 0.15s ease',
+                                            }}
+                                            onMouseEnter={(e) => { e.currentTarget.style.color = '#ef4444'; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.color = '#ccc'; }}
+                                            title="削除"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    )}
+                                </div>
+                                );
+                            })}
                         </div>
 
-                        {/* Save Panel: Phrase + Word side by side */}
+                        {/* Explanation at bottom of list view */}
                         <div style={{
-                            marginTop: '12px',
-                            display: 'flex',
-                            flexDirection: isMobile ? 'column' : 'row',
-                            gap: '10px',
+                            maxWidth: '800px',
+                            margin: '32px auto 16px',
+                            padding: '16px',
+                            backgroundColor: '#fff',
+                            borderRadius: '12px',
+                            border: '1px solid #e5e5e5'
                         }}>
-                            {/* Left: Phrase Save */}
-                            <div style={{
-                                flex: 1,
-                                padding: '12px 14px',
-                                backgroundColor: '#fff',
-                                borderRadius: '10px',
-                                border: '1px solid #e5e5e5',
-                                borderTop: '3px solid #D4AF37',
-                                minHeight: '120px',
-                            }}>
-                                <div style={{
-                                    fontSize: '12px',
-                                    fontWeight: '600',
-                                    color: '#D4AF37',
-                                    marginBottom: '8px',
-                                    letterSpacing: '0.5px',
-                                }}>
-                                    PHRASE SAVE
-                                </div>
-
-                                {(selectedSegments.size > 0 || phraseText.trim()) ? (
-                                    <>
-                                        <div style={{
-                                            fontSize: '11px',
-                                            color: '#a8a29e',
-                                            marginBottom: '6px',
-                                        }}>
-                                            {selectedSegments.size} segment{selectedSegments.size > 1 ? 's' : ''} selected
-                                        </div>
-                                        <textarea
-                                            value={phraseText}
-                                            onChange={e => setPhraseText(e.target.value)}
-                                            rows={2}
-                                            style={{
-                                                width: '100%',
-                                                fontSize: '13px',
-                                                color: '#44403c',
-                                                padding: '6px 8px',
-                                                backgroundColor: 'rgba(212,175,55,0.08)',
-                                                borderRadius: '5px',
-                                                border: '1px solid #D4AF37',
-                                                marginBottom: '8px',
-                                                maxHeight: '60px',
-                                                lineHeight: '1.4',
-                                                resize: 'vertical',
-                                                boxSizing: 'border-box',
-                                                fontFamily: 'inherit',
-                                            }}
-                                        />
-                                        <div style={{
-                                            display: 'flex',
-                                            gap: '6px',
-                                            alignItems: 'center',
-                                            flexWrap: 'wrap',
-                                        }}>
-                                            <input
-                                                type="date"
-                                                value={saveDate}
-                                                onChange={e => setSaveDate(e.target.value)}
-                                                style={{
-                                                    padding: '5px 8px',
-                                                    border: '1px solid #d6d3d1',
-                                                    borderRadius: '5px',
-                                                    fontSize: '12px',
-                                                }}
-                                            />
-                                            <button
-                                                onClick={handleSave}
-                                                disabled={savingPhrase}
-                                                style={{
-                                                    padding: '5px 14px',
-                                                    backgroundColor: savingPhrase ? '#a8a29e' : '#D4AF37',
-                                                    color: '#fff',
-                                                    border: 'none',
-                                                    borderRadius: '5px',
-                                                    fontSize: '12px',
-                                                    fontWeight: '600',
-                                                    cursor: savingPhrase ? 'default' : 'pointer',
-                                                }}
-                                            >
-                                                {savingPhrase ? '...' : 'Save'}
-                                            </button>
-                                            <button
-                                                onClick={clearSelection}
-                                                style={{
-                                                    padding: '5px 10px',
-                                                    backgroundColor: 'transparent',
-                                                    color: '#78716c',
-                                                    border: '1px solid #d6d3d1',
-                                                    borderRadius: '5px',
-                                                    fontSize: '12px',
-                                                    cursor: 'pointer',
-                                                }}
-                                            >
-                                                Clear
-                                            </button>
-                                        </div>
-                                        {saveSuccess && (
-                                            <div style={{ marginTop: '6px', fontSize: '11px', color: '#16a34a', fontWeight: '500' }}>
-                                                Saved!
-                                            </div>
-                                        )}
-                                    </>
-                                ) : (
-                                    <div style={{
-                                        fontSize: '12px',
-                                        color: '#a8a29e',
-                                        lineHeight: '1.5',
-                                        padding: '8px 0',
-                                    }}>
-                                        Click timestamps to select subtitle segments, then save as a phrase
-                                    </div>
-                                )}
+                            <div style={{ fontSize: '11px', color: '#ef4444', fontWeight: '600', marginBottom: '8px' }}>
+                                You can't escape from English.
                             </div>
-
-                            {/* Right: Word Registration */}
-                            <div style={{
-                                flex: 1,
-                                padding: '12px 14px',
-                                backgroundColor: '#fff',
-                                borderRadius: '10px',
-                                border: '1px solid #e5e5e5',
-                                borderTop: '3px solid #10B981',
-                                minHeight: '120px',
-                            }}>
-                                <div style={{
-                                    fontSize: '12px',
-                                    fontWeight: '600',
-                                    color: '#10B981',
-                                    marginBottom: '8px',
-                                    letterSpacing: '0.5px',
-                                }}>
-                                    WORD REGISTER
-                                </div>
-
-                                {wordForm ? (
-                                    <>
-                                        <div style={{
-                                            display: 'flex',
-                                            gap: '6px',
-                                            marginBottom: '6px',
-                                        }}>
-                                            <input
-                                                type="text"
-                                                value={wordForm.phrase}
-                                                onChange={e => setWordForm({ ...wordForm, phrase: e.target.value })}
-                                                placeholder="Word / Phrase"
-                                                style={{
-                                                    flex: 1,
-                                                    padding: '6px 8px',
-                                                    border: '1px solid #d6d3d1',
-                                                    borderRadius: '5px',
-                                                    fontSize: '13px',
-                                                    fontWeight: '600',
-                                                    boxSizing: 'border-box',
-                                                }}
-                                            />
-                                            <button
-                                                onClick={() => setWordForm(null)}
-                                                style={{
-                                                    background: 'none',
-                                                    border: '1px solid #e5e5e5',
-                                                    borderRadius: '5px',
-                                                    fontSize: '14px',
-                                                    color: '#a8a29e',
-                                                    cursor: 'pointer',
-                                                    padding: '4px 8px',
-                                                    lineHeight: 1,
-                                                }}
-                                            >
-                                                x
-                                            </button>
-                                        </div>
-
-                                        <div style={{
-                                            display: 'flex',
-                                            gap: '3px',
-                                            flexWrap: 'wrap',
-                                            marginBottom: '6px',
-                                        }}>
-                                            {WORD_TYPES.map(t => (
-                                                <button
-                                                    key={t}
-                                                    onClick={() => setWordForm({ ...wordForm, type: t })}
-                                                    style={{
-                                                        padding: '2px 6px',
-                                                        fontSize: '10px',
-                                                        borderRadius: '3px',
-                                                        border: wordForm.type === t ? '1px solid #10B981' : '1px solid #e5e5e5',
-                                                        backgroundColor: wordForm.type === t ? '#D1FAE5' : '#fff',
-                                                        color: wordForm.type === t ? '#065F46' : '#78716c',
-                                                        cursor: 'pointer',
-                                                        fontWeight: wordForm.type === t ? '600' : '400',
-                                                    }}
-                                                >
-                                                    {t}
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        <input
-                                            type="text"
-                                            value={wordForm.meaning}
-                                            onChange={e => setWordForm({ ...wordForm, meaning: e.target.value })}
-                                            placeholder="Meaning (Japanese) *"
-                                            onKeyDown={e => { if (e.key === 'Enter' && wordForm.meaning) handleWordSave(); }}
-                                            autoFocus
-                                            style={{
-                                                width: '100%',
-                                                padding: '6px 8px',
-                                                border: '1px solid #d6d3d1',
-                                                borderRadius: '5px',
-                                                fontSize: '12px',
-                                                marginBottom: '6px',
-                                                boxSizing: 'border-box',
-                                            }}
-                                        />
-
-                                        <div style={{
-                                            display: 'flex',
-                                            gap: '6px',
-                                            marginBottom: '6px',
-                                        }}>
-                                            <input
-                                                type="text"
-                                                value={wordForm.note}
-                                                onChange={e => setWordForm({ ...wordForm, note: e.target.value })}
-                                                placeholder="Note"
-                                                style={{
-                                                    flex: 1,
-                                                    padding: '5px 8px',
-                                                    border: '1px solid #d6d3d1',
-                                                    borderRadius: '5px',
-                                                    fontSize: '11px',
-                                                    boxSizing: 'border-box',
-                                                }}
-                                            />
-                                            <input
-                                                type="text"
-                                                value={wordForm.example}
-                                                onChange={e => setWordForm({ ...wordForm, example: e.target.value })}
-                                                placeholder="Example"
-                                                style={{
-                                                    flex: 1,
-                                                    padding: '5px 8px',
-                                                    border: '1px solid #d6d3d1',
-                                                    borderRadius: '5px',
-                                                    fontSize: '11px',
-                                                    boxSizing: 'border-box',
-                                                    color: '#57534e',
-                                                }}
-                                            />
-                                        </div>
-
-                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                            <button
-                                                onClick={handleWordSave}
-                                                disabled={savingWord || !wordForm.meaning.trim()}
-                                                style={{
-                                                    padding: '5px 14px',
-                                                    backgroundColor: (!wordForm.meaning.trim() || savingWord) ? '#a8a29e' : '#10B981',
-                                                    color: '#fff',
-                                                    border: 'none',
-                                                    borderRadius: '5px',
-                                                    fontSize: '12px',
-                                                    fontWeight: '600',
-                                                    cursor: (!wordForm.meaning.trim() || savingWord) ? 'default' : 'pointer',
-                                                }}
-                                            >
-                                                {savingWord ? '...' : 'Register'}
-                                            </button>
-                                            {wordSaveSuccess && (
-                                                <span style={{ fontSize: '11px', color: '#16a34a', fontWeight: '500' }}>Saved!</span>
-                                            )}
-                                            {wordSaveError && (
-                                                <span style={{ fontSize: '11px', color: '#dc2626' }}>{wordSaveError}</span>
-                                            )}
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div style={{
-                                        fontSize: '12px',
-                                        color: '#a8a29e',
-                                        lineHeight: '1.5',
-                                        padding: '8px 0',
-                                    }}>
-                                        Click a word in the subtitles to register it as vocabulary
-                                    </div>
-                                )}
+                            <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6' }}>
+                                日本語YouTubeを「英語版」で見る。Comprehensible Input仮説に基づく学習法。
+                                好きなコンテンツで学ぶから、記憶に残りやすい。
                             </div>
                         </div>
                     </div>
+                )}
 
-                    {/* Right: Transcript */}
+                {/* Calendar Section */}
+                {viewMode === 'calendar' && (
                     <div style={{
-                        flex: isMobile ? 'none' : '1 1 45%',
-                        padding: isMobile ? '0 16px 16px' : '16px 24px 16px 16px',
+                        flex: isMobile ? 'none' : '1',
+                        height: isMobile ? '50%' : '100%',
                         display: 'flex',
                         flexDirection: 'column',
+                        overflowY: 'auto',
+                        backgroundColor: '#fff',
+                        borderRight: isMobile ? 'none' : '1px solid #e5e5e5'
                     }}>
-                        {/* Transcript Header */}
+                        {/* Day Headers */}
                         <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            marginBottom: '8px',
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(7, 1fr)',
+                            borderBottom: '1px solid #eee',
+                            flexShrink: 0
                         }}>
-                            <span style={{
-                                fontSize: '14px',
-                                fontWeight: '600',
-                                color: '#44403c',
-                            }}>
-                                Subtitles
-                                {transcript.length > 0 && (
-                                    <span style={{ fontWeight: '400', color: '#a8a29e', marginLeft: '8px' }}>
-                                        {transcript.length} segments
-                                    </span>
-                                )}
-                            </span>
-                            {transcript.length > 0 && (
-                                <button
-                                    onClick={selectedSegments.size === transcript.length ? clearSelection : selectAll}
+                            {dayNames.map((day, index) => (
+                                <div
+                                    key={day}
                                     style={{
-                                        fontSize: '12px',
-                                        color: '#78716c',
-                                        background: 'none',
-                                        border: '1px solid #e5e5e5',
-                                        borderRadius: '4px',
-                                        padding: '3px 8px',
-                                        cursor: 'pointer',
+                                        textAlign: 'center',
+                                        fontSize: '11px',
+                                        color: index === 0 ? '#ef4444' : index === 6 ? '#3b82f6' : '#666',
+                                        fontWeight: '600',
+                                        padding: '8px 0'
                                     }}
                                 >
-                                    {selectedSegments.size === transcript.length ? 'Deselect All' : 'Select All'}
-                                </button>
-                            )}
+                                    {day}
+                                </div>
+                            ))}
                         </div>
 
-                        {/* Transcript List */}
-                        <div
-                            ref={transcriptContainerRef}
-                            style={{
-                                flex: 1,
-                                overflowY: 'auto',
-                                maxHeight: isMobile ? '400px' : 'calc(100vh - 200px)',
-                                backgroundColor: '#fff',
-                                borderRadius: '10px',
-                                border: '1px solid #e5e5e5',
-                            }}
-                        >
-                            {transcriptLoading && (
-                                <div style={{
-                                    padding: '40px 20px',
-                                    textAlign: 'center',
-                                    color: '#a8a29e',
-                                    fontSize: '14px',
-                                }}>
-                                    Loading subtitles...
-                                </div>
-                            )}
+                        {/* Calendar Grid */}
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(7, 1fr)',
+                            gap: '2px',
+                            padding: '4px',
+                            backgroundColor: '#f0f0f0',
+                        }}>
+                            {calendarDays.map((day, index) => {
+                                if (day === null) {
+                                    return <div key={`empty-${index}`} style={{ backgroundColor: '#fafafa', aspectRatio: '1', borderRadius: '4px' }} />;
+                                }
 
-                            {transcriptError && (
-                                <div style={{
-                                    padding: '40px 20px',
-                                    textAlign: 'center',
-                                    color: '#dc2626',
-                                    fontSize: '14px',
-                                }}>
-                                    {transcriptError}
-                                </div>
-                            )}
-
-                            {!transcriptLoading && !transcriptError && transcript.length === 0 && (
-                                <div style={{
-                                    padding: '40px 20px',
-                                    textAlign: 'center',
-                                    color: '#a8a29e',
-                                    fontSize: '14px',
-                                }}>
-                                    No subtitles loaded yet
-                                </div>
-                            )}
-
-                            {transcript.map(seg => {
-                                const isActive = seg.id === activeSegmentId;
-                                const isSelected = selectedSegments.has(seg.id);
+                                const dayContents = getContentsForDay(day);
+                                const hasContent = dayContents.length > 0;
+                                const thumbnail = hasContent ? `https://img.youtube.com/vi/${dayContents[0].youtubeId}/mqdefault.jpg` : null;
+                                const isTodayDate = isToday(day);
+                                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                                const isSelected = selectedDay === dateKey;
+                                const dayOfWeek = (firstDayOfMonth + day - 1) % 7;
 
                                 return (
                                     <div
-                                        key={seg.id}
-                                        ref={isActive ? activeSegmentRef : null}
-                                        onClick={() => handleSegmentClick(seg)}
+                                        key={day}
+                                        onClick={() => hasContent && setSelectedDay(isSelected ? null : dateKey)}
                                         style={{
-                                            display: 'flex',
-                                            gap: '10px',
-                                            padding: '8px 12px',
-                                            cursor: 'pointer',
-                                            borderBottom: '1px solid #f5f5f4',
-                                            backgroundColor: isSelected
-                                                ? 'rgba(212,175,55,0.12)'
-                                                : isActive
-                                                    ? '#dcfce7'
-                                                    : '#fff',
-                                            borderLeft: isSelected
-                                                ? '3px solid #D4AF37'
-                                                : isActive
-                                                    ? '3px solid #86efac'
-                                                    : '3px solid transparent',
-                                            transition: 'background-color 0.15s ease, border-left 0.15s ease',
+                                            position: 'relative',
+                                            overflow: 'hidden',
+                                            borderRadius: '4px',
+                                            cursor: hasContent ? 'pointer' : 'default',
+                                            backgroundColor: '#fff',
+                                            boxShadow: isSelected ? '0 0 0 2px #ef4444' : isTodayDate ? '0 0 0 2px #10b981' : 'none',
+                                            aspectRatio: '1'
                                         }}
                                     >
-                                        <span style={{
-                                            fontSize: '11px',
-                                            color: isActive ? '#16a34a' : '#a8a29e',
-                                            fontFamily: 'monospace',
-                                            whiteSpace: 'nowrap',
-                                            lineHeight: '20px',
-                                            minWidth: '36px',
+                                        {/* Background Image */}
+                                        {hasContent && thumbnail && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                inset: 0,
+                                                backgroundImage: `url(${thumbnail})`,
+                                                backgroundSize: 'cover',
+                                                backgroundPosition: 'center'
+                                            }} />
+                                        )}
+
+                                        {/* Gradient Overlay */}
+                                        {hasContent && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                inset: 0,
+                                                background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 100%)'
+                                            }} />
+                                        )}
+
+                                        {/* Content */}
+                                        <div style={{
+                                            position: 'relative',
+                                            zIndex: 1,
+                                            padding: '4px'
                                         }}>
-                                            {formatTime(seg.offset)}
-                                        </span>
-                                        <span style={{
-                                            fontSize: '13px',
-                                            color: isActive ? '#14532d' : '#44403c',
-                                            lineHeight: '20px',
-                                            fontWeight: isActive ? '500' : '400',
-                                        }}>
-                                            {seg.text.split(/(\s+)/).map((part, i) => {
-                                                const isWord = /[a-zA-Z]/.test(part);
-                                                if (!isWord) return <span key={i}>{part}</span>;
-                                                return (
-                                                    <span
-                                                        key={i}
-                                                        onClick={(e) => handleWordClick(part, seg, e)}
-                                                        style={{
-                                                            cursor: 'pointer',
-                                                            borderRadius: '2px',
-                                                            transition: 'background-color 0.1s',
-                                                        }}
-                                                        onMouseEnter={(e) => {
-                                                            (e.target as HTMLElement).style.backgroundColor = 'rgba(212,175,55,0.2)';
-                                                        }}
-                                                        onMouseLeave={(e) => {
-                                                            (e.target as HTMLElement).style.backgroundColor = 'transparent';
-                                                        }}
-                                                    >
-                                                        {part}
-                                                    </span>
-                                                );
-                                            })}
-                                        </span>
+                                            {/* Day Number */}
+                                            <div style={{
+                                                fontSize: '12px',
+                                                fontWeight: '700',
+                                                color: hasContent
+                                                    ? '#fff'
+                                                    : dayOfWeek === 0 ? '#ef4444' : dayOfWeek === 6 ? '#3b82f6' : '#888',
+                                                textShadow: hasContent ? '0 1px 2px rgba(0,0,0,0.5)' : 'none'
+                                            }}>
+                                                {day}
+                                            </div>
+
+                                            {/* Video Title */}
+                                            {hasContent && (
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    bottom: '4px',
+                                                    left: '4px',
+                                                    right: '4px'
+                                                }}>
+                                                    <div style={{
+                                                        fontSize: '10px',
+                                                        fontWeight: '600',
+                                                        color: '#fff',
+                                                        lineHeight: '1.3',
+                                                        overflow: 'hidden',
+                                                        display: '-webkit-box',
+                                                        WebkitLineClamp: 2,
+                                                        WebkitBoxOrient: 'vertical',
+                                                        textShadow: '0 1px 2px rgba(0,0,0,0.7)'
+                                                    }}>
+                                                        {dayContents[0].title}
+                                                    </div>
+                                                    {dayContents.length > 1 && (
+                                                        <div style={{
+                                                            fontSize: '9px',
+                                                            color: '#ef4444',
+                                                            fontWeight: '700',
+                                                            marginTop: '2px',
+                                                            textShadow: '0 1px 2px rgba(0,0,0,0.7)'
+                                                        }}>
+                                                            +{dayContents.length - 1}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 );
                             })}
                         </div>
-                    </div>
-                </div>
-            )}
 
-            {/* Empty State */}
-            {!videoId && (
-                <div style={{
-                    padding: '80px 24px',
-                    textAlign: 'center',
-                    color: '#a8a29e',
-                }}>
-                    <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.3 }}>
-                        &#9654;
+                        {/* Explanation at bottom of calendar */}
+                        <div style={{
+                            padding: '12px 16px',
+                            backgroundColor: '#fafafa',
+                            borderTop: '1px solid #eee',
+                            marginTop: 'auto'
+                        }}>
+                            <div style={{ fontSize: '10px', color: '#ef4444', fontWeight: '600', marginBottom: '4px' }}>
+                                You can't escape from English.
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#888', lineHeight: '1.5' }}>
+                                日本語で一度見たYouTubeを英語版で再視聴。Comprehensible Input仮説に基づき、
+                                理解可能なインプットで効率的に学習。好きなコンテンツだから記憶に残る。
+                            </div>
+                        </div>
                     </div>
-                    <div style={{ fontSize: '16px', fontWeight: '500', color: '#78716c' }}>
-                        Paste a YouTube URL above to get started
+                )}
+
+                {/* Right Panel: Selected Day Videos (only in calendar mode) */}
+                {viewMode === 'calendar' && (
+                    <div style={{
+                        flex: isMobile ? 'none' : '0 0 360px',
+                        height: isMobile ? '50%' : '100%',
+                        overflowY: 'auto',
+                        backgroundColor: '#fafafa',
+                        borderTop: isMobile ? '1px solid #e5e5e5' : 'none'
+                    }}>
+                        {selectedDay && selectedDayContents.length > 0 ? (
+                            /* Selected Day Videos */
+                            <div style={{ padding: '16px' }}>
+                                <div style={{
+                                    fontSize: '12px',
+                                    color: '#888',
+                                    marginBottom: '12px',
+                                    fontWeight: '500'
+                                }}>
+                                    {new Date(selectedDay).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' })} - {selectedDayContents.length} video{selectedDayContents.length > 1 ? 's' : ''}
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    {selectedDayContents.map(content => (
+                                        <div key={content.id}>
+                                        <Link
+                                            href={`/english/youtube/${content.id}`}
+                                            style={{ textDecoration: 'none' }}
+                                        >
+                                            <div style={{
+                                                backgroundColor: '#fff',
+                                                borderRadius: '12px',
+                                                overflow: 'hidden',
+                                                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                                                transition: 'all 0.15s ease'
+                                            }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.12)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+                                                }}
+                                            >
+                                                {/* Thumbnail */}
+                                                <div style={{
+                                                    position: 'relative',
+                                                    aspectRatio: '16/9',
+                                                    backgroundImage: `url(https://img.youtube.com/vi/${content.youtubeId}/mqdefault.jpg)`,
+                                                    backgroundSize: 'cover',
+                                                    backgroundPosition: 'center'
+                                                }}>
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        inset: 0,
+                                                        background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 50%)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center'
+                                                    }}>
+                                                        <div style={{
+                                                            width: '48px',
+                                                            height: '48px',
+                                                            borderRadius: '50%',
+                                                            backgroundColor: 'rgba(255,255,255,0.95)',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            opacity: 0.9
+                                                        }}>
+                                                            <Play size={20} fill="#ef4444" color="#ef4444" style={{ marginLeft: '2px' }} />
+                                                        </div>
+                                                    </div>
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        top: '8px',
+                                                        right: '8px',
+                                                        backgroundColor: 'rgba(0,0,0,0.7)',
+                                                        color: '#fff',
+                                                        padding: '2px 8px',
+                                                        borderRadius: '4px',
+                                                        fontSize: '11px'
+                                                    }}>
+                                                        {content.segments.length > 0 ? `${content.segments.length} segments` : `${(content.expressions || []).length} expressions`}
+                                                    </div>
+                                                </div>
+                                                {/* Content */}
+                                                <div style={{ padding: '12px' }}>
+                                                    <div style={{
+                                                        fontSize: '14px',
+                                                        fontWeight: '600',
+                                                        color: '#1a1a1a',
+                                                        lineHeight: '1.4',
+                                                        marginBottom: '6px'
+                                                    }}>
+                                                        {content.title}
+                                                    </div>
+                                                    <div style={{
+                                                        fontSize: '12px',
+                                                        color: '#888',
+                                                        lineHeight: '1.4',
+                                                        display: '-webkit-box',
+                                                        WebkitLineClamp: 2,
+                                                        WebkitBoxOrient: 'vertical',
+                                                        overflow: 'hidden'
+                                                    }}>
+                                                        {content.description}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </Link>
+
+                                        {/* Expression Cards */}
+                                        {content.expressions && content.expressions.length > 0 && (
+                                            <div style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: '6px',
+                                                marginTop: '8px',
+                                            }}>
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    padding: '0 2px',
+                                                }}>
+                                                    <div style={{
+                                                        fontSize: '11px',
+                                                        fontWeight: '700',
+                                                        color: '#ef4444',
+                                                        letterSpacing: '0.5px',
+                                                    }}>
+                                                        EXPRESSIONS ({content.expressions.length})
+                                                    </div>
+                                                    {(() => {
+                                                        const unregCount = content.expressions!.filter(e => !isExprRegistered(e.english)).length;
+                                                        return unregCount > 0 ? (
+                                                            <button
+                                                                onClick={() => registerAllExpressions(content.expressions!, content.title, content.date)}
+                                                                disabled={registeringKey === 'batch'}
+                                                                style={{
+                                                                    fontSize: '10px',
+                                                                    fontWeight: '700',
+                                                                    color: '#fff',
+                                                                    backgroundColor: registeringKey === 'batch' ? '#ccc' : '#ef4444',
+                                                                    border: 'none',
+                                                                    borderRadius: '6px',
+                                                                    padding: '4px 10px',
+                                                                    cursor: registeringKey === 'batch' ? 'default' : 'pointer',
+                                                                    transition: 'all 0.15s',
+                                                                }}
+                                                            >
+                                                                {registeringKey === 'batch' ? '...' : `${unregCount}個まとめて登録`}
+                                                            </button>
+                                                        ) : (
+                                                            <div style={{ fontSize: '10px', color: '#10b981', fontWeight: '600' }}>
+                                                                ALL REGISTERED
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                </div>
+                                                {content.expressions.map((expr: ExpressionPick, idx: number) => {
+                                                    const registered = isExprRegistered(expr.english);
+                                                    return (
+                                                    <div
+                                                        key={idx}
+                                                        style={{
+                                                            backgroundColor: registered ? '#f0fdf4' : '#fff',
+                                                            borderRadius: '10px',
+                                                            border: `1px solid ${registered ? '#bbf7d0' : '#f0f0f0'}`,
+                                                            padding: '10px 12px',
+                                                            transition: 'all 0.15s',
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            if (!registered) e.currentTarget.style.borderColor = '#ef4444';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.borderColor = registered ? '#bbf7d0' : '#f0f0f0';
+                                                        }}
+                                                    >
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                                                            <div style={{ flex: 1 }}>
+                                                                <div style={{
+                                                                    fontSize: '16px',
+                                                                    fontWeight: '800',
+                                                                    color: '#1a1a1a',
+                                                                    lineHeight: 1.3,
+                                                                    marginBottom: '3px',
+                                                                }}>
+                                                                    {expr.japanese}
+                                                                </div>
+                                                                <div style={{
+                                                                    fontSize: '13px',
+                                                                    fontWeight: '600',
+                                                                    color: '#ef4444',
+                                                                    lineHeight: 1.4,
+                                                                }}>
+                                                                    {expr.english}
+                                                                </div>
+                                                            </div>
+                                                            {registered ? (
+                                                                <div style={{
+                                                                    fontSize: '10px',
+                                                                    fontWeight: '700',
+                                                                    color: '#10b981',
+                                                                    whiteSpace: 'nowrap',
+                                                                    padding: '3px 8px',
+                                                                    backgroundColor: '#dcfce7',
+                                                                    borderRadius: '6px',
+                                                                }}>
+                                                                    DONE
+                                                                </div>
+                                                            ) : (
+                                                                <button
+                                                                    onClick={() => registerExpression(expr, content.title, content.date)}
+                                                                    disabled={registeringKey === expr.english}
+                                                                    style={{
+                                                                        fontSize: '10px',
+                                                                        fontWeight: '700',
+                                                                        color: '#ef4444',
+                                                                        backgroundColor: '#fff',
+                                                                        border: '1px solid #ef4444',
+                                                                        borderRadius: '6px',
+                                                                        padding: '3px 8px',
+                                                                        cursor: 'pointer',
+                                                                        whiteSpace: 'nowrap',
+                                                                        transition: 'all 0.15s',
+                                                                    }}
+                                                                >
+                                                                    {registeringKey === expr.english ? '...' : '+ Phrases'}
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                        {expr.context && (
+                                                            <div style={{
+                                                                fontSize: '11px',
+                                                                color: '#aaa',
+                                                                fontStyle: 'italic',
+                                                                marginTop: '4px',
+                                                                lineHeight: 1.4,
+                                                            }}>
+                                                                {expr.context}
+                                                            </div>
+                                                        )}
+                                                        {expr.why && (
+                                                            <div style={{
+                                                                fontSize: '11px',
+                                                                color: '#666',
+                                                                marginTop: '6px',
+                                                                lineHeight: 1.5,
+                                                                padding: '6px 8px',
+                                                                backgroundColor: registered ? '#f0fdf4' : '#fafafa',
+                                                                borderRadius: '6px',
+                                                                borderLeft: '2px solid #ef4444',
+                                                            }}>
+                                                                {expr.why}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            /* Empty state / Instructions */
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                height: '100%',
+                                padding: '32px',
+                                textAlign: 'center'
+                            }}>
+                                <div style={{
+                                    width: '64px',
+                                    height: '64px',
+                                    borderRadius: '50%',
+                                    backgroundColor: '#fee2e2',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginBottom: '16px'
+                                }}>
+                                    <Play size={28} color="#ef4444" />
+                                </div>
+                                <div style={{ fontSize: '14px', fontWeight: '600', color: '#333', marginBottom: '8px' }}>
+                                    YouTube English
+                                </div>
+                                <div style={{ fontSize: '12px', color: '#888', lineHeight: '1.5' }}>
+                                    カレンダーから日付を選択して
+                                    <br />
+                                    動画を視聴
+                                </div>
+                                <div style={{
+                                    marginTop: '24px',
+                                    padding: '12px 16px',
+                                    backgroundColor: '#fff',
+                                    borderRadius: '8px',
+                                    border: '1px solid #e5e5e5',
+                                    fontSize: '11px',
+                                    color: '#666'
+                                }}>
+                                    {allContents.length} videos available
+                                </div>
+                            </div>
+                        )}
                     </div>
-                    <div style={{ fontSize: '13px', marginTop: '8px' }}>
-                        View subtitles synced with playback and save phrases you want to learn
-                    </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 }

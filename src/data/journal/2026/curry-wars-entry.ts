@@ -626,6 +626,8 @@ CoCo壱の宗次徳二は、1977年に東京で12店舗のカレー屋を1日で
 
 **反省している。本当に。**
 `,
+    businessTags: ['経営戦略', '業界分析', 'ブランド論', '価格戦略'],
+    techTags: ['カレー', 'CoCo壱番屋', 'C&C', '外食産業', '脳科学'],
     englishSummary: {
         title: 'The Curry Wars -- CoCo Ichibanya Is Basically Legal Drugs, and Nobody Knows C&C Even Exists',
         readTime: 20,

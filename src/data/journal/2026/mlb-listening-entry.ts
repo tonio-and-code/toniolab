@@ -267,7 +267,7 @@ const playSegment = (index: number) => {
 
 ---
 
-*URL: [/english/listening/mlb-offseason-jan2025](/english/listening/mlb-offseason-jan2025)*
+*URL: [/english/youtube/mlb-offseason-jan2025](/english/youtube/mlb-offseason-jan2025)*
 
 *80セグメント、日英バイリンガル、連続再生対応*
 

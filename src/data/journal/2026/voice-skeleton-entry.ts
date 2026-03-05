@@ -848,4 +848,7 @@ S+V+Oを組み立てる必要なんかない。レンガを積めばいい。軌
         generatedAt: new Date('2026-02-12T12:00:00.000Z'),
         tone: 'casual' as const,
     },
+
+    businessTags: ['英語学習', 'スピーキング', '自己分析'],
+    techTags: ['Whisper', '音声文字起こし', '言語構造', 'パターン分析']
 };

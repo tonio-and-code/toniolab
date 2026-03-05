@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { signOut } from '@/lib/auth';
 
 export default function EnglishSidebar({ desktopOpen = true }: { desktopOpen?: boolean }) {
     const pathname = usePathname();
@@ -51,18 +50,20 @@ export default function EnglishSidebar({ desktopOpen = true }: { desktopOpen?: b
     const mainItems = [
         { id: '/english/dashboard', label: 'ダッシュボード' },
         { id: '/english/training', label: 'トレーニング' },
-        { id: '/english/xp-guide', label: 'XP Rulebook' },
-        { id: '/english/training/card-preview', label: 'Card Preview' },
-        { id: '/memoria', label: 'メモリア' },
+        { id: '/english/xp-guide', label: '遊び方ガイド' },
+        { id: '/english/training/card-preview', label: 'カードコレクション' },
+        { id: '/memoria', label: 'メモリア日記' },
         { id: '/english/youtube', label: 'YouTube' },
-        { id: '/english/pro', label: 'Pro' },
-        { id: '/english/requiem', label: 'レクイエム' },
+        { id: '/english/pro', label: 'プロの解説' },
+        { id: '/english/requiem', label: 'レクイエム鎮魂歌' },
         { id: '/english/conversation', label: '日常会話マスター' },
         { id: '/english/nihongo', label: '日本語から学ぶ' },
         { id: '/english/goroku', label: '俺語録' },
         { id: '/english/self-master', label: 'セルフマスター' },
         { id: '/english/note', label: 'note記事' },
         { id: '/english/vocabulary', label: 'ボキャブラリー' },
+        { id: '/english/arena', label: 'WORD ARENA' },
+        { id: '/english/arena/battle', label: 'CARD BATTLE' },
         { id: '/english/bookmarks', label: 'ブックマーク' },
         { id: '/english/dev', label: 'DEV' },
     ];
@@ -414,34 +415,6 @@ export default function EnglishSidebar({ desktopOpen = true }: { desktopOpen?: b
                         設定
                     </div>
                 </Link>
-
-                {/* Logout */}
-                <button
-                    onClick={async () => {
-                        await signOut();
-                        window.location.href = '/english';
-                    }}
-                    style={{
-                        width: '100%',
-                        padding: '10px 24px',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: '#ef4444',
-                        fontSize: '13px',
-                        textAlign: 'left',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                    }}
-                >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                        <polyline points="16 17 21 12 16 7" />
-                        <line x1="21" y1="12" x2="9" y2="12" />
-                    </svg>
-                    ログアウト
-                </button>
 
                 {/* Home Link */}
                 <Link href="/" style={{ textDecoration: 'none' }}>

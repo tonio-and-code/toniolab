@@ -29,12 +29,51 @@ export default function VoiceRecorder({
     const audioChunksRef = useRef<Blob[]>([]);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
+    // Refs to always read the latest props (avoids stale closure in MediaRecorder.onstop)
+    const phraseIdRef = useRef(phraseId);
+    phraseIdRef.current = phraseId;
+    const onCompleteRef = useRef(onRecordingComplete);
+    onCompleteRef.current = onRecordingComplete;
+
+    const uploadRecording = useCallback(async (audioBlob: Blob) => {
+        setIsUploading(true);
+        const currentPhraseId = phraseIdRef.current;
+        try {
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'recording.webm');
+            formData.append('phraseId', currentPhraseId);
+
+            const response = await fetch('/api/voice-recordings', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const data = await response.json();
+            if (data.success && data.recording) {
+                onCompleteRef.current(data.recording);
+            } else {
+                throw new Error(data.error || 'Upload failed');
+            }
+        } catch (error) {
+            console.error('Error uploading recording:', error);
+            alert('録音のアップロードに失敗しました');
+        } finally {
+            setIsUploading(false);
+        }
+    }, []);
+
     const startRecording = useCallback(async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const mediaRecorder = new MediaRecorder(stream, {
-                mimeType: 'audio/webm;codecs=opus'
-            });
+
+            // Check codec support
+            const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+                ? 'audio/webm;codecs=opus'
+                : MediaRecorder.isTypeSupported('audio/webm')
+                    ? 'audio/webm'
+                    : 'audio/mp4';
+
+            const mediaRecorder = new MediaRecorder(stream, { mimeType });
 
             audioChunksRef.current = [];
 
@@ -45,7 +84,7 @@ export default function VoiceRecorder({
             };
 
             mediaRecorder.onstop = async () => {
-                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
                 stream.getTracks().forEach(track => track.stop());
                 await uploadRecording(audioBlob);
             };
@@ -57,7 +96,7 @@ export default function VoiceRecorder({
             console.error('Error starting recording:', error);
             alert('マイクへのアクセスが許可されていません');
         }
-    }, []);
+    }, [uploadRecording]);
 
     const stopRecording = useCallback(() => {
         if (mediaRecorderRef.current && isRecording) {
@@ -65,32 +104,6 @@ export default function VoiceRecorder({
             setIsRecording(false);
         }
     }, [isRecording]);
-
-    const uploadRecording = async (audioBlob: Blob) => {
-        setIsUploading(true);
-        try {
-            const formData = new FormData();
-            formData.append('audio', audioBlob, 'recording.webm');
-            formData.append('phraseId', phraseId);
-
-            const response = await fetch('/api/voice-recordings', {
-                method: 'POST',
-                body: formData,
-            });
-
-            const data = await response.json();
-            if (data.success && data.recording) {
-                onRecordingComplete(data.recording);
-            } else {
-                throw new Error(data.error || 'Upload failed');
-            }
-        } catch (error) {
-            console.error('Error uploading recording:', error);
-            alert('録音のアップロードに失敗しました');
-        } finally {
-            setIsUploading(false);
-        }
-    };
 
     const deleteRecording = async (recording: VoiceRecording) => {
         if (!confirm('この録音を削除しますか？')) return;

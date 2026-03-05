@@ -303,7 +303,7 @@ export default function NativeDatePage() {
                 </Link>
                 {savedCount > 0 && (
                     <Link
-                        href="/english/saved"
+                        href="/english/bookmarks"
                         style={{
                             display: 'flex',
                             alignItems: 'center',
