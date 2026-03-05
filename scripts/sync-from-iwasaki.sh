@@ -18,9 +18,14 @@ echo "=== Syncing English features from iwasaki-naisou-website ==="
 echo ""
 
 # ── Pages ────────────────────────────────────────
-echo "[1/6] Pages (src/app/english/) - sync ALL"
+# Skip pages that need large data files not in toniolab (world-topo-50m.json = 756KB)
+SKIP_PAGES="world-map world-map-2 world-map-3 world-map-4 world-map-5 world-map-6"
+echo "[1/6] Pages (src/app/english/) - sync ALL (skip: world-map*)"
 for p in $(ls "$SRC/src/app/english/"); do
   if [ -d "$SRC/src/app/english/$p" ]; then
+    skip=false
+    for s in $SKIP_PAGES; do [ "$p" = "$s" ] && skip=true; done
+    if $skip; then continue; fi
     rm -rf "$DST/src/app/english/$p"
     cp -r "$SRC/src/app/english/$p" "$DST/src/app/english/$p"
   fi
