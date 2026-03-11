@@ -13,11 +13,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "toniolab - English + Vibe Coding",
-  description: "ネイティブ英語を構造分析して学習システムを作った。まだ喋れない。",
+  title: "English Quest RPG -- toniolab",
+  description: "教科書のきれいな英語じゃない。ネイティブが本当に使うum, like, you knowだらけの英語を、RPGのクエストとして攻略する。",
   openGraph: {
-    title: "toniolab",
-    description: "ネイティブ英語を構造分析して学習システムを作った。まだ喋れない。",
+    title: "English Quest RPG",
+    description: "教科書のきれいな英語じゃない。ネイティブが本当に使うum, like, you knowだらけの英語を、RPGのクエストとして攻略する。",
     url: "https://toniolab.com",
     siteName: "toniolab",
     locale: "ja_JP",
@@ -25,8 +25,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "toniolab",
-    description: "ネイティブ英語を構造分析して学習システムを作った。まだ喋れない。",
+    title: "English Quest RPG",
+    description: "教科書のきれいな英語じゃない。ネイティブが本当に使うum, like, you knowだらけの英語を、RPGのクエストとして攻略する。",
   },
 };
 

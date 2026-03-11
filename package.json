@@ -7,12 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "pages:build": "npx @opennextjs/cloudflare build",
-    "deploy": "npx wrangler pages deploy .open-next/assets"
+    "deploy": "vercel --prod"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
-    "@opennextjs/cloudflare": "^1.16.5",
     "@supabase/supabase-js": "^2.98.0",
     "@types/d3-geo": "^3.1.0",
     "@types/d3-selection": "^3.0.11",

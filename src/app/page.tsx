@@ -1,4 +1,6 @@
 export default function Home() {
+  const appUrl = 'https://english-quest-rpg.vercel.app/english/training'
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#FAFAF9' }}>
       {/* Nav */}
@@ -25,14 +27,19 @@ export default function Home() {
             tonio<span style={{ color: '#D4AF37' }}>lab</span>
           </span>
           <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-            <a href="#articles" style={{ fontSize: '13px', color: '#78716C', textDecoration: 'none', fontWeight: '500' }}>
-              Articles
+            <a href="#features" style={{ fontSize: '13px', color: '#78716C', textDecoration: 'none', fontWeight: '500' }}>
+              Features
             </a>
-            <a href="#system" style={{ fontSize: '13px', color: '#78716C', textDecoration: 'none', fontWeight: '500' }}>
-              System
+            <a href="#preview" style={{ fontSize: '13px', color: '#78716C', textDecoration: 'none', fontWeight: '500' }}>
+              Preview
+            </a>
+            <a href="#devlog" style={{ fontSize: '13px', color: '#78716C', textDecoration: 'none', fontWeight: '500' }}>
+              Dev Log
             </a>
             <a
-              href="/english/training"
+              href={appUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               style={{
                 fontSize: '12px',
                 fontWeight: '600',
@@ -44,24 +51,7 @@ export default function Home() {
                 letterSpacing: '0.3px',
               }}
             >
-              Login
-            </a>
-            <a
-              href="https://github.com/tonio-and-code"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                fontSize: '12px',
-                fontWeight: '600',
-                color: '#fff',
-                backgroundColor: '#1C1917',
-                padding: '6px 16px',
-                borderRadius: '6px',
-                textDecoration: 'none',
-                letterSpacing: '0.3px',
-              }}
-            >
-              GitHub
+              Launch App
             </a>
           </div>
         </div>
@@ -80,7 +70,7 @@ export default function Home() {
           letterSpacing: '2px',
           marginBottom: '16px',
         }}>
-          ENGLISH + VIBE CODING
+          ENGLISH QUEST RPG
         </div>
         <h1 style={{
           fontSize: '48px',
@@ -90,69 +80,50 @@ export default function Home() {
           letterSpacing: '-1.5px',
           maxWidth: '700px',
         }}>
-          ネイティブ英語を<br />
-          構造分析して<br />
-          学習システムを作った。
+          英語を「勉強」するな。<br />
+          冒険しろ。
         </h1>
         <p style={{
           fontSize: '20px',
           color: '#78716C',
           marginTop: '20px',
           lineHeight: '1.7',
-          maxWidth: '540px',
+          maxWidth: '560px',
         }}>
-          まだ喋れない。
+          教科書のきれいな英語じゃない。ネイティブが本当に使う um, like, you know だらけの英語を、RPGのクエストとして攻略する。
         </p>
         <p style={{
-          fontSize: '16px',
+          fontSize: '15px',
           color: '#A8A29E',
-          marginTop: '8px',
+          marginTop: '12px',
           lineHeight: '1.7',
           maxWidth: '540px',
         }}>
-          半年間ポッドキャストを書き起こして um を数えた結果、<br />
-          英語学習システムを自作した男の記録。全部公開してる。
+          1,000フレーズ。7つのシナリオ。310個の俺語録。<br />
+          全部、ポッドキャストの書き起こしから作った。
         </p>
-        <div style={{ display: 'flex', gap: '12px', marginTop: '36px' }}>
+        <div style={{ marginTop: '36px' }}>
           <a
-            href="https://note.com/tonio_english"
+            href={appUrl}
             target="_blank"
             rel="noopener noreferrer"
             style={{
-              padding: '12px 28px',
+              padding: '14px 32px',
               backgroundColor: '#D4AF37',
               color: '#fff',
               borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: '600',
+              fontSize: '15px',
+              fontWeight: '700',
               textDecoration: 'none',
-              transition: 'all 0.15s ease',
+              letterSpacing: '0.5px',
             }}
           >
-            note.com で読む
-          </a>
-          <a
-            href="https://github.com/tonio-and-code"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              padding: '12px 28px',
-              backgroundColor: '#fff',
-              color: '#1C1917',
-              border: '1px solid #E7E5E4',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: '600',
-              textDecoration: 'none',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            GitHub
+            Start Quest
           </a>
         </div>
       </section>
 
-      {/* Key numbers */}
+      {/* Stats */}
       <section style={{
         borderTop: '1px solid #E7E5E4',
         borderBottom: '1px solid #E7E5E4',
@@ -167,13 +138,13 @@ export default function Home() {
           gap: '32px',
         }}>
           {[
-            { number: '39', unit: 'bps', label: '人類の情報転送速度', sub: '17言語で同じ' },
-            { number: '70', unit: '%', label: '発話のムダ', sub: 'um, you know, like...' },
-            { number: '23', unit: 'sec', label: '2行の情報を伝える時間', sub: 'Mark Prior実測値' },
-            { number: '6', unit: '', label: '記事', sub: 'note.comで連載中' },
+            { number: '1,000', unit: '', label: 'Quest Phrases', sub: '10 stages' },
+            { number: '7', unit: '', label: 'Memoria Scenarios', sub: '35 days of conversations' },
+            { number: '310', unit: '', label: 'Goroku Expressions', sub: 'daily calendar' },
+            { number: '134', unit: '+', label: 'Journal Entries', sub: 'research log' },
           ].map((item, i) => (
             <div key={i} style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '40px', fontWeight: '800', color: '#1C1917', letterSpacing: '-2px', lineHeight: '1' }}>
+              <div style={{ fontSize: '36px', fontWeight: '800', color: '#1C1917', letterSpacing: '-2px', lineHeight: '1' }}>
                 {item.number}
                 <span style={{ fontSize: '18px', color: '#D4AF37', fontWeight: '600', marginLeft: '2px' }}>
                   {item.unit}
@@ -190,8 +161,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* What I found */}
-      <section style={{
+      {/* App Preview */}
+      <section id="preview" style={{
         maxWidth: '960px',
         margin: '0 auto',
         padding: '80px 24px',
@@ -203,52 +174,68 @@ export default function Home() {
           letterSpacing: '2px',
           marginBottom: '12px',
         }}>
-          FINDINGS
+          APP PREVIEW
         </div>
         <h2 style={{
           fontSize: '32px',
           fontWeight: '700',
           color: '#1C1917',
           letterSpacing: '-0.8px',
-          marginBottom: '40px',
+          marginBottom: '16px',
         }}>
-          半年分析してわかったこと
+          実際の画面
         </h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
-          {[
-            {
-              title: '英語の7割は聞き流していい',
-              body: 'ネイティブの発話を書き起こした。意味のある単語は3割。残り7割は um, you know, I mean。何の情報も運んでない足場。でも教科書はこれを一切教えない。',
-            },
-            {
-              title: '非ネイティブの方が明確',
-              body: 'ドジャースのロハスの英語はネイティブより聞き取りやすい。語彙が少ないから短い文、同じ足場の繰り返し、方向転換なし。弱点が強みになってる。',
-            },
-            {
-              title: '脳は毎秒39ビットのモデム',
-              body: '17言語を測定した研究。結論：全部同じ速度。日本語が速く聞こえるのは1音節が軽いから。英語は重い弾を少なく撃つ。着弾量は同じ。人類は平等に遅い。',
-            },
-          ].map((card, i) => (
-            <div key={i} style={{
-              backgroundColor: '#fff',
-              border: '1px solid #E7E5E4',
-              borderRadius: '12px',
-              padding: '28px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-            }}>
-              <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1C1917', marginBottom: '12px', lineHeight: '1.5' }}>
-                {card.title}
-              </h3>
-              <p style={{ fontSize: '14px', color: '#78716C', lineHeight: '1.8' }}>
-                {card.body}
-              </p>
+        <p style={{ fontSize: '15px', color: '#78716C', lineHeight: '1.7', marginBottom: '32px', maxWidth: '600px' }}>
+          ブラウザで動く。インストール不要。スマホでもPCでも。
+        </p>
+        <div style={{
+          borderRadius: '16px',
+          overflow: 'hidden',
+          border: '1px solid #E7E5E4',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.1)',
+          backgroundColor: '#0a0a0a',
+        }}>
+          <div style={{
+            padding: '12px 16px',
+            backgroundColor: '#1C1917',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            borderBottom: '1px solid #292524',
+          }}>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#EF4444' }} />
+              <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#F59E0B' }} />
+              <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#22C55E' }} />
             </div>
-          ))}
+            <div style={{
+              flex: 1,
+              backgroundColor: '#292524',
+              borderRadius: '6px',
+              padding: '6px 12px',
+              fontSize: '12px',
+              color: '#78716C',
+              fontFamily: 'var(--font-geist-mono), monospace',
+              textAlign: 'center',
+            }}>
+              english-quest-rpg.vercel.app/english/training
+            </div>
+          </div>
+          <iframe
+            src={appUrl}
+            style={{
+              width: '100%',
+              height: '600px',
+              border: 'none',
+              display: 'block',
+            }}
+            title="English Quest RPG"
+          />
         </div>
       </section>
 
-      {/* System */}
-      <section id="system" style={{
+      {/* Features */}
+      <section id="features" style={{
         backgroundColor: '#fff',
         borderTop: '1px solid #E7E5E4',
         borderBottom: '1px solid #E7E5E4',
@@ -265,7 +252,7 @@ export default function Home() {
             letterSpacing: '2px',
             marginBottom: '12px',
           }}>
-            SYSTEM
+            FEATURES
           </div>
           <h2 style={{
             fontSize: '32px',
@@ -274,27 +261,48 @@ export default function Home() {
             letterSpacing: '-0.8px',
             marginBottom: '16px',
           }}>
-            作ったもの
+            6つの武器
           </h2>
           <p style={{ fontSize: '15px', color: '#78716C', lineHeight: '1.7', marginBottom: '40px', maxWidth: '600px' }}>
-            分析結果をもとに3つの学習システムを作った。教科書の正しい英語じゃなくて、本物のネイティブの喋り方で。全部オープンソース。
+            ネイティブの英語を半年分析して作った学習システム。教科書じゃ絶対に教えない「本物の喋り方」を攻略する。
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
             {[
               {
-                name: 'Word Review',
-                desc: '50語で1つのシナリオ。キャラクターが会話の中で単語を使う。足場もg-droppingも方向転換も全部入り。',
-                tag: '復習',
+                name: 'Quest Mode',
+                tag: 'CORE',
+                tagColor: '#D4AF37',
+                desc: '10ステージ x 100フレーズ。各ステージに1つの「英語の裏技」。カードランク制（NORMAL → LEGENDARY）で育てる。',
               },
               {
                 name: 'Memoria',
-                desc: '会話リスニング。umが入る。文が途中で方向転換する。正しくない英語で作ってある。本物のリズムで聞く訓練。',
-                tag: 'リスニング',
+                tag: 'LISTENING',
+                tagColor: '#0284C7',
+                desc: '5日間のシナリオ会話。umが入る。文が途中で方向転換する。教科書にない本物のリズムで聴く。',
               },
               {
-                name: 'Expressions',
-                desc: '会話から抜き出した75個の表現。元の文脈へのリンク付き。会話で出会って、ここで整理して、復習で定着。',
-                tag: '表現集',
+                name: 'Word Review',
+                tag: 'PRACTICE',
+                tagColor: '#16A34A',
+                desc: '1シナリオ50語 x 5日間。キャラクターが会話の中で使う。g-droppingも足場も全部入り。',
+              },
+              {
+                name: 'Goroku',
+                tag: 'EXPRESSION',
+                tagColor: '#9333EA',
+                desc: '310個の俺語録。月間カレンダーで管理。「教科書では絶対出てこない言い方」だけを集めた。',
+              },
+              {
+                name: 'Pro',
+                tag: 'DEEP DIVE',
+                tagColor: '#DC2626',
+                desc: '1つの表現を深掘り。3段落の英語 + 3段落の日本語解説。居酒屋の友達が教えてくれる感覚で。',
+              },
+              {
+                name: 'Training',
+                tag: 'DAILY',
+                tagColor: '#EA580C',
+                desc: 'カード練習セッション。コンボシステムとXP。毎日の習慣を「続けたくなる仕掛け」で。',
               },
             ].map((item, i) => (
               <div key={i} style={{
@@ -302,13 +310,14 @@ export default function Home() {
                 borderRadius: '12px',
                 padding: '28px',
                 backgroundColor: '#FAFAF9',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
               }}>
                 <div style={{
                   fontSize: '10px',
-                  fontWeight: '600',
-                  color: '#D4AF37',
-                  letterSpacing: '1px',
-                  marginBottom: '8px',
+                  fontWeight: '700',
+                  color: item.tagColor,
+                  letterSpacing: '1.5px',
+                  marginBottom: '10px',
                 }}>
                   {item.tag}
                 </div>
@@ -324,8 +333,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Articles */}
-      <section id="articles" style={{
+      {/* How it works */}
+      <section style={{
         maxWidth: '960px',
         margin: '0 auto',
         padding: '80px 24px',
@@ -337,7 +346,7 @@ export default function Home() {
           letterSpacing: '2px',
           marginBottom: '12px',
         }}>
-          ARTICLES ON NOTE.COM
+          HOW IT WORKS
         </div>
         <h2 style={{
           fontSize: '32px',
@@ -346,125 +355,53 @@ export default function Home() {
           letterSpacing: '-0.8px',
           marginBottom: '40px',
         }}>
-          note.com の記事
+          なぜ「教科書の英語」じゃダメなのか
         </h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '32px' }}>
           {[
             {
-              num: '01',
-              title: 'ネイティブの英語を構造分析したら学習システムができた',
-              desc: 'はじめまして。英語について毎日書いていきます。',
-              url: 'https://note.com/tonio_english/n/n2fe3ab9595bf',
-              published: true,
+              step: '01',
+              title: '英語の7割はゴミ',
+              body: 'ネイティブの発話を書き起こすと、意味のある単語は3割だけ。残りは um, you know, I mean。教科書はこの7割を完全に無視してる。だから聞き取れない。',
             },
             {
-              num: '02',
-              title: 'ネイティブは23秒かけて2行分の情報を喋る',
-              desc: '他人のumを3時間数えた話',
-              url: null,
-              published: false,
+              step: '02',
+              title: '下手な方が伝わる',
+              body: '非ネイティブの英語はネイティブより聞き取りやすい。語彙が少ないから短い文、繰り返し、方向転換なし。弱点が武器になってる。これがロハスモデル。',
             },
             {
-              num: '03',
-              title: 'どの言語で喋っても脳は毎秒39ビットしか送れない',
-              desc: '17言語調べた科学者の結論 -- 人類は平等に遅い',
-              url: null,
-              published: false,
+              step: '03',
+              title: '脳は毎秒39ビット',
+              body: '17言語を測定した研究結果。全部同じ転送速度。日本語が速く聞こえるのは1音節が軽いだけ。英語は重い弾を少なく撃つ。人類は平等に遅い。',
             },
-            {
-              num: '04',
-              title: '非ネイティブの英語はネイティブより明確',
-              desc: '英語が下手な方が伝わるという逆説',
-              url: null,
-              published: false,
-            },
-            {
-              num: '05',
-              title: '営業ができないから全部公開する',
-              desc: 'コードも思想も間違いも',
-              url: null,
-              published: false,
-            },
-            {
-              num: '06',
-              title: '英語学習システムを作った男、まだ喋れない',
-              desc: 'これから頑張ります',
-              url: null,
-              published: false,
-            },
-          ].map((article) => (
-            <div key={article.num} style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '20px',
-              padding: '20px 24px',
-              backgroundColor: '#fff',
-              border: '1px solid #E7E5E4',
-              borderRadius: '12px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-            }}>
-              <span style={{
-                fontSize: '14px',
-                fontWeight: '700',
-                color: '#D4AF37',
+          ].map((item, i) => (
+            <div key={i}>
+              <div style={{
+                fontSize: '48px',
+                fontWeight: '800',
+                color: '#E7E5E4',
+                lineHeight: '1',
+                marginBottom: '16px',
                 fontFamily: 'var(--font-geist-mono), monospace',
-                flexShrink: 0,
-                marginTop: '2px',
               }}>
-                {article.num}
-              </span>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <h3 style={{ fontSize: '15px', fontWeight: '600', color: '#1C1917', lineHeight: '1.5' }}>
-                    {article.title}
-                  </h3>
-                  {article.published && (
-                    <span style={{
-                      fontSize: '9px',
-                      fontWeight: '600',
-                      color: '#166534',
-                      backgroundColor: '#dcfce7',
-                      padding: '2px 6px',
-                      borderRadius: '3px',
-                      letterSpacing: '0.5px',
-                      flexShrink: 0,
-                    }}>
-                      PUBLIC
-                    </span>
-                  )}
-                </div>
-                <p style={{ fontSize: '13px', color: '#A8A29E', marginTop: '4px' }}>
-                  {article.desc}
-                </p>
+                {item.step}
               </div>
-              {article.url && (
-                <a
-                  href={article.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    color: '#78716C',
-                    textDecoration: 'none',
-                    padding: '6px 12px',
-                    border: '1px solid #E7E5E4',
-                    borderRadius: '6px',
-                    flexShrink: 0,
-                  }}
-                >
-                  Read
-                </a>
-              )}
+              <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#1C1917', marginBottom: '12px', lineHeight: '1.5' }}>
+                {item.title}
+              </h3>
+              <p style={{ fontSize: '14px', color: '#78716C', lineHeight: '1.8' }}>
+                {item.body}
+              </p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* About */}
+      {/* Quest Stages */}
       <section style={{
-        backgroundColor: '#1C1917',
-        color: '#fff',
+        backgroundColor: '#fff',
+        borderTop: '1px solid #E7E5E4',
+        borderBottom: '1px solid #E7E5E4',
       }}>
         <div style={{
           maxWidth: '960px',
@@ -478,78 +415,307 @@ export default function Home() {
             letterSpacing: '2px',
             marginBottom: '12px',
           }}>
-            ABOUT
+            10 STAGES
           </div>
           <h2 style={{
             fontSize: '32px',
             fontWeight: '700',
+            color: '#1C1917',
             letterSpacing: '-0.8px',
-            marginBottom: '20px',
+            marginBottom: '16px',
           }}>
-            とにお
+            Quest Mode -- 10個の裏技
           </h2>
-          <p style={{ fontSize: '15px', color: '#A8A29E', lineHeight: '1.8', maxWidth: '600px' }}>
-            バイブコーディング歴6ヶ月。英語システムは2026年から。ネイティブの英語を構造分析して、それをもとに学習システムを作ってる。自分でも実験中。正しいかはわからない。面白いとは思ってる。
+          <p style={{ fontSize: '15px', color: '#78716C', lineHeight: '1.7', marginBottom: '40px', maxWidth: '600px' }}>
+            各ステージで1つの「英語の構造的な秘密」をアンロック。100フレーズを繰り返してカードを育てる。
           </p>
-          <div style={{ display: 'flex', gap: '16px', marginTop: '32px' }}>
-            <a
-              href="https://note.com/tonio_english"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                padding: '10px 24px',
-                backgroundColor: '#D4AF37',
-                color: '#fff',
-                borderRadius: '8px',
-                fontSize: '13px',
-                fontWeight: '600',
-                textDecoration: 'none',
-              }}
-            >
-              note.com
-            </a>
-            <a
-              href="https://github.com/tonio-and-code"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                padding: '10px 24px',
-                backgroundColor: 'transparent',
-                color: '#A8A29E',
-                border: '1px solid #44403C',
-                borderRadius: '8px',
-                fontSize: '13px',
-                fontWeight: '600',
-                textDecoration: 'none',
-              }}
-            >
-              GitHub
-            </a>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+            {[
+              { stage: '01', hack: '英語は意見と感情の表明', example: 'Nice to meet you = I\'m happy to meet you' },
+              { stage: '02', hack: 'GETで英語の半分を表現できる', example: 'get angry, get there, get it, get ready' },
+              { stage: '03', hack: 'HAVEは経験と状態', example: 'have a good time, have been, have to' },
+              { stage: '04', hack: 'DO vs MAKE の違い', example: 'do damage (行為) vs make a mess (変化を生む)' },
+              { stage: '05', hack: 'PUT / TAKE で移動・時間・感情', example: 'put up with, take it easy, put off' },
+              { stage: '06', hack: 'GO / COME は聞き手基準', example: 'I\'m coming! (日本語と逆)' },
+              { stage: '07', hack: 'フィラーは会話のエンジン', example: 'well, like, I mean, you know' },
+              { stage: '08', hack: '質問で会話をコントロール', example: 'How come? What do you mean? Really?' },
+              { stage: '09', hack: '3語で感情を表現', example: 'That\'s messed up. I\'m fed up.' },
+              { stage: '10', hack: '実戦シナリオ', example: '全部を組み合わせた実践会話' },
+            ].map((item, i) => (
+              <div key={i} style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '16px',
+                padding: '20px',
+                backgroundColor: '#FAFAF9',
+                border: '1px solid #E7E5E4',
+                borderRadius: '10px',
+              }}>
+                <span style={{
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  color: '#D4AF37',
+                  fontFamily: 'var(--font-geist-mono), monospace',
+                  flexShrink: 0,
+                  marginTop: '2px',
+                  width: '28px',
+                }}>
+                  {item.stage}
+                </span>
+                <div>
+                  <div style={{ fontSize: '15px', fontWeight: '700', color: '#1C1917', lineHeight: '1.4' }}>
+                    {item.hack}
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#A8A29E', marginTop: '4px', fontFamily: 'var(--font-geist-mono), monospace' }}>
+                    {item.example}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer style={{
-        borderTop: '1px solid #E7E5E4',
+      {/* Memoria Scenarios */}
+      <section style={{
+        maxWidth: '960px',
+        margin: '0 auto',
+        padding: '80px 24px',
+      }}>
+        <div style={{
+          fontSize: '11px',
+          fontWeight: '600',
+          color: '#0284C7',
+          letterSpacing: '2px',
+          marginBottom: '12px',
+        }}>
+          MEMORIA
+        </div>
+        <h2 style={{
+          fontSize: '32px',
+          fontWeight: '700',
+          color: '#1C1917',
+          letterSpacing: '-0.8px',
+          marginBottom: '16px',
+        }}>
+          会話シナリオ
+        </h2>
+        <p style={{ fontSize: '15px', color: '#78716C', lineHeight: '1.7', marginBottom: '40px', maxWidth: '600px' }}>
+          リアルな会話を5日間に分けて聴く。キャラクターが um を挟み、文が途中で曲がり、g-dropping する。教科書では永遠に出会えない「本物の英語」。
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+          {[
+            { title: 'College Party Recap', chars: '10 characters', days: 'Day 1-5', color: '#D4AF37' },
+            { title: 'Monster Under the Bed', chars: '8 characters', days: 'Day 6-10', color: '#16A34A' },
+            { title: 'Mariners Trade Talk', chars: '2 characters', days: 'Day 11-15', color: '#DC2626' },
+            { title: 'First Movie Without Parents', chars: '8 characters', days: 'Day 16-20', color: '#9333EA' },
+            { title: 'Game Night Gone Wrong', chars: '6 characters', days: 'Day 21-25', color: '#EA580C' },
+            { title: 'Antiques House Call', chars: '6 characters', days: 'Day 26-30', color: '#0284C7' },
+          ].map((item, i) => (
+            <div key={i} style={{
+              padding: '24px',
+              border: '1px solid #E7E5E4',
+              borderRadius: '10px',
+              borderLeft: `3px solid ${item.color}`,
+              backgroundColor: '#fff',
+            }}>
+              <div style={{ fontSize: '10px', fontWeight: '600', color: '#A8A29E', letterSpacing: '1px', marginBottom: '8px' }}>
+                {item.days}
+              </div>
+              <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1C1917', marginBottom: '6px', lineHeight: '1.4' }}>
+                {item.title}
+              </h3>
+              <div style={{ fontSize: '12px', color: '#78716C' }}>
+                {item.chars}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Dev Log */}
+      <section id="devlog" style={{
         backgroundColor: '#fff',
+        borderTop: '1px solid #E7E5E4',
+        borderBottom: '1px solid #E7E5E4',
       }}>
         <div style={{
           maxWidth: '960px',
           margin: '0 auto',
-          padding: '24px',
+          padding: '80px 24px',
+        }}>
+          <div style={{
+            fontSize: '11px',
+            fontWeight: '600',
+            color: '#D4AF37',
+            letterSpacing: '2px',
+            marginBottom: '12px',
+          }}>
+            DEV LOG
+          </div>
+          <h2 style={{
+            fontSize: '32px',
+            fontWeight: '700',
+            color: '#1C1917',
+            letterSpacing: '-0.8px',
+            marginBottom: '16px',
+          }}>
+            開発記録
+          </h2>
+          <p style={{ fontSize: '15px', color: '#78716C', lineHeight: '1.7', marginBottom: '40px', maxWidth: '600px' }}>
+            TOEIC 900点、でも喋れない男がバイブコーディングで英語アプリを作る日々の記録。AIとの会話ログ、設計判断、失敗と発見。
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {[
+              {
+                date: '2026.03.10',
+                title: '岩﨑内装の残骸を全部引き剥がした',
+                body: 'english-quest-rpgから内装会社のページ・コンポーネント・データを全削除。50以上のルート、40以上のコンポーネント、メタデータ全書き替え。ようやく純粋な英語アプリになった。',
+              },
+              {
+                date: '2026.03.10',
+                title: 'toniolab.comをアプリ紹介サイトに全面改装',
+                body: '研究ブログだったtoniolabを、English Quest RPGの公式紹介サイトとして再構築。Features、App Preview、Quest Stages、Memoria Scenariosの紹介ページに。',
+              },
+              {
+                date: '2026.03.10',
+                title: 'Quest Modeをサイドバーに追加',
+                body: '10ステージ x 100フレーズのクエストモードがサイドバーから直接アクセス可能に。トレーニングのすぐ下に配置。',
+              },
+            ].map((entry, i) => (
+              <div key={i} style={{
+                padding: '24px',
+                backgroundColor: '#FAFAF9',
+                border: '1px solid #E7E5E4',
+                borderRadius: '10px',
+              }}>
+                <div style={{
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  color: '#D4AF37',
+                  fontFamily: 'var(--font-geist-mono), monospace',
+                  marginBottom: '8px',
+                }}>
+                  {entry.date}
+                </div>
+                <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1C1917', marginBottom: '8px', lineHeight: '1.5' }}>
+                  {entry.title}
+                </h3>
+                <p style={{ fontSize: '14px', color: '#78716C', lineHeight: '1.8' }}>
+                  {entry.body}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section style={{
+        backgroundColor: '#1C1917',
+      }}>
+        <div style={{
+          maxWidth: '960px',
+          margin: '0 auto',
+          padding: '80px 24px',
+          textAlign: 'center',
+        }}>
+          <div style={{
+            fontSize: '11px',
+            fontWeight: '600',
+            color: '#D4AF37',
+            letterSpacing: '2px',
+            marginBottom: '16px',
+          }}>
+            START YOUR QUEST
+          </div>
+          <h2 style={{
+            fontSize: '36px',
+            fontWeight: '800',
+            color: '#fff',
+            letterSpacing: '-1px',
+            marginBottom: '16px',
+          }}>
+            教科書を捨てろ。冒険を始めろ。
+          </h2>
+          <p style={{
+            fontSize: '15px',
+            color: '#78716C',
+            lineHeight: '1.7',
+            maxWidth: '480px',
+            margin: '0 auto 36px',
+          }}>
+            無料。アカウント不要。ブラウザで動く。
+          </p>
+          <a
+            href={appUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              padding: '14px 36px',
+              backgroundColor: '#D4AF37',
+              color: '#fff',
+              borderRadius: '8px',
+              fontSize: '15px',
+              fontWeight: '700',
+              textDecoration: 'none',
+              letterSpacing: '0.5px',
+            }}
+          >
+            Launch App
+          </a>
+        </div>
+      </section>
+
+      {/* About + Footer */}
+      <section style={{
+        borderTop: '1px solid #44403C',
+        backgroundColor: '#1C1917',
+      }}>
+        <div style={{
+          maxWidth: '960px',
+          margin: '0 auto',
+          padding: '48px 24px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
         }}>
-          <span style={{ fontSize: '12px', color: '#A8A29E' }}>
-            toniolab.com
-          </span>
-          <span style={{ fontSize: '12px', color: '#A8A29E' }}>
-            Built with vibe coding
-          </span>
+          <div>
+            <span style={{ fontSize: '14px', fontWeight: '700', color: '#fff' }}>とにお</span>
+            <span style={{ fontSize: '13px', color: '#78716C', marginLeft: '12px' }}>
+              TOEIC 900点。でも喋れない。バイブコーディングで毎日実験中。
+            </span>
+          </div>
+          <a
+            href="https://note.com/tonio_english"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              padding: '6px 16px',
+              backgroundColor: '#D4AF37',
+              color: '#fff',
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontWeight: '600',
+              textDecoration: 'none',
+              flexShrink: 0,
+            }}
+          >
+            note.com
+          </a>
         </div>
-      </footer>
+        <div style={{
+          maxWidth: '960px',
+          margin: '0 auto',
+          padding: '16px 24px',
+          borderTop: '1px solid #292524',
+          display: 'flex',
+          justifyContent: 'space-between',
+        }}>
+          <span style={{ fontSize: '11px', color: '#44403C' }}>toniolab.com</span>
+          <span style={{ fontSize: '11px', color: '#44403C' }}>Built with vibe coding</span>
+        </div>
+      </section>
     </div>
   );
 }
