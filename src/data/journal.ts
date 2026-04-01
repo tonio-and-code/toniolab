@@ -61,9 +61,11 @@ export interface JournalEntry {
 import { january2026Entries } from './journal/2026/01-january';
 import { february2026Entries } from './journal/2026/02-february';
 import { march2026Entries } from './journal/2026/03-march';
+import { april2026Entries } from './journal/2026/04-april';
 
 export const journalEntries: JournalEntry[] = [
   // 新しいエントリ（2026年〜）
+  ...april2026Entries,
   ...march2026Entries,
   ...february2026Entries,
   ...january2026Entries,
