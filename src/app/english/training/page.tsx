@@ -4605,7 +4605,37 @@ export default function PhrasesPage() {
                         gap: '16px',
                         padding: isMobile ? '16px' : '48px 24px',
                     }}>
-                        {renderReviewContent()}
+                        {phrases.length === 0 && timeAttackPhase === 'running' ? (
+                            <div style={{
+                                textAlign: 'center',
+                                padding: '60px 24px',
+                                color: '#78716C',
+                            }}>
+                                <div style={{ fontSize: '48px', fontWeight: '900', color: '#E7E5E4', marginBottom: '16px' }}>0</div>
+                                <div style={{ fontSize: '16px', fontWeight: '700', color: '#1C1917', marginBottom: '8px' }}>
+                                    まだフレーズが登録されていません
+                                </div>
+                                <div style={{ fontSize: '13px', lineHeight: 1.6 }}>
+                                    カレンダーの「+」ボタンか、会話ページからフレーズを登録してください。
+                                </div>
+                                <button
+                                    onClick={() => { stopTimeAttack(); setViewMode('calendar'); }}
+                                    style={{
+                                        marginTop: '20px',
+                                        background: '#D4AF37',
+                                        border: 'none',
+                                        borderRadius: '10px',
+                                        padding: '12px 24px',
+                                        cursor: 'pointer',
+                                        fontSize: '14px',
+                                        fontWeight: '700',
+                                        color: '#fff',
+                                    }}
+                                >
+                                    カレンダーに戻る
+                                </button>
+                            </div>
+                        ) : renderReviewContent()}
                     </div>
                 </div>
             ) : viewMode === 'list' ? (
