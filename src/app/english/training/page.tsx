@@ -498,6 +498,7 @@ export default function PhrasesPage() {
                 stopFeverBGM(feverDroneRef.current);
                 feverDroneRef.current = null;
             }
+            trackTimeAttackChainBreak();
         }
     }, [chainState.mode]);
 
@@ -891,6 +892,7 @@ export default function PhrasesPage() {
                                 setFeverFlash('exit');
                                 setFeverExitEffect({ streak: exitStreak });
                                 playFeverExitSound();
+                                trackTimeAttackChainBreak();
                             }
                         } else if (isWin) {
                             const newCount = currentFever.streak + 1;
@@ -1382,7 +1384,7 @@ export default function PhrasesPage() {
         }
     }, [reviewList.length, reviewIndex]);
 
-    // Exit review mode on Escape
+    // Exit review mode on Escape (basic — TA handling added below after TA declarations)
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
             if (e.key === 'Escape' && viewMode === 'review') setViewMode('calendar');
@@ -1413,6 +1415,285 @@ export default function PhrasesPage() {
     const [xpFloats, setXpFloats] = useState<Array<{ id: number; value: number; color: string }>>([]);
     // Touch float
     const [touchFloats, setTouchFloats] = useState<Array<{ id: number }>>([]);
+
+    // ══════════════════════════════════════════════════════════════
+    // TIME ATTACK SESSION STATE
+    // ══════════════════════════════════════════════════════════════
+    const TIME_PRESETS = [
+        { seconds: 60, label: '1 min', labelJa: '1分', subtitle: '今日はこれだけ', color: '#16A34A', icon: 'QUICK', recommended: true },
+        { seconds: 180, label: '3 min', labelJa: '3分', subtitle: 'しっかり復習', color: '#D4AF37', icon: 'STANDARD' },
+        { seconds: 300, label: '5 min', labelJa: '5分', subtitle: 'ガチ勢', color: '#DC2626', icon: 'FOCUS' },
+    ];
+    const MILESTONES = [
+        { cards: 3, title: 'GOOD START', color: '#16A34A' },
+        { cards: 5, title: 'NICE', color: '#2563EB' },
+        { cards: 10, title: 'ON FIRE', color: '#EA580C' },
+        { cards: 15, title: 'UNSTOPPABLE', color: '#DC2626' },
+        { cards: 20, title: 'BEAST MODE', color: '#7C3AED' },
+        { cards: 30, title: 'LEGENDARY', color: '#D4AF37' },
+    ];
+    const [timeAttackPhase, setTimeAttackPhase] = useState<'idle' | 'selecting' | 'countdown' | 'running' | 'result'>('idle');
+    const [timeAttackPreset, setTimeAttackPreset] = useState(60);
+    const [timeAttackRemaining, setTimeAttackRemaining] = useState(0);
+    const [timeAttackStartedAt, setTimeAttackStartedAt] = useState(0);
+    const [timeAttackCountdownText, setTimeAttackCountdownText] = useState<string>('');
+    const [timeAttackCountdownColor, setTimeAttackCountdownColor] = useState('#D4AF37');
+    const timeAttackIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const timeAttackSessionRef = useRef({
+        cardsReviewed: 0,
+        xpEarned: 0,
+        levelUps: 0,
+        maxChain: 0,
+        currentChain: 0,
+    });
+    const [timeAttackMilestone, setTimeAttackMilestone] = useState<{ title: string; color: string; key: number } | null>(null);
+    const [timeAttackLivePace, setTimeAttackLivePace] = useState(0);
+    const [timeAttackResult, setTimeAttackResult] = useState<{
+        preset: number;
+        actual: number;
+        cards: number;
+        xp: number;
+        levelUps: number;
+        maxChain: number;
+        cpm: number;
+        grade: string;
+        completed: boolean;
+        isNewRecord: boolean;
+    } | null>(null);
+    const [timeAttackBestRecords, setTimeAttackBestRecords] = useState<Record<number, number>>({});
+    const [timeAttackUrgent, setTimeAttackUrgent] = useState(false);
+    const [timeAttackHistory, setTimeAttackHistory] = useState<Array<{
+        id: number; date: string; duration_preset: number; duration_actual: number;
+        cards_reviewed: number; xp_earned: number; grade: string; cards_per_minute: number;
+        max_chain: number; completed: number;
+    }>>([]);
+    const [timeAttackStats, setTimeAttackStats] = useState<{
+        total_sessions: number; total_cards: number; total_time: number;
+        s_rank_count: number; longest_chain: number; streak_days: number;
+    } | null>(null);
+    const [showTimeAttackHistory, setShowTimeAttackHistory] = useState(false);
+
+    // Load TA history from localStorage
+    useEffect(() => {
+        try {
+            const sessions = JSON.parse(localStorage.getItem('ta-sessions') || '[]');
+            setTimeAttackHistory(sessions.slice(0, 20));
+            const bests: Record<number, number> = {};
+            let totalCards = 0, sRanks = 0, longestChain = 0;
+            const dates = new Set<string>();
+            for (const s of sessions) {
+                const preset = s.duration_preset;
+                if (!bests[preset] || s.cards_reviewed > bests[preset]) bests[preset] = s.cards_reviewed;
+                totalCards += s.cards_reviewed;
+                if (s.grade === 'S') sRanks++;
+                if (s.max_chain > longestChain) longestChain = s.max_chain;
+                dates.add(s.date);
+            }
+            setTimeAttackBestRecords(bests);
+            const today = new Date().toISOString().split('T')[0];
+            let streak = 0, checkDate = today;
+            for (let i = 0; i < 365; i++) {
+                if (dates.has(checkDate)) { streak++; const prev = new Date(checkDate); prev.setDate(prev.getDate() - 1); checkDate = prev.toISOString().split('T')[0]; } else break;
+            }
+            if (sessions.length > 0) {
+                setTimeAttackStats({
+                    total_sessions: sessions.length,
+                    total_cards: totalCards,
+                    total_time: sessions.reduce((a: number, s: any) => a + s.duration_actual, 0),
+                    s_rank_count: sRanks,
+                    longest_chain: longestChain,
+                    streak_days: streak,
+                });
+            }
+        } catch { /* ignore */ }
+    }, []);
+
+    // ══════ TIME ATTACK FUNCTIONS ══════
+    const startTimeAttack = useCallback((presetSeconds: number) => {
+        setTimeAttackPreset(presetSeconds);
+        setTimeAttackRemaining(presetSeconds);
+        setTimeAttackStartedAt(Date.now());
+        setTimeAttackUrgent(false);
+        setTimeAttackMilestone(null);
+        setTimeAttackLivePace(0);
+        timeAttackSessionRef.current = { cardsReviewed: 0, xpEarned: 0, levelUps: 0, maxChain: 0, currentChain: 0 };
+        setTimeAttackPhase('countdown');
+
+        const sequence = [
+            { text: 'READY?', color: '#A8A29E', delay: 0 },
+            { text: '3', color: '#2563EB', delay: 800 },
+            { text: '2', color: '#EA580C', delay: 1600 },
+            { text: '1', color: '#DC2626', delay: 2400 },
+            { text: 'GO!', color: '#D4AF37', delay: 3200 },
+        ];
+        sequence.forEach(({ text, color, delay }) => {
+            setTimeout(() => {
+                setTimeAttackCountdownText(text);
+                setTimeAttackCountdownColor(color);
+            }, delay);
+        });
+
+        setTimeout(() => {
+            setTimeAttackRemaining(presetSeconds);
+            setTimeAttackPhase('running');
+            const startTime = Date.now();
+            const startedAt = Date.now();
+            setTimeAttackStartedAt(startedAt);
+            timeAttackIntervalRef.current = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const remaining = Math.max(0, presetSeconds - elapsed);
+                setTimeAttackRemaining(remaining);
+                const elapsedMin = Math.max(elapsed / 60, 0.05);
+                setTimeAttackLivePace(Math.round((timeAttackSessionRef.current.cardsReviewed / elapsedMin) * 10) / 10);
+                if (remaining <= 60 && remaining > 0) setTimeAttackUrgent(true);
+                if (remaining <= 0) {
+                    if (timeAttackIntervalRef.current) clearInterval(timeAttackIntervalRef.current);
+                    timeAttackIntervalRef.current = null;
+                    finishTimeAttack(presetSeconds, presetSeconds, true);
+                }
+            }, 250);
+        }, 4000);
+    }, []);
+
+    const finishTimeAttack = useCallback((preset: number, actualSeconds: number, completed: boolean) => {
+        if (timeAttackIntervalRef.current) {
+            clearInterval(timeAttackIntervalRef.current);
+            timeAttackIntervalRef.current = null;
+        }
+        const session = timeAttackSessionRef.current;
+        const minutes = Math.max(actualSeconds / 60, 0.1);
+        const cpm = Math.round((session.cardsReviewed / minutes) * 10) / 10;
+
+        let grade = 'D';
+        if (session.cardsReviewed >= 10) grade = 'S';
+        else if (session.cardsReviewed >= 7) grade = 'A';
+        else if (session.cardsReviewed >= 4) grade = 'B';
+        else if (session.cardsReviewed >= 2) grade = 'C';
+        if (completed && grade === 'D') grade = 'C';
+
+        const isNewRecord = session.cardsReviewed > (timeAttackBestRecords[preset] || 0);
+
+        setTimeAttackResult({
+            preset,
+            actual: actualSeconds,
+            cards: session.cardsReviewed,
+            xp: session.xpEarned,
+            levelUps: session.levelUps,
+            maxChain: session.maxChain,
+            cpm,
+            grade,
+            completed,
+            isNewRecord,
+        });
+        setTimeAttackPhase('result');
+        setTimeAttackUrgent(false);
+
+        if (isNewRecord) {
+            setTimeAttackBestRecords(prev => ({ ...prev, [preset]: session.cardsReviewed }));
+        }
+
+        const todayDate = clientToday || new Date().toISOString().split('T')[0];
+        const sessionData = {
+            id: Date.now(),
+            date: todayDate,
+            duration_preset: preset,
+            duration_actual: actualSeconds,
+            cards_reviewed: session.cardsReviewed,
+            xp_earned: session.xpEarned,
+            level_ups: session.levelUps,
+            max_chain: session.maxChain,
+            grade,
+            cards_per_minute: cpm,
+            completed: completed ? 1 : 0,
+        };
+
+        try {
+            const existing = JSON.parse(localStorage.getItem('ta-sessions') || '[]');
+            existing.unshift(sessionData);
+            localStorage.setItem('ta-sessions', JSON.stringify(existing.slice(0, 50)));
+            setTimeAttackHistory(existing.slice(0, 20));
+            const dates = new Set(existing.map((s: any) => s.date));
+            const today = new Date().toISOString().split('T')[0];
+            let streak = 0;
+            let checkDate = today;
+            for (let i = 0; i < 365; i++) {
+                if (dates.has(checkDate)) {
+                    streak++;
+                    const prev = new Date(checkDate);
+                    prev.setDate(prev.getDate() - 1);
+                    checkDate = prev.toISOString().split('T')[0];
+                } else break;
+            }
+            setTimeAttackStats(prev => prev ? { ...prev, total_sessions: existing.length, total_cards: existing.reduce((a: number, s: any) => a + s.cards_reviewed, 0), streak_days: streak, s_rank_count: existing.filter((s: any) => s.grade === 'S').length } : null);
+        } catch { /* ignore */ }
+    }, [clientToday, timeAttackBestRecords]);
+
+    const stopTimeAttack = useCallback(() => {
+        const elapsed = Math.floor((Date.now() - timeAttackStartedAt) / 1000);
+        finishTimeAttack(timeAttackPreset, elapsed, false);
+    }, [timeAttackPreset, timeAttackStartedAt, finishTimeAttack]);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (timeAttackIntervalRef.current) clearInterval(timeAttackIntervalRef.current);
+        };
+    }, []);
+
+    const trackTimeAttackReview = useCallback((xpGained: number, isLevelUp: boolean) => {
+        if (timeAttackPhase !== 'running') return;
+        const s = timeAttackSessionRef.current;
+        s.cardsReviewed++;
+        s.xpEarned += xpGained;
+        if (isLevelUp) s.levelUps++;
+        s.currentChain++;
+        if (s.currentChain > s.maxChain) s.maxChain = s.currentChain;
+
+        const milestone = MILESTONES.find(m => m.cards === s.cardsReviewed);
+        if (milestone) {
+            setTimeAttackMilestone({ title: milestone.title, color: milestone.color, key: Date.now() });
+        }
+    }, [timeAttackPhase]);
+
+    // Auto-clear milestone popup
+    useEffect(() => {
+        if (!timeAttackMilestone) return;
+        const timer = setTimeout(() => setTimeAttackMilestone(null), 2000);
+        return () => clearTimeout(timer);
+    }, [timeAttackMilestone]);
+
+    const trackTimeAttackChainBreak = useCallback(() => {
+        if (timeAttackPhase !== 'running') return;
+        timeAttackSessionRef.current.currentChain = 0;
+    }, [timeAttackPhase]);
+
+    // Time Attack escape handler (must be after TA declarations)
+    useEffect(() => {
+        const handleTaEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                if (timeAttackPhase === 'selecting') { setTimeAttackPhase('idle'); return; }
+                if (timeAttackPhase === 'running') { stopTimeAttack(); return; }
+                if (timeAttackPhase === 'result') { setTimeAttackResult(null); setTimeAttackPhase('idle'); setViewMode('calendar'); return; }
+            }
+        };
+        window.addEventListener('keydown', handleTaEsc);
+        return () => window.removeEventListener('keydown', handleTaEsc);
+    }, [timeAttackPhase, stopTimeAttack]);
+
+    const taSessionsByDate = useMemo(() => {
+        const map: Record<string, { count: number; totalCards: number; bestGrade: string }> = {};
+        const gradeRank: Record<string, number> = { S: 5, A: 4, B: 3, C: 2, D: 1 };
+        for (const s of timeAttackHistory) {
+            const d = s.date;
+            if (!map[d]) map[d] = { count: 0, totalCards: 0, bestGrade: 'D' };
+            map[d].count += 1;
+            map[d].totalCards += s.cards_reviewed;
+            if ((gradeRank[s.grade] || 0) > (gradeRank[map[d].bestGrade] || 0)) {
+                map[d].bestGrade = s.grade;
+            }
+        }
+        return map;
+    }, [timeAttackHistory]);
 
     // Spawn XP float when pointEffect fires
     useEffect(() => {
@@ -2594,6 +2875,7 @@ export default function PhrasesPage() {
             const nextLevel = getChakraLevel(next, hasRec, hasLink);
             const xpGained = CHAKRA_CONFIG[nextLevel].lv;
             postXP(todayKey, xpGained, slamActive, phraseId);
+            trackTimeAttackReview(xpGained, next > current);
         }
 
         try {
@@ -4029,6 +4311,22 @@ export default function PhrasesPage() {
                                 </button>
                             )}
                             <button
+                                onClick={() => setTimeAttackPhase('selecting')}
+                                style={{
+                                    background: 'linear-gradient(135deg, #D4AF37, #B8941F)',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    padding: '4px 10px',
+                                    cursor: 'pointer',
+                                    fontSize: '11px',
+                                    fontWeight: '800',
+                                    color: '#fff',
+                                    letterSpacing: '1px',
+                                }}
+                            >
+                                TIME ATTACK
+                            </button>
+                            <button
                                 onClick={() => setViewMode('list')}
                                 style={{
                                     background: 'none', border: '1px solid #E7E5E4',
@@ -4071,16 +4369,241 @@ export default function PhrasesPage() {
                     flex: 1,
                     overflow: 'auto',
                     display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'flex-start',
-                    padding: isMobile ? '16px' : '48px 24px',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    position: 'relative',
                 }}>
+                    {/* TIME ATTACK TIMER BAR */}
+                    {timeAttackPhase === 'running' && (() => {
+                        const progress = timeAttackRemaining / timeAttackPreset;
+                        const mins = Math.floor(timeAttackRemaining / 60);
+                        const secs = timeAttackRemaining % 60;
+                        const session = timeAttackSessionRef.current;
+                        const isHeartbeat = timeAttackRemaining <= 30 && timeAttackRemaining > 0;
+                        const barColor = isHeartbeat
+                            ? '#EF4444'
+                            : timeAttackUrgent
+                                ? (timeAttackRemaining % 2 === 0 ? '#EF4444' : '#DC2626')
+                                : progress > 0.5 ? '#D4AF37' : progress > 0.2 ? '#F59E0B' : '#EF4444';
+                        const bestForPreset = timeAttackBestRecords[timeAttackPreset] || 0;
+                        const isAheadOfBest = bestForPreset > 0 && session.cardsReviewed > 0;
+                        const elapsed = Math.max((Date.now() - timeAttackStartedAt) / 1000, 1);
+                        const projectedTotal = Math.round(session.cardsReviewed * (timeAttackPreset / elapsed));
+
+                        return (
+                            <div style={{
+                                width: '100%',
+                                padding: '0',
+                                position: 'sticky',
+                                top: 0,
+                                zIndex: 100,
+                                background: isHeartbeat
+                                    ? 'linear-gradient(180deg, #FEF2F2 0%, #fff 100%)'
+                                    : timeAttackUrgent
+                                        ? 'linear-gradient(180deg, #FEF2F2 0%, #fff 100%)'
+                                        : 'linear-gradient(180deg, #FFFBEB 0%, #fff 100%)',
+                                borderBottom: `2px solid ${barColor}30`,
+                                animation: isHeartbeat ? 'ta-heartbeat 1s ease-in-out infinite' : undefined,
+                            }}>
+                                {timeAttackUrgent && (
+                                    <div style={{
+                                        position: 'fixed',
+                                        inset: 0,
+                                        pointerEvents: 'none',
+                                        zIndex: 99,
+                                        boxShadow: isHeartbeat
+                                            ? 'inset 0 0 80px rgba(239,68,68,0.15)'
+                                            : 'inset 0 0 40px rgba(239,68,68,0.08)',
+                                        animation: isHeartbeat ? 'ta-edge-glow 1s ease-in-out infinite' : undefined,
+                                        transition: 'box-shadow 0.5s',
+                                    }} />
+                                )}
+                                <div style={{ width: '100%', height: '5px', background: '#F5F5F4', position: 'relative' }}>
+                                    <div style={{
+                                        width: `${progress * 100}%`,
+                                        height: '100%',
+                                        background: `linear-gradient(90deg, ${barColor}, ${barColor}CC)`,
+                                        transition: 'width 0.5s linear, background 0.3s',
+                                        borderRadius: '0 3px 3px 0',
+                                        boxShadow: `0 0 8px ${barColor}40`,
+                                    }} />
+                                    <div style={{
+                                        position: 'absolute',
+                                        right: `${(1 - progress) * 100}%`,
+                                        top: '-3px',
+                                        width: '11px',
+                                        height: '11px',
+                                        borderRadius: '50%',
+                                        background: barColor,
+                                        boxShadow: `0 0 12px ${barColor}80`,
+                                        animation: 'ta-dot-pulse 1.5s ease-in-out infinite',
+                                        transition: 'right 0.5s linear',
+                                    }} />
+                                </div>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '10px 16px 8px',
+                                    maxWidth: '780px',
+                                    margin: '0 auto',
+                                    width: '100%',
+                                    boxSizing: 'border-box',
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                        <div style={{
+                                            fontSize: isHeartbeat ? '28px' : '24px',
+                                            fontWeight: '900',
+                                            fontVariantNumeric: 'tabular-nums',
+                                            color: barColor,
+                                            letterSpacing: '-1px',
+                                            lineHeight: 1,
+                                            transition: 'font-size 0.3s, color 0.3s',
+                                            textShadow: isHeartbeat ? `0 0 20px ${barColor}60` : 'none',
+                                        }}>
+                                            {mins}:{String(secs).padStart(2, '0')}
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            <div style={{ display: 'flex', gap: '10px', fontSize: '12px', color: '#78716C', alignItems: 'baseline' }}>
+                                                <span><strong style={{ color: '#1C1917', fontSize: '18px', fontWeight: '900' }}>{session.cardsReviewed}</strong> <span style={{ fontSize: '10px' }}>cards</span></span>
+                                                <span><strong style={{ color: '#D4AF37', fontSize: '14px' }}>{session.xpEarned}</strong> <span style={{ fontSize: '10px' }}>XP</span></span>
+                                                {session.currentChain >= 3 && (
+                                                    <span style={{
+                                                        color: session.currentChain >= 10 ? '#D4AF37' : session.currentChain >= 5 ? '#DC2626' : '#7C3AED',
+                                                        fontWeight: '800',
+                                                        fontSize: '13px',
+                                                        animation: 'ta-combo-pop 0.3s ease-out',
+                                                    }}>
+                                                        {session.currentChain}x COMBO
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '8px', fontSize: '10px', color: '#A8A29E' }}>
+                                                <span>{timeAttackLivePace} cards/min</span>
+                                                {isAheadOfBest && (
+                                                    <span style={{
+                                                        color: projectedTotal > bestForPreset ? '#16A34A' : '#EF4444',
+                                                        fontWeight: '700',
+                                                    }}>
+                                                        {projectedTotal > bestForPreset ? 'BEST PACE' : `BEST: ${bestForPreset}`}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={stopTimeAttack}
+                                        style={{
+                                            background: 'none',
+                                            border: '1.5px solid #EF4444',
+                                            borderRadius: '6px',
+                                            padding: '4px 12px',
+                                            cursor: 'pointer',
+                                            fontSize: '11px',
+                                            fontWeight: '700',
+                                            color: '#EF4444',
+                                        }}
+                                    >
+                                        STOP
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })()}
+
+                    {/* Milestone popup */}
+                    {timeAttackMilestone && (
+                        <div style={{
+                            position: 'fixed',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            zIndex: 150,
+                            pointerEvents: 'none',
+                            animation: 'ta-milestone-pop 2s ease-out forwards',
+                        }}>
+                            <div style={{
+                                fontSize: '36px',
+                                fontWeight: '900',
+                                color: timeAttackMilestone.color,
+                                textShadow: `0 0 40px ${timeAttackMilestone.color}60, 0 4px 12px rgba(0,0,0,0.2)`,
+                                letterSpacing: '4px',
+                                textAlign: 'center',
+                                whiteSpace: 'nowrap',
+                            }}>
+                                {timeAttackMilestone.title}
+                            </div>
+                            <div style={{
+                                fontSize: '14px',
+                                fontWeight: '700',
+                                color: timeAttackMilestone.color,
+                                textAlign: 'center',
+                                opacity: 0.7,
+                                marginTop: '4px',
+                            }}>
+                                {timeAttackSessionRef.current.cardsReviewed} cards
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Countdown overlay */}
+                    {timeAttackPhase === 'countdown' && (
+                        <div style={{
+                            position: 'absolute',
+                            inset: 0,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: 'rgba(28,25,23,0.9)',
+                            zIndex: 200,
+                            backdropFilter: 'blur(12px)',
+                        }}>
+                            <div style={{
+                                position: 'absolute',
+                                width: '300px',
+                                height: '300px',
+                                borderRadius: '50%',
+                                background: `radial-gradient(circle, ${timeAttackCountdownColor}20 0%, transparent 70%)`,
+                                animation: 'ta-burst 0.8s ease-out',
+                            }} />
+                            <div
+                                key={timeAttackCountdownText}
+                                style={{
+                                    fontSize: timeAttackCountdownText === 'READY?' ? '48px' : timeAttackCountdownText === 'GO!' ? '100px' : '140px',
+                                    fontWeight: '900',
+                                    color: timeAttackCountdownColor,
+                                    textShadow: `0 0 60px ${timeAttackCountdownColor}60, 0 0 120px ${timeAttackCountdownColor}30`,
+                                    animation: timeAttackCountdownText === 'GO!'
+                                        ? 'ta-go-explode 0.8s ease-out'
+                                        : 'ta-number-slam 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                                    letterSpacing: timeAttackCountdownText === 'GO!' ? '12px' : '-2px',
+                                    position: 'relative',
+                                    zIndex: 1,
+                                }}
+                            >
+                                {timeAttackCountdownText}
+                            </div>
+                            <div style={{
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                color: 'rgba(255,255,255,0.4)',
+                                letterSpacing: '3px',
+                                marginTop: '20px',
+                                position: 'relative',
+                                zIndex: 1,
+                            }}>
+                                {TIME_PRESETS.find(p => p.seconds === timeAttackPreset)?.labelJa} TIME ATTACK
+                            </div>
+                        </div>
+                    )}
                     <div style={{
                         width: '100%',
                         maxWidth: '780px',
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '16px',
+                        padding: isMobile ? '16px' : '48px 24px',
                     }}>
                         {renderReviewContent()}
                     </div>
@@ -4507,6 +5030,29 @@ export default function PhrasesPage() {
                                                         })}
                                                     </div>
                                                 )}
+                                                {/* TA indicator (mobile) */}
+                                                {taSessionsByDate[dateKey] && (() => {
+                                                    const ta = taSessionsByDate[dateKey];
+                                                    const gradeColor: Record<string, string> = { S: '#D4AF37', A: '#ef4444', B: '#3b82f6', C: '#10B981', D: '#78716C' };
+                                                    return (
+                                                        <div style={{
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px',
+                                                            marginTop: '1px', padding: '1px 0',
+                                                            background: `${gradeColor[ta.bestGrade] || '#78716C'}12`,
+                                                            borderRadius: '2px',
+                                                        }}>
+                                                            <span style={{ fontSize: '7px', color: gradeColor[ta.bestGrade] || '#78716C', lineHeight: 1 }}>TA</span>
+                                                            <span style={{
+                                                                fontSize: '8px', fontWeight: '900',
+                                                                color: gradeColor[ta.bestGrade] || '#78716C',
+                                                                lineHeight: 1,
+                                                            }}>{ta.bestGrade}</span>
+                                                            {ta.count > 1 && (
+                                                                <span style={{ fontSize: '6px', color: '#A8A29E', lineHeight: 1 }}>x{ta.count}</span>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })()}
                                             </div>
                                         );
                                     })}
@@ -4863,6 +5409,33 @@ export default function PhrasesPage() {
                                                     })}
                                                 </div>
                                             )}
+
+                                            {/* TA indicator (desktop) */}
+                                            {taSessionsByDate[dateKey] && (() => {
+                                                const ta = taSessionsByDate[dateKey];
+                                                const gradeColor: Record<string, string> = { S: '#D4AF37', A: '#ef4444', B: '#3b82f6', C: '#10B981', D: '#78716C' };
+                                                return (
+                                                    <div style={{
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px',
+                                                        margin: '2px 0', padding: '2px 4px',
+                                                        background: `${gradeColor[ta.bestGrade] || '#78716C'}12`,
+                                                        borderRadius: '3px',
+                                                        border: `1px solid ${gradeColor[ta.bestGrade] || '#78716C'}25`,
+                                                    }}>
+                                                        <span style={{ fontSize: '9px', fontWeight: '600', color: '#A8A29E', lineHeight: 1 }}>TA</span>
+                                                        <span style={{
+                                                            fontSize: '12px', fontWeight: '900',
+                                                            color: gradeColor[ta.bestGrade] || '#78716C',
+                                                            lineHeight: 1,
+                                                            textShadow: ta.bestGrade === 'S' ? '0 0 4px rgba(212,175,55,0.3)' : 'none',
+                                                        }}>{ta.bestGrade}</span>
+                                                        {ta.count > 1 && (
+                                                            <span style={{ fontSize: '8px', fontWeight: '700', color: '#A8A29E', lineHeight: 1 }}>x{ta.count}</span>
+                                                        )}
+                                                        <span style={{ fontSize: '8px', color: '#A8A29E', lineHeight: 1 }}>{ta.totalCards}cards</span>
+                                                    </div>
+                                                );
+                                            })()}
 
                                             {/* Empty cell: Just + button */}
                                             {!hasAnyPhrases && (
@@ -6190,6 +6763,553 @@ export default function PhrasesPage() {
                     </div>
                 </div>
             )}
+
+            {/* ══════ TIME ATTACK SELECTION MODAL ══════ */}
+            {timeAttackPhase === 'selecting' && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'rgba(28,25,23,0.7)',
+                    zIndex: 300,
+                    backdropFilter: 'blur(6px)',
+                }}
+                    onClick={() => setTimeAttackPhase('idle')}
+                >
+                    <div
+                        style={{
+                            background: '#fff',
+                            borderRadius: '20px',
+                            padding: '40px',
+                            maxWidth: '480px',
+                            width: '90%',
+                            boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
+                        }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div style={{
+                            textAlign: 'center',
+                            marginBottom: '24px',
+                        }}>
+                            {timeAttackStats && timeAttackStats.streak_days > 0 && (
+                                <div style={{
+                                    display: 'inline-block',
+                                    background: 'linear-gradient(135deg, #D4AF37, #F6C85F)',
+                                    borderRadius: '20px',
+                                    padding: '4px 14px',
+                                    fontSize: '11px',
+                                    fontWeight: '800',
+                                    color: '#fff',
+                                    marginBottom: '12px',
+                                    letterSpacing: '0.5px',
+                                }}>
+                                    {timeAttackStats.streak_days} DAY STREAK
+                                </div>
+                            )}
+                            <div style={{
+                                fontSize: '12px',
+                                fontWeight: '700',
+                                letterSpacing: '3px',
+                                color: '#D4AF37',
+                                marginBottom: '8px',
+                            }}>
+                                DAILY REVIEW
+                            </div>
+                            <div style={{
+                                fontSize: '20px',
+                                fontWeight: '900',
+                                color: '#1C1917',
+                                letterSpacing: '-0.5px',
+                            }}>
+                                今日の復習、何分やる？
+                            </div>
+                            <div style={{
+                                fontSize: '12px',
+                                color: '#78716C',
+                                marginTop: '6px',
+                                lineHeight: 1.5,
+                            }}>
+                                1分でOK。タップで覚えた表現を思い出そう
+                            </div>
+                        </div>
+
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr 1fr',
+                            gap: '12px',
+                            marginBottom: '24px',
+                        }}>
+                            {TIME_PRESETS.map(p => {
+                                const best = timeAttackBestRecords[p.seconds] || 0;
+                                const isRec = (p as any).recommended;
+                                return (
+                                    <button
+                                        key={p.seconds}
+                                        onClick={() => {
+                                            setTimeAttackPhase('idle');
+                                            setViewMode('review');
+                                            setShuffleKey(k => k + 1);
+                                            setTimeout(() => startTimeAttack(p.seconds), 200);
+                                        }}
+                                        style={{
+                                            background: isRec ? `linear-gradient(135deg, ${p.color}08, ${p.color}15)` : '#FAFAF9',
+                                            border: `2px solid ${isRec ? p.color + '40' : '#E7E5E4'}`,
+                                            borderRadius: '16px',
+                                            padding: '20px 16px 16px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: '4px',
+                                            position: 'relative',
+                                            overflow: 'hidden',
+                                        }}
+                                        onMouseEnter={e => {
+                                            e.currentTarget.style.borderColor = p.color;
+                                            e.currentTarget.style.background = `linear-gradient(135deg, ${p.color}10, ${p.color}20)`;
+                                            e.currentTarget.style.transform = 'scale(1.04)';
+                                            e.currentTarget.style.boxShadow = `0 8px 24px ${p.color}20`;
+                                        }}
+                                        onMouseLeave={e => {
+                                            e.currentTarget.style.borderColor = isRec ? p.color + '40' : '#E7E5E4';
+                                            e.currentTarget.style.background = isRec ? `linear-gradient(135deg, ${p.color}08, ${p.color}15)` : '#FAFAF9';
+                                            e.currentTarget.style.transform = 'scale(1)';
+                                            e.currentTarget.style.boxShadow = 'none';
+                                        }}
+                                    >
+                                        {isRec && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: '6px',
+                                                right: '6px',
+                                                background: p.color,
+                                                borderRadius: '4px',
+                                                padding: '2px 6px',
+                                                fontSize: '8px',
+                                                fontWeight: '800',
+                                                color: '#fff',
+                                                letterSpacing: '0.5px',
+                                            }}>
+                                                RECOMMENDED
+                                            </div>
+                                        )}
+                                        <div style={{
+                                            fontSize: '9px',
+                                            fontWeight: '800',
+                                            color: p.color,
+                                            letterSpacing: '2px',
+                                            marginBottom: '2px',
+                                        }}>
+                                            {p.icon}
+                                        </div>
+                                        <div style={{
+                                            fontSize: '32px',
+                                            fontWeight: '900',
+                                            color: '#1C1917',
+                                            lineHeight: 1,
+                                        }}>
+                                            {p.labelJa}
+                                        </div>
+                                        <div style={{
+                                            fontSize: '11px',
+                                            fontWeight: '600',
+                                            color: '#78716C',
+                                            marginTop: '2px',
+                                        }}>
+                                            {p.subtitle}
+                                        </div>
+                                        {best > 0 && (
+                                            <div style={{
+                                                fontSize: '10px',
+                                                fontWeight: '800',
+                                                color: p.color,
+                                                marginTop: '6px',
+                                                padding: '2px 8px',
+                                                background: `${p.color}10`,
+                                                borderRadius: '4px',
+                                            }}>
+                                                BEST: {best} cards
+                                            </div>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {timeAttackStats && timeAttackStats.total_sessions > 0 && (
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'center',
+                                gap: '20px',
+                                marginBottom: '16px',
+                                padding: '12px',
+                                background: '#FAFAF9',
+                                borderRadius: '10px',
+                                border: '1px solid #F5F5F4',
+                            }}>
+                                {[
+                                    { label: 'TOTAL', value: timeAttackStats.total_sessions, unit: '回' },
+                                    { label: 'CARDS', value: timeAttackStats.total_cards, unit: '' },
+                                    { label: 'S RANK', value: timeAttackStats.s_rank_count, unit: '' },
+                                    { label: 'STREAK', value: timeAttackStats.streak_days, unit: '日' },
+                                ].map((s, i) => (
+                                    <div key={i} style={{ textAlign: 'center' }}>
+                                        <div style={{ fontSize: '9px', fontWeight: '700', color: '#A8A29E', letterSpacing: '1px' }}>{s.label}</div>
+                                        <div style={{ fontSize: '18px', fontWeight: '900', color: '#1C1917' }}>
+                                            {s.value}<span style={{ fontSize: '10px', color: '#A8A29E', fontWeight: '600' }}>{s.unit}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                                onClick={() => {
+                                    setTimeAttackPhase('idle');
+                                    setViewMode('review');
+                                    setShuffleKey(k => k + 1);
+                                }}
+                                style={{
+                                    flex: 1,
+                                    background: 'none',
+                                    border: '1px solid #E7E5E4',
+                                    borderRadius: '10px',
+                                    padding: '12px',
+                                    cursor: 'pointer',
+                                    fontSize: '13px',
+                                    fontWeight: '600',
+                                    color: '#78716C',
+                                }}
+                            >
+                                タイマーなしで復習
+                            </button>
+                            {timeAttackHistory.length > 0 && (
+                                <button
+                                    onClick={() => setShowTimeAttackHistory(h => !h)}
+                                    style={{
+                                        background: showTimeAttackHistory ? '#1C1917' : 'none',
+                                        border: '1px solid #E7E5E4',
+                                        borderRadius: '10px',
+                                        padding: '12px 16px',
+                                        cursor: 'pointer',
+                                        fontSize: '13px',
+                                        fontWeight: '600',
+                                        color: showTimeAttackHistory ? '#fff' : '#78716C',
+                                    }}
+                                >
+                                    履歴
+                                </button>
+                            )}
+                        </div>
+
+                        {showTimeAttackHistory && timeAttackHistory.length > 0 && (
+                            <div style={{
+                                marginTop: '16px',
+                                maxHeight: '240px',
+                                overflowY: 'auto',
+                                borderRadius: '10px',
+                                border: '1px solid #F5F5F4',
+                            }}>
+                                {timeAttackHistory.map((s, i) => {
+                                    const presetLabel = TIME_PRESETS.find(p => p.seconds === s.duration_preset)?.labelJa || `${Math.floor(s.duration_preset / 60)}分`;
+                                    const gradeColor: Record<string, string> = { S: '#D4AF37', A: '#DC2626', B: '#2563EB', C: '#16A34A', D: '#78716C' };
+                                    return (
+                                        <div key={s.id || i} style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            padding: '10px 14px',
+                                            borderBottom: i < timeAttackHistory.length - 1 ? '1px solid #F5F5F4' : 'none',
+                                            background: i % 2 === 0 ? '#fff' : '#FAFAF9',
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <div style={{
+                                                    fontSize: '18px',
+                                                    fontWeight: '900',
+                                                    color: gradeColor[s.grade] || '#78716C',
+                                                    width: '28px',
+                                                    textAlign: 'center',
+                                                }}>
+                                                    {s.grade}
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#1C1917' }}>
+                                                        {s.cards_reviewed} cards / {presetLabel}
+                                                    </div>
+                                                    <div style={{ fontSize: '10px', color: '#A8A29E' }}>
+                                                        {s.date} -- {s.cards_per_minute} cards/min -- {s.xp_earned} XP
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {!s.completed && (
+                                                <div style={{ fontSize: '9px', color: '#A8A29E', fontWeight: '600' }}>途中終了</div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* ══════ TIME ATTACK RESULT OVERLAY ══════ */}
+            {timeAttackPhase === 'result' && timeAttackResult && (() => {
+                const r = timeAttackResult;
+                const gradeColors: Record<string, { bg: string; text: string; glow: string; particle: string }> = {
+                    S: { bg: 'linear-gradient(135deg, #D4AF37 0%, #F6C85F 50%, #D4AF37 100%)', text: '#fff', glow: 'rgba(212,175,55,0.5)', particle: '#F6C85F' },
+                    A: { bg: 'linear-gradient(135deg, #DC2626 0%, #EF4444 50%, #DC2626 100%)', text: '#fff', glow: 'rgba(220,38,38,0.4)', particle: '#FCA5A5' },
+                    B: { bg: 'linear-gradient(135deg, #2563EB 0%, #3B82F6 50%, #2563EB 100%)', text: '#fff', glow: 'rgba(37,99,235,0.4)', particle: '#93C5FD' },
+                    C: { bg: 'linear-gradient(135deg, #16A34A 0%, #22C55E 50%, #16A34A 100%)', text: '#fff', glow: 'rgba(22,163,74,0.3)', particle: '#86EFAC' },
+                    D: { bg: 'linear-gradient(135deg, #78716C 0%, #A8A29E 50%, #78716C 100%)', text: '#fff', glow: 'rgba(120,113,108,0.2)', particle: '#D6D3D1' },
+                };
+                const gc = gradeColors[r.grade] || gradeColors.D;
+                const presetLabel = TIME_PRESETS.find(p => p.seconds === r.preset)?.labelJa || `${Math.floor(r.preset / 60)}分`;
+                const actualMins = Math.floor(r.actual / 60);
+                const actualSecs = r.actual % 60;
+
+                const motivationalMessages: Record<string, string[]> = {
+                    S: ['PERFECT', 'AMAZING', 'MASTER'],
+                    A: ['GREAT JOB', 'IMPRESSIVE', 'NICE'],
+                    B: ['GOOD WORK', 'SOLID', 'KEEP IT UP'],
+                    C: ['NICE TRY', 'GOOD START', 'GETTING BETTER'],
+                    D: ['YOU DID IT', 'FIRST STEP', 'COME BACK TOMORROW'],
+                };
+                const msgs = motivationalMessages[r.grade] || motivationalMessages.D;
+                const motivMsg = msgs[Math.floor(Math.random() * msgs.length)];
+                const showParticles = r.grade === 'S' || r.grade === 'A';
+
+                return (
+                    <div style={{
+                        position: 'fixed',
+                        inset: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'rgba(28,25,23,0.9)',
+                        zIndex: 300,
+                        backdropFilter: 'blur(12px)',
+                        animation: 'result-fade-in 0.6s ease-out',
+                    }}>
+                        {showParticles && Array.from({ length: 20 }).map((_, i) => (
+                            <div key={i} style={{
+                                position: 'absolute',
+                                width: `${3 + (i % 3) * 2}px`,
+                                height: `${3 + (i % 3) * 2}px`,
+                                borderRadius: '50%',
+                                background: i % 3 === 0 ? gc.particle : i % 3 === 1 ? '#fff' : gc.particle + '80',
+                                left: `${5 + (i * 4.7) % 90}%`,
+                                top: `${5 + (i * 7.3) % 90}%`,
+                                animation: `ta-result-particle ${3 + (i % 4)}s ease-in-out infinite`,
+                                animationDelay: `${i * 0.15}s`,
+                                opacity: 0.6,
+                                pointerEvents: 'none',
+                            }} />
+                        ))}
+
+                        <div style={{
+                            background: '#fff',
+                            borderRadius: '24px',
+                            padding: '0',
+                            maxWidth: '420px',
+                            width: '90%',
+                            boxShadow: `0 30px 80px rgba(0,0,0,0.5), 0 0 80px ${gc.glow}`,
+                            overflow: 'hidden',
+                            animation: 'ta-result-card-enter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                        }}>
+                            <div style={{
+                                background: gc.bg,
+                                backgroundSize: '200% 200%',
+                                animation: r.grade === 'S' ? 'ta-grade-shimmer 3s ease-in-out infinite' : undefined,
+                                padding: '36px 24px',
+                                textAlign: 'center',
+                                position: 'relative',
+                                overflow: 'hidden',
+                            }}>
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '50%',
+                                    left: '50%',
+                                    transform: 'translate(-50%, -50%)',
+                                    width: '200px',
+                                    height: '200px',
+                                    borderRadius: '50%',
+                                    background: 'radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%)',
+                                    animation: 'ta-result-shine 2s ease-in-out infinite',
+                                }} />
+
+                                {r.isNewRecord && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '12px',
+                                        right: '16px',
+                                        background: 'rgba(255,255,255,0.3)',
+                                        borderRadius: '8px',
+                                        padding: '4px 12px',
+                                        fontSize: '10px',
+                                        fontWeight: '900',
+                                        color: '#fff',
+                                        letterSpacing: '2px',
+                                        animation: 'new-record-flash 1.5s ease-in-out infinite',
+                                        boxShadow: '0 0 20px rgba(255,255,255,0.3)',
+                                    }}>
+                                        NEW RECORD
+                                    </div>
+                                )}
+                                <div style={{
+                                    fontSize: '11px',
+                                    fontWeight: '700',
+                                    color: 'rgba(255,255,255,0.6)',
+                                    letterSpacing: '4px',
+                                    marginBottom: '8px',
+                                    position: 'relative',
+                                }}>
+                                    {r.completed ? 'TIME UP' : 'SESSION END'}
+                                </div>
+                                <div style={{
+                                    fontSize: '96px',
+                                    fontWeight: '900',
+                                    color: gc.text,
+                                    lineHeight: 1,
+                                    textShadow: `0 4px 30px ${gc.glow}, 0 0 60px ${gc.glow}`,
+                                    letterSpacing: '-4px',
+                                    position: 'relative',
+                                    animation: 'ta-grade-zoom 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                                }}>
+                                    {r.grade}
+                                </div>
+                                <div style={{
+                                    fontSize: '16px',
+                                    fontWeight: '800',
+                                    color: 'rgba(255,255,255,0.9)',
+                                    marginTop: '8px',
+                                    letterSpacing: '3px',
+                                    position: 'relative',
+                                    animation: 'ta-motiv-fade 1s ease-out 0.5s both',
+                                }}>
+                                    {motivMsg}
+                                </div>
+                                <div style={{
+                                    fontSize: '12px',
+                                    fontWeight: '600',
+                                    color: 'rgba(255,255,255,0.6)',
+                                    marginTop: '6px',
+                                    position: 'relative',
+                                }}>
+                                    {presetLabel} {r.completed ? 'Complete' : `(${actualMins}:${String(actualSecs).padStart(2, '0')})`}
+                                </div>
+                            </div>
+
+                            <div style={{
+                                padding: '20px',
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 1fr 1fr',
+                                gap: '10px',
+                            }}>
+                                {[
+                                    { label: 'CARDS', value: r.cards, unit: '', color: '#1C1917', big: true },
+                                    { label: 'XP', value: r.xp, unit: '', color: '#D4AF37', big: true },
+                                    { label: 'PACE', value: r.cpm, unit: '/min', color: '#3B82F6', big: true },
+                                    { label: 'LEVEL UP', value: r.levelUps, unit: '', color: '#16A34A', big: false },
+                                    { label: 'MAX CHAIN', value: r.maxChain, unit: '', color: '#7C3AED', big: false },
+                                    { label: 'BEST', value: timeAttackBestRecords[r.preset] || r.cards, unit: '', color: '#D4AF37', big: false },
+                                ].map((stat, i) => (
+                                    <div key={i} style={{
+                                        background: '#FAFAF9',
+                                        borderRadius: '12px',
+                                        padding: '12px',
+                                        border: '1px solid #F5F5F4',
+                                        textAlign: 'center',
+                                        animation: `ta-stat-enter 0.4s ease-out ${0.3 + i * 0.08}s both`,
+                                    }}>
+                                        <div style={{
+                                            fontSize: '9px',
+                                            fontWeight: '700',
+                                            color: '#A8A29E',
+                                            letterSpacing: '1px',
+                                            marginBottom: '4px',
+                                        }}>
+                                            {stat.label}
+                                        </div>
+                                        <div style={{
+                                            fontSize: stat.big ? '26px' : '22px',
+                                            fontWeight: '900',
+                                            color: stat.color,
+                                            lineHeight: 1,
+                                            fontVariantNumeric: 'tabular-nums',
+                                        }}>
+                                            {stat.value}
+                                            {stat.unit && (
+                                                <span style={{ fontSize: '10px', fontWeight: '600', color: '#A8A29E' }}>
+                                                    {stat.unit}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div style={{
+                                padding: '0 20px 20px',
+                                display: 'flex',
+                                gap: '10px',
+                            }}>
+                                <button
+                                    onClick={() => {
+                                        setTimeAttackResult(null);
+                                        setTimeAttackPhase('selecting');
+                                    }}
+                                    style={{
+                                        flex: 1,
+                                        background: 'linear-gradient(135deg, #D4AF37, #B8941F)',
+                                        border: 'none',
+                                        borderRadius: '14px',
+                                        padding: '16px',
+                                        cursor: 'pointer',
+                                        fontSize: '15px',
+                                        fontWeight: '900',
+                                        color: '#fff',
+                                        letterSpacing: '2px',
+                                        boxShadow: '0 4px 16px rgba(212,175,55,0.3)',
+                                        transition: 'transform 0.2s',
+                                    }}
+                                    onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                                >
+                                    RETRY
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setTimeAttackResult(null);
+                                        setTimeAttackPhase('idle');
+                                        setViewMode('calendar');
+                                    }}
+                                    style={{
+                                        flex: 1,
+                                        background: '#FAFAF9',
+                                        border: '1.5px solid #E7E5E4',
+                                        borderRadius: '14px',
+                                        padding: '16px',
+                                        cursor: 'pointer',
+                                        fontSize: '15px',
+                                        fontWeight: '700',
+                                        color: '#78716C',
+                                        transition: 'transform 0.2s',
+                                    }}
+                                    onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                                >
+                                    終了
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
         </div>
     );
 }
