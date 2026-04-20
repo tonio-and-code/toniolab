@@ -127,7 +127,7 @@ export default function MembershipPage() {
         margin: '0 auto',
         padding: '48px 24px 0',
       }}>
-        <a href="https://tonio-life.pages.dev/membership/life" style={{ textDecoration: 'none' }}>
+        <Link href="/membership/life" style={{ textDecoration: 'none' }}>
           <div style={{
             background: 'linear-gradient(135deg, #ffffff 0%, #FAF7EF 100%)',
             border: `2px solid ${GOLD}`,
@@ -194,7 +194,7 @@ export default function MembershipPage() {
               <span style={{ fontSize: '16px' }}>→</span>
             </div>
           </div>
-        </a>
+        </Link>
       </section>
 
       {/* Feature Grid */}
