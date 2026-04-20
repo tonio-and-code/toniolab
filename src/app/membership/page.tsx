@@ -121,6 +121,82 @@ export default function MembershipPage() {
         </div>
       </header>
 
+      {/* LIFE CTA -- primary hero action */}
+      <section style={{
+        maxWidth: '720px',
+        margin: '0 auto',
+        padding: '48px 24px 0',
+      }}>
+        <Link href="/membership/life" style={{ textDecoration: 'none' }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #ffffff 0%, #FAF7EF 100%)',
+            border: `2px solid ${GOLD}`,
+            borderRadius: '16px',
+            padding: '40px 32px',
+            boxShadow: '0 24px 60px -20px rgba(212,175,55,0.35)',
+            position: 'relative' as const,
+            overflow: 'hidden' as const,
+          }}>
+            <div style={{
+              position: 'absolute' as const,
+              top: '16px',
+              right: '20px',
+              fontSize: '9px',
+              fontWeight: '700',
+              color: GOLD,
+              letterSpacing: '0.3em',
+              textTransform: 'uppercase' as const,
+            }}>
+              App · Install
+            </div>
+            <p style={{
+              fontSize: '10px',
+              letterSpacing: '0.4em',
+              color: GOLD,
+              fontWeight: '700',
+              margin: '0 0 14px',
+              textTransform: 'uppercase' as const,
+            }}>
+              Tonio Life -- 1日1録音
+            </p>
+            <h2 style={{
+              fontSize: '30px',
+              fontWeight: '700',
+              color: STONE_900,
+              lineHeight: '1.25',
+              margin: '0 0 16px',
+              letterSpacing: '-0.01em',
+            }}>
+              今日の一言を、<br />録音する。
+            </h2>
+            <p style={{
+              fontSize: '14px',
+              color: STONE_700,
+              lineHeight: '1.8',
+              margin: '0 0 24px',
+              maxWidth: '460px',
+            }}>
+              日常の一コマを日本語で録音。あとでとにおが英語にして、俺流の解説を添えて返します。ホーム画面に追加してアプリとして使えます。
+            </p>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '14px 28px',
+              background: STONE_900,
+              color: '#fff',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: '700',
+              letterSpacing: '0.04em',
+            }}>
+              録音ページを開く
+              <span style={{ fontSize: '16px' }}>→</span>
+            </div>
+          </div>
+        </Link>
+      </section>
+
       {/* Feature Grid */}
       <section style={{
         maxWidth: '880px',
