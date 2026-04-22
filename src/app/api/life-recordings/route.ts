@@ -105,8 +105,38 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
     try {
         const body = await request.json();
-        const { id, english_short, english_attitude, english_full, english_monologue, context } = body;
-        if (!id || !english_attitude || !context) {
+        const { id } = body;
+        if (!id) {
+            return NextResponse.json({ success: false, error: 'id is required' }, { status: 400 });
+        }
+
+        if (body.edit === true) {
+            const editableKeys = [
+                'japanese', 'english_short', 'english_attitude', 'english_full',
+                'english_monologue', 'context', 'literal', 'category',
+            ] as const;
+            const sets: string[] = [];
+            const params: (string | number | null)[] = [];
+            for (const key of editableKeys) {
+                if (Object.prototype.hasOwnProperty.call(body, key)) {
+                    const v = body[key];
+                    if (key === 'japanese' && typeof v === 'string' && !v.trim()) {
+                        return NextResponse.json({ success: false, error: 'japanese cannot be empty' }, { status: 400 });
+                    }
+                    sets.push(`${key} = ?`);
+                    params.push(v ?? null);
+                }
+            }
+            if (sets.length === 0) {
+                return NextResponse.json({ success: false, error: 'no editable fields provided' }, { status: 400 });
+            }
+            params.push(id);
+            await queryD1(`UPDATE life_recordings SET ${sets.join(', ')} WHERE id = ?`, params);
+            return NextResponse.json({ success: true });
+        }
+
+        const { english_short, english_attitude, english_full, english_monologue, context } = body;
+        if (!english_attitude || !context) {
             return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
         }
         const now = jstNowIso();
